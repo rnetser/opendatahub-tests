@@ -31,6 +31,9 @@ classifiers = [
   "Operating System :: OS Independent",
 ]
 
+[tool.poetry-dynamic-versioning.substitution]
+files = ["VERSION"]
+
 [tool.poetry.dependencies]
 python = "^3.8"
 pyhelper-utils = "^0.0.41"
@@ -46,3 +49,7 @@ ipython = "*"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry-dynamic-versioning]
+enable = true
+pattern = "((?P<epoch>\\d+)!)?(?P<base>\\d+(\\.\\d+)*)"
