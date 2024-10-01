@@ -33,6 +33,10 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = "^3.8"
+pyhelper-utils = "^0.0.41"
+python-simple-logger = "^1.0.39"
+openshift-python-wrapper = "^10.0.87"
+pytest-testconfig = "^0.2.0"
 
 
 [tool.poetry.group.dev.dependencies]
