@@ -16,7 +16,7 @@ pytestmark = pytest.mark.usefixtures("valid_aws_config")
                 "model-version": "1",
                 "multi-model": False,
             },
-            {"name": "onnx", "model-dir": "test-dir"},
+            {"name": "onnx"},
         )
     ],
     indirect=True,

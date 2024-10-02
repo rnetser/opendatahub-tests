@@ -149,7 +149,7 @@ def downloaded_model_data(
     model_pvc: PersistentVolumeClaim,
     aws_secret_access_key: str,
     aws_access_key: str,
-) -> None:
+) -> str:
     mount_path: str = "data"
     containers = [
         {
@@ -179,6 +179,8 @@ def downloaded_model_data(
         pod.wait_for_status(status=Pod.Status.RUNNING)
         pod.execute(command=shlex.split(f"aws s3 cp --recursive {storage_uri} /{mount_path} --recursive"))
 
+    return mount_path
+
 
 @pytest.fixture(scope="class")
 def inference_service(
@@ -188,7 +190,7 @@ def inference_service(
     serving_runtime: ServingRuntime,
     endpoint_s3_secret: Secret,
     model_pvc: PersistentVolumeClaim,
-    downloaded_model_data: None,
+    downloaded_model_data: str,
     model_service_account: ServiceAccount,
 ) -> InferenceService:
     with InferenceService(
@@ -200,7 +202,7 @@ def inference_service(
             "model": {
                 "modelFormat": {"name": serving_runtime.instance.spec.supportedModelFormats[0].name},
                 "runtime": serving_runtime.name,
-                "storageUri": f"pvc://{model_pvc.name}/{request.param['model-dir']}",
+                "storageUri": f"pvc://{model_pvc.name}/{downloaded_model_data}",
             },
             "serviceAccountName": model_service_account.name,
         },
