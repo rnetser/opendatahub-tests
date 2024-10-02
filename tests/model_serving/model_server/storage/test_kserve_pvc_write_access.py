@@ -11,11 +11,12 @@ pytestmark = pytest.mark.usefixtures("valid_aws_config")
             {"name": "pvc-write-access"},
             {"model-dir": "test-dir"},
             {
-                "name": "caikit-tgis-runtime",
+                "name": "ovms-runtime",
                 "model-name": "onnx",
+                "model-version": "1",
                 "multi-model": False,
             },
-            {"name": "onnx"},
+            {"name": "onnx", "model-dir": "test-dir"},
         )
     ],
     indirect=True,
