@@ -1,7 +1,6 @@
 import logging
 import shutil
 
-import pytest
 
 from utilities.pytest_utils import (
     separator,
@@ -34,15 +33,8 @@ def pytest_fixture_setup(fixturedef, request):  # type: ignore
 
 
 def pytest_runtest_setup(item):  # type: ignore
-    """
-    Use incremental
-    """
     BASIC_LOGGER.info(f"\n{separator(symbol_='-', val=item.name)}")
     BASIC_LOGGER.info(f"{separator(symbol_='-', val='SETUP')}")
-    if "incremental" in item.keywords:
-        previousfailed = getattr(item.parent, "_previousfailed", None)
-        if previousfailed is not None:
-            pytest.xfail("previous test failed (%s)" % previousfailed.name)
 
 
 def pytest_sessionfinish(session, exitstatus):  # type: ignore

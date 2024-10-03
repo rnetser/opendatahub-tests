@@ -55,8 +55,8 @@ def service_mesh_member(admin_client: DynamicClient, model_namespace: Namespace)
 
 
 @pytest.fixture(scope="class")
-def storage_uri(request) -> str:
-    return f"s3://{py_config['model_s3_bucket_name']}/{request.param['model-dir']}/"
+def ci_s3_storage_uri(request) -> str:
+    return f"s3://{py_config['ci_s3_bucket_name']}/{request.param['model-dir']}/"
 
 
 @pytest.fixture(scope="class")
@@ -95,41 +95,6 @@ def model_service_account(admin_client: DynamicClient, endpoint_s3_secret: Names
 
 
 @pytest.fixture(scope="class")
-def serving_runtime(
-    request,
-    admin_client: DynamicClient,
-    service_mesh_member,
-    model_namespace: Namespace,
-) -> ServingRuntime:
-    containers = [
-        {
-            "name": "kserve-container",
-            "image": "quay.io/modh/openvino_model_server:stable",
-            "args": [
-                f"--model-name={request.param['model-name']}",
-                "model_path=/mnt/models",
-            ],
-            "env": [TRANSFORMERS_CACHE_ENV_VAR],
-            "ports": [{"containerPort": 8888, "protocol": "TCP"}],
-        }
-    ]
-
-    with ServingRuntime(
-        client=admin_client,
-        name=request.param["name"],
-        namespace=model_namespace.name,
-        # label={"networking.knative.dev/visibility": "cluster-local"},
-        # annotations={"enable-route": "true"},
-        containers=containers,
-        supported_model_formats=[
-            {"name": request.param["model-name"], "autoselect": "true", "version": request.param["model-version"]},
-        ],
-        multi_model=request.param["multi-model"],
-    ) as mlserver:
-        yield mlserver
-
-
-@pytest.fixture(scope="class")
 def model_pvc(admin_client: DynamicClient, model_namespace: Namespace) -> PersistentVolumeClaim:
     with PersistentVolumeClaim(
         name="model-pvc",
@@ -145,12 +110,13 @@ def model_pvc(admin_client: DynamicClient, model_namespace: Namespace) -> Persis
 def downloaded_model_data(
     admin_client: DynamicClient,
     model_namespace: Namespace,
-    storage_uri: str,
+    ci_s3_storage_uri: str,
     model_pvc: PersistentVolumeClaim,
     aws_secret_access_key: str,
     aws_access_key: str,
 ) -> str:
     mount_path: str = "data"
+    model_dir: str = "model-dir"
     containers = [
         {
             "name": "model-downloader",
@@ -164,7 +130,7 @@ def downloaded_model_data(
                 {"name": "AWS_ACCESS_KEY_ID", "value": aws_access_key},
                 {"name": "AWS_SECRET_ACCESS_KEY", "value": aws_secret_access_key},
             ],
-            "volumeMounts": [{"mountPath": mount_path, "name": model_pvc.name}],
+            "volumeMounts": [{"mountPath": mount_path, "name": model_pvc.name, "subPath": model_dir}],
         }
     ]
     volumes = [{"name": model_pvc.name, "persistentVolumeClaim": {"claimName": model_pvc.name}}]
@@ -177,9 +143,47 @@ def downloaded_model_data(
         volumes=volumes,
     ) as pod:
         pod.wait_for_status(status=Pod.Status.RUNNING)
-        pod.execute(command=shlex.split(f"aws s3 cp --recursive {storage_uri} /{mount_path} --recursive"))
+        pod.execute(command=shlex.split(f"aws s3 cp --recursive {ci_s3_storage_uri} /{mount_path}/{model_dir}"))
 
-    return mount_path
+    return model_dir
+
+
+@pytest.fixture(scope="class")
+def serving_runtime(
+    request,
+    admin_client: DynamicClient,
+    service_mesh_member,
+    model_namespace: Namespace,
+    downloaded_model_data: str,
+) -> ServingRuntime:
+    containers = [
+        {
+            "name": "kserve-container",
+            "image": "quay.io/modh/openvino_model_server:stable",
+            "args": [
+                f"--model_name={request.param['name']}",
+                f"--model_path=/mnt/models/{downloaded_model_data}",
+            ],
+            "env": [TRANSFORMERS_CACHE_ENV_VAR],
+            "ports": [{"containerPort": 8888, "protocol": "TCP"}],
+        }
+    ]
+
+    with ServingRuntime(
+        client=admin_client,
+        name=request.param["name"],
+        namespace=model_namespace.name,
+        containers=containers,
+        supported_model_formats=[
+            {
+                "name": request.param["model-name"],
+                "autoselect": "true",
+                "version": request.param["model-version"],
+            },
+        ],
+        multi_model=request.param["multi-model"],
+    ) as mlserver:
+        yield mlserver
 
 
 @pytest.fixture(scope="class")

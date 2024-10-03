@@ -5,7 +5,7 @@ pytestmark = pytest.mark.usefixtures("valid_aws_config")
 
 
 @pytest.mark.parametrize(
-    "model_namespace, storage_uri, serving_runtime, inference_service",
+    "model_namespace, ci_s3_storage_uri, serving_runtime, inference_service",
     [
         pytest.param(
             {"name": "pvc-write-access"},
