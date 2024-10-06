@@ -37,6 +37,10 @@ def pytest_runtest_setup(item):  # type: ignore
     BASIC_LOGGER.info(f"{separator(symbol_='-', val='SETUP')}")
 
 
+def pytest_runtest_teardown(item):
+    BASIC_LOGGER.info(f"{separator(symbol_='-', val='TEARDOWN')}")
+
+
 def pytest_sessionfinish(session, exitstatus):  # type: ignore
     shutil.rmtree(path=session.config.option.basetemp, ignore_errors=True)
 

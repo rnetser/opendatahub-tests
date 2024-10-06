@@ -1,7 +1,7 @@
 import shlex
 from ocp_resources.pod import ExecOnPodError
-
 import pytest
+from ocp_utilities.infra import get_pod_by_name_prefix
 
 
 pytestmark = pytest.mark.usefixtures("valid_aws_config")
@@ -41,12 +41,16 @@ class TestKservePVCWriteAccess:
         ],
         indirect=True,
     )
-    def test_isvc_read_only_annotation_false(self, patched_isvc, predictor_pod):
-        with pytest.raises(ExecOnPodError):
-            predictor_pod.execute(
-                container="kserve-container",
-                command=shlex.split("touch /mnt/models/test"),
-            )
+    def test_isvc_read_only_annotation_false(self, admin_client, patched_isvc):
+        new_pod = get_pod_by_name_prefix(
+            client=admin_client,
+            pod_prefix=f"{patched_isvc.name}-predictor",
+            namespace=patched_isvc.namespace,
+        )
+        new_pod.execute(
+            container="kserve-container",
+            command=shlex.split("touch /mnt/models/test"),
+        )
 
     @pytest.mark.parametrize(
         "patched_isvc",
@@ -57,11 +61,14 @@ class TestKservePVCWriteAccess:
         ],
         indirect=True,
     )
-    def test_isvc_read_only_annotation_true(self, patched_isvc, predictor_pod):
-        predictor_pod.execute(
-            container="kserve-container",
-            command=shlex.split("touch /mnt/models/test"),
+    def test_isvc_read_only_annotation_true(self, admin_client, patched_isvc):
+        new_pod = get_pod_by_name_prefix(
+            client=admin_client,
+            pod_prefix=f"{patched_isvc.name}-predictor",
+            namespace=patched_isvc.namespace,
         )
-
-    def test_isvc_modified_read_only_annotation(self, inference_service):
-        pass
+        with pytest.raises(ExecOnPodError):
+            new_pod.execute(
+                container="kserve-container",
+                command=shlex.split("touch /mnt/models/test"),
+            )

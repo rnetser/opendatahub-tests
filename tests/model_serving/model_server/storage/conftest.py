@@ -18,6 +18,7 @@ INFERENCE_ANNOTATIONS: Dict[str, str] = {
     "serving.knative.openshift.io/enablePassthrough": "true",
     "sidecar.istio.io/inject": "true",
     "sidecar.istio.io/rewriteAppHTTPProbers": "true",
+    "serving.kserve.io/deploymentMode": "Serverless",
 }
 SMM_SPEC: Dict[str, str] = {"name": "data-science-smcp", "namespace": "istio-system"}
 
@@ -190,7 +191,7 @@ def predictor_pod(admin_client: DynamicClient, inference_service: InferenceServi
 
 
 @pytest.fixture()
-def patched_isvc(request, inference_service: InferenceService):
+def patched_isvc(request, inference_service: InferenceService, predictor_pod: Pod) -> None:
     with ResourceEditor(
         patches={
             inference_service: {
@@ -200,4 +201,5 @@ def patched_isvc(request, inference_service: InferenceService):
             }
         }
     ):
+        predictor_pod.wait_deleted()
         yield inference_service
