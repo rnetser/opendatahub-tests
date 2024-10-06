@@ -30,7 +30,7 @@ KSERVE_CONTAINER_NAME: str = "kserve-container"
     indirect=True,
 )
 class TestKservePVCWriteAccess:
-    def test_isvc_read_only_annotation_not_set(self, inference_service):
+    def test_isvc_read_only_annotation_not_set_by_default(self, inference_service):
         assert inference_service.instance.metadata.annotations.get(
             "storage.kserve.io/readonly"
         ), "Read only annotation is set"
