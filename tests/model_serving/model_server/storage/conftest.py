@@ -14,6 +14,8 @@ from ocp_resources.serving_runtime import ServingRuntime
 from ocp_utilities.infra import get_pod_by_name_prefix
 from pytest_testconfig import config as py_config
 
+from tests.model_serving.model_server.storage.test_kserve_pvc_write_access import KSERVE_CONTAINER_NAME
+
 
 @pytest.fixture(scope="session")
 def admin_client() -> DynamicClient:
@@ -133,7 +135,7 @@ def serving_runtime(
 ) -> ServingRuntime:
     containers = [
         {
-            "name": "kserve-container",
+            "name": KSERVE_CONTAINER_NAME,
             "image": "quay.io/modh/openvino_model_server:stable",
             "args": [
                 f"--model_name={request.param['name']}",
@@ -210,7 +212,7 @@ def predictor_pod(admin_client: DynamicClient, inference_service: InferenceServi
 
 
 @pytest.fixture()
-def patched_isvc(request, inference_service: InferenceService, predictor_pod: Pod) -> None:
+def patched_isvc(request, inference_service: InferenceService, predictor_pod: Pod) -> InferenceService:
     with ResourceEditor(
         patches={
             inference_service: {

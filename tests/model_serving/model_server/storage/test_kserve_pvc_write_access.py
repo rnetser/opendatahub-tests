@@ -2,9 +2,14 @@ import shlex
 from ocp_resources.pod import ExecOnPodError
 import pytest
 from ocp_utilities.infra import get_pod_by_name_prefix
+from typing import List
 
 
 pytestmark = pytest.mark.usefixtures("valid_aws_config")
+
+
+POD_SPLIT_COMMAND: List[str] = shlex.split("touch /mnt/models/test")
+KSERVE_CONTAINER_NAME: str = "kserve-container"
 
 
 @pytest.mark.parametrize(
@@ -28,8 +33,8 @@ class TestKservePVCWriteAccess:
     def test_isvc_read_only_annotation_default_value(self, predictor_pod):
         with pytest.raises(ExecOnPodError):
             predictor_pod.execute(
-                container="kserve-container",
-                command=shlex.split("touch /mnt/models/test"),
+                container=KSERVE_CONTAINER_NAME,
+                command=POD_SPLIT_COMMAND,
             )
 
     @pytest.mark.parametrize(
@@ -48,8 +53,8 @@ class TestKservePVCWriteAccess:
             namespace=patched_isvc.namespace,
         )
         new_pod.execute(
-            container="kserve-container",
-            command=shlex.split("touch /mnt/models/test"),
+            container=KSERVE_CONTAINER_NAME,
+            command=POD_SPLIT_COMMAND,
         )
 
     @pytest.mark.parametrize(
@@ -69,6 +74,6 @@ class TestKservePVCWriteAccess:
         )
         with pytest.raises(ExecOnPodError):
             new_pod.execute(
-                container="kserve-container",
-                command=shlex.split("touch /mnt/models/test"),
+                container=KSERVE_CONTAINER_NAME,
+                command=POD_SPLIT_COMMAND,
             )
