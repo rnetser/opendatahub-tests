@@ -7,9 +7,10 @@ from ocp_resources.inference_service import InferenceService
 from ocp_resources.namespace import Namespace
 from ocp_resources.persistent_volume_claim import PersistentVolumeClaim
 from ocp_resources.pod import Pod
-from ocp_resources.resource import get_client
+from ocp_resources.resource import get_client, ResourceEditor
 from ocp_resources.service_mesh_member import ServiceMeshMember
 from ocp_resources.serving_runtime import ServingRuntime
+from ocp_utilities.infra import get_pod_by_name_prefix
 from pytest_testconfig import config as py_config
 
 
@@ -176,4 +177,27 @@ def inference_service(
             status=inference_service.Condition.Status.TRUE,
             timeout=10 * 60,
         )
+        yield inference_service
+
+
+@pytest.fixture()
+def predictor_pod(admin_client: DynamicClient, inference_service: InferenceService) -> Pod:
+    return get_pod_by_name_prefix(
+        client=admin_client,
+        pod_prefix=f"{inference_service.name}-predictor",
+        namespace=inference_service.namespace,
+    )
+
+
+@pytest.fixture()
+def patched_isvc(request, inference_service: InferenceService):
+    with ResourceEditor(
+        patches={
+            inference_service: {
+                "metadata": {
+                    "annotations": {"storage.kserve.io/readonly": request.param["readonly"]},
+                }
+            }
+        }
+    ):
         yield inference_service
