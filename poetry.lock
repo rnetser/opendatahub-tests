@@ -775,26 +775,29 @@ signedtoken = ["cryptography (>=3.0.0)", "pyjwt (>=2.0.0,<3)"]
 
 [[package]]
 name = "openshift-python-utilities"
-version = "5.0.67"
+version = "0.0.0"
 description = "A utilities repository for https://github.com/RedHatQE/openshift-python-wrapper"
 optional = false
-python-versions = "<4.0,>=3.8"
-files = [
-    {file = "openshift_python_utilities-5.0.67.tar.gz", hash = "sha256:87fa949dd8f96e4fff28b8f9f45ac7dbd3f0a134839440bc485826b70713b521"},
-]
+python-versions = "^3.8"
+files = []
+develop = false
 
 [package.dependencies]
-beautifulsoup4 = ">=4.12.3,<5.0.0"
-colorlog = ">=6.7.0,<7.0.0"
-deprecation = ">=2.1.0,<3.0.0"
+beautifulsoup4 = "^4.12.3"
+colorlog = "^6.7.0"
+deprecation = "^2.1.0"
 openshift-python-wrapper = "*"
 openshift-python-wrapper-data-collector = ">=1.0.4"
 pyhelper-utils = ">=0.0.22"
 python-simple-logger = ">=1.0.5"
-pyyaml = ">=6.0.1,<7.0.0"
-requests = ">=2.31.0,<3.0.0"
-semver = ">=3.0.2,<4.0.0"
+pyyaml = "^6.0.1"
+requests = "^2.31.0"
+semver = "^3.0.2"
 timeout-sampler = ">=0.0.17"
+
+[package.source]
+type = "directory"
+url = "../openshift-python-utilities"
 
 [[package]]
 name = "openshift-python-wrapper"
@@ -1548,4 +1551,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "9674adc9decf45f2ce32598748b9898ff1fc2dd8aeeacabea3d335c55c8b7446"
+content-hash = "a5584e0fb7e60a72fd841719e463f66f964640deff50b9dc1bc4992e5fd2b3ce"
