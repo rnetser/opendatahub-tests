@@ -1,5 +1,6 @@
+import os
 import shlex
-from typing import Dict
+from typing import Optional, Tuple
 
 import pytest
 from kubernetes.dynamic import DynamicClient
@@ -7,25 +8,39 @@ from ocp_resources.inference_service import InferenceService
 from ocp_resources.namespace import Namespace
 from ocp_resources.persistent_volume_claim import PersistentVolumeClaim
 from ocp_resources.pod import Pod
-from ocp_resources.resource import get_client, ResourceEditor
+from ocp_resources.resource import ResourceEditor, get_client
 from ocp_resources.service_mesh_member import ServiceMeshMember
 from ocp_resources.serving_runtime import ServingRuntime
 from ocp_utilities.infra import get_pod_by_name_prefix
 from pytest_testconfig import config as py_config
 
 
-INFERENCE_ANNOTATIONS: Dict[str, str] = {
-    "serving.knative.openshift.io/enablePassthrough": "true",
-    "sidecar.istio.io/inject": "true",
-    "sidecar.istio.io/rewriteAppHTTPProbers": "true",
-    "serving.kserve.io/deploymentMode": "Serverless",
-}
-SMM_SPEC: Dict[str, str] = {"name": "data-science-smcp", "namespace": "istio-system"}
-
-
 @pytest.fixture(scope="session")
 def admin_client() -> DynamicClient:
     return get_client()
+
+
+@pytest.fixture(scope="session")
+def aws_access_key() -> Optional[str]:
+    access_key = py_config.get("aws_access_key", os.environ.get("AWS_ACCESS_KEY_ID"))
+    if not access_key:
+        raise ValueError("AWS access key is not set")
+
+    return access_key
+
+
+@pytest.fixture(scope="session")
+def aws_secret_access_key() -> Optional[str]:
+    secret_access_key = py_config.get("aws_secret_key", os.environ.get("AWS_SECRET_ACCESS_KEY"))
+    if not secret_access_key:
+        raise ValueError("AWS secret key is not set")
+
+    return secret_access_key
+
+
+@pytest.fixture(scope="session")
+def valid_aws_config(aws_access_key: str, aws_secret_access_key: str) -> Tuple[str, str]:
+    return aws_access_key, aws_secret_access_key
 
 
 @pytest.fixture(scope="class")
@@ -44,7 +59,7 @@ def service_mesh_member(admin_client: DynamicClient, model_namespace: Namespace)
         client=admin_client,
         name="default",
         namespace=model_namespace.name,
-        control_plane_ref=SMM_SPEC,
+        control_plane_ref={"name": "data-science-smcp", "namespace": "istio-system"},
     ) as smm:
         yield smm
 
@@ -63,7 +78,6 @@ def model_pvc(admin_client: DynamicClient, model_namespace: Namespace) -> Persis
         size="15Gi",
         accessmodes="ReadWriteOnce",
     ) as pvc:
-        # pvc.wait_for_status(status=pvc.Status.BOUND, timeout=60)
         yield pvc
 
 
@@ -163,7 +177,12 @@ def inference_service(
         client=admin_client,
         name=request.param["name"],
         namespace=model_namespace.name,
-        annotations=INFERENCE_ANNOTATIONS,
+        annotations={
+            "serving.knative.openshift.io/enablePassthrough": "true",
+            "sidecar.istio.io/inject": "true",
+            "sidecar.istio.io/rewriteAppHTTPProbers": "true",
+            "serving.kserve.io/deploymentMode": "Serverless",
+        },
         predictor={
             "model": {
                 "modelFormat": {"name": serving_runtime.instance.spec.supportedModelFormats[0].name},
