@@ -42,7 +42,7 @@ openshift-python-wrapper = "^10.0.87"
 pytest-testconfig = "^0.2.0"
 pytest-progress = "^1.3.0"
 pyyaml = "^6.0.2"
-openshift-python-utilities = "^5.0.67"
+openshift-python-utilities = "^5.0.68"
 
 
 [tool.poetry.group.dev.dependencies]
