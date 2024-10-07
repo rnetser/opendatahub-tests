@@ -1,1 +1,1 @@
-{"$schema": "https://docs.renovatebot.com/renovate-schema.json", "packageRules": [{"matchPackagePatterns": ["ipdb", "ipython"], "groupName": "poetry-deps"}]}
+{"$schema": "https://docs.renovatebot.com/renovate-schema.json", "packageRules": [{"matchPackagePatterns": ["python-simple-logger", "openshift-python-wrapper", "pytest-testconfig", "pytest-progress", "pyyaml", "openshift-python-utilities", "ipdb", "ipython"], "groupName": "poetry-deps"}]}
