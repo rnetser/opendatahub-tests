@@ -138,8 +138,8 @@ def serving_runtime(
         name=request.param["name"],
         namespace=model_namespace.name,
         template_name=request.param["template-name"],
-    ) as serving_runtime:
-        yield serving_runtime
+    ) as model_runtime:
+        yield model_runtime
 
 
 @pytest.fixture(scope="class")

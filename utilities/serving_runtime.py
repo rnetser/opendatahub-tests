@@ -1,5 +1,3 @@
-import io
-import yaml
 from typing import Any, Dict
 from kubernetes.dynamic import DynamicClient
 from kubernetes.dynamic.exceptions import ResourceNotFoundError
@@ -13,9 +11,8 @@ class ServingRuntimeFromTemplate(ServingRuntime):
         self.name = name
         self.namespace = namespace
         self.template_name = template_name
-        self.yaml_file = self.get_model_from_template()
 
-        super().__init__(client=self.client, yaml_file=self.yaml_file)
+        super().__init__(client=self.client, kind_dict=self.get_model_dict_from_template())
 
     def get_model_template(self) -> Template:
         template = Template(
@@ -28,10 +25,10 @@ class ServingRuntimeFromTemplate(ServingRuntime):
 
         raise ResourceNotFoundError(f"{self.template_name} template not found")
 
-    def get_model_from_template(self) -> io.StringIO:
+    def get_model_dict_from_template(self) -> Dict[Any, Any]:
         template = self.get_model_template()
-        model: Dict[str, Any] = template.instance.objects[0].to_dict()
-        model["metadata"]["name"] = self.name
-        model["metadata"]["namespace"] = self.namespace
+        model_dict: Dict[str, Any] = template.instance.objects[0].to_dict()
+        model_dict["metadata"]["name"] = self.name
+        model_dict["metadata"]["namespace"] = self.namespace
 
-        return io.StringIO(yaml.dump(model))
+        return model_dict

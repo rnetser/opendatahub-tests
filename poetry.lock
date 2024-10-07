@@ -798,29 +798,32 @@ timeout-sampler = ">=0.0.17"
 
 [[package]]
 name = "openshift-python-wrapper"
-version = "10.0.87"
+version = "0.0.0"
 description = "Wrapper around https://github.com/kubernetes-client/python"
 optional = false
-python-versions = "<4.0,>=3.8"
-files = [
-    {file = "openshift_python_wrapper-10.0.87.tar.gz", hash = "sha256:c390057e84cad80303525106771ee14e37d888fd637e5d1bd10e35bc6dbb2045"},
-]
+python-versions = "^3.8"
+files = []
+develop = false
 
 [package.dependencies]
-click = ">=8.1.7,<9.0.0"
-cloup = ">=3.0.5,<4.0.0"
-colorlog = ">=6.7.0,<7.0.0"
-jinja2 = ">=3.1.2,<4.0.0"
-kubernetes = "==30.*"
-packaging = ">=23.1,<24.0"
-pyhelper-utils = ">=0.0.41,<0.0.42"
-pytest = ">=8.0.0,<9.0.0"
-python-benedict = ">=0.33.0,<0.34.0"
+click = "^8.1.7"
+cloup = "^3.0.5"
+colorlog = "^6.7.0"
+jinja2 = "^3.1.2"
+kubernetes = "30.*.*"
+packaging = "^23.1"
+pyhelper-utils = "^0.0.42"
+pytest = "^8.0.0"
+python-benedict = "^0.33.0"
 python-simple-logger = ">=1.0.6"
-rich = ">=13.7.1,<14.0.0"
-ruff = ">=0.6.0,<0.7.0"
+rich = "^13.7.1"
+ruff = "^0.6.0"
 timeout-sampler = ">=0.0.17"
-xmltodict = ">=0.13.0,<0.14.0"
+xmltodict = "^0.13.0"
+
+[package.source]
+type = "directory"
+url = "../ocp-python-wrapper"
 
 [[package]]
 name = "openshift-python-wrapper-data-collector"
@@ -1027,12 +1030,12 @@ windows-terminal = ["colorama (>=0.4.6)"]
 
 [[package]]
 name = "pyhelper-utils"
-version = "0.0.41"
+version = "0.0.42"
 description = "Collective utility functions for python projects"
 optional = false
 python-versions = "<4.0,>=3.8"
 files = [
-    {file = "pyhelper_utils-0.0.41.tar.gz", hash = "sha256:cbe67c1f4b7385605f65ae7dfc254d6aa651958203fa69e935e1fd48cd01a44e"},
+    {file = "pyhelper_utils-0.0.42.tar.gz", hash = "sha256:45d60797b92d463d534e253f9dd5a7e2e2e1c26ea98becc5928cc4546130c20e"},
 ]
 
 [package.dependencies]
@@ -1548,4 +1551,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "5dd60ff87f221e9bf798746f24c677a16f6dbaeeed63012a369f18d1472f8715"
+content-hash = "bf6bcd93d346dcecfc6169100d09ba9a0fcb6599c54d3613c0a89a8378b48708"
