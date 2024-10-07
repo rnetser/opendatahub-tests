@@ -37,11 +37,11 @@ files = ["VERSION"]
 [tool.poetry.dependencies]
 python = "^3.8"
 python-simple-logger = "^1.0.39"
-openshift-python-wrapper = {path = "/home/rnetser/git/ocp-python-wrapper"}
 pytest-testconfig = "^0.2.0"
 pytest-progress = "^1.3.0"
 pyyaml = "^6.0.2"
 openshift-python-utilities = "^5.0.68"
+openshift-python-wrapper = "^10.0.92"
 
 
 [tool.poetry.group.dev.dependencies]

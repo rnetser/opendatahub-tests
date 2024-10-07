@@ -798,32 +798,29 @@ timeout-sampler = ">=0.0.17"
 
 [[package]]
 name = "openshift-python-wrapper"
-version = "0.0.0"
+version = "10.0.92"
 description = "Wrapper around https://github.com/kubernetes-client/python"
 optional = false
-python-versions = "^3.8"
-files = []
-develop = false
+python-versions = "<4.0,>=3.8"
+files = [
+    {file = "openshift_python_wrapper-10.0.92.tar.gz", hash = "sha256:79c38045ec4c4b5e346134573814aebeaaa95bfb63c2ad5440bea4668c3a5610"},
+]
 
 [package.dependencies]
-click = "^8.1.7"
-cloup = "^3.0.5"
-colorlog = "^6.7.0"
-jinja2 = "^3.1.2"
-kubernetes = "30.*.*"
-packaging = "^23.1"
-pyhelper-utils = "^0.0.42"
-pytest = "^8.0.0"
-python-benedict = "^0.33.0"
+click = ">=8.1.7,<9.0.0"
+cloup = ">=3.0.5,<4.0.0"
+colorlog = ">=6.7.0,<7.0.0"
+jinja2 = ">=3.1.2,<4.0.0"
+kubernetes = "==30.*"
+packaging = ">=23.1,<24.0"
+pyhelper-utils = ">=0.0.42,<0.0.43"
+pytest = ">=8.0.0,<9.0.0"
+python-benedict = ">=0.33.0,<0.34.0"
 python-simple-logger = ">=1.0.6"
-rich = "^13.7.1"
-ruff = "^0.6.0"
+rich = ">=13.7.1,<14.0.0"
+ruff = ">=0.6.0,<0.7.0"
 timeout-sampler = ">=0.0.17"
-xmltodict = "^0.13.0"
-
-[package.source]
-type = "directory"
-url = "../ocp-python-wrapper"
+xmltodict = ">=0.13.0,<0.14.0"
 
 [[package]]
 name = "openshift-python-wrapper-data-collector"
@@ -1551,4 +1548,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "bf6bcd93d346dcecfc6169100d09ba9a0fcb6599c54d3613c0a89a8378b48708"
+content-hash = "ae36c6a199d8bac18bceeb1044d9dc4a10d1aa87697d781176a200dd2abb1eda"
