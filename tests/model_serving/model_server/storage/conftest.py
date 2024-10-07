@@ -11,10 +11,10 @@ from ocp_resources.pod import Pod
 from ocp_resources.resource import ResourceEditor, get_client
 from ocp_resources.service_mesh_member import ServiceMeshMember
 from ocp_resources.serving_runtime import ServingRuntime
-from ocp_utilities.infra import get_pod_by_name_prefix
+from ocp_utilities.infra import get_pods_by_name_prefix
 from pytest_testconfig import config as py_config
 
-from tests.model_serving.model_server.storage.test_kserve_pvc_write_access import KSERVE_CONTAINER_NAME
+from utilities.serving_runtime import ServingRuntimeFromTemplate
 
 
 @pytest.fixture(scope="session")
@@ -133,37 +133,13 @@ def serving_runtime(
     model_namespace: Namespace,
     downloaded_model_data: str,
 ) -> ServingRuntime:
-    containers = [
-        {
-            "name": KSERVE_CONTAINER_NAME,
-            "image": "quay.io/modh/openvino_model_server:stable",
-            "args": [
-                f"--model_name={request.param['name']}",
-                f"--model_path=/mnt/models/{downloaded_model_data}",
-                "--rest_port=8888",
-                "--grpc_bind_address=0.0.0.0",
-            ],
-            "ports": [{"containerPort": 8888, "protocol": "TCP"}],
-        }
-    ]
-
-    with ServingRuntime(
+    with ServingRuntimeFromTemplate(
         client=admin_client,
         name=request.param["name"],
         namespace=model_namespace.name,
-        annotations={"opendatahub.io/apiProtocol": "REST"},
-        containers=containers,
-        supported_model_formats=[
-            {
-                "name": request.param["model-name"],
-                "autoselect": "true",
-                "version": request.param["model-version"],
-            },
-        ],
-        multi_model=request.param["multi-model"],
-        protocol_versions=["v2", "grpc-v2"],
-    ) as mlserver:
-        yield mlserver
+        template_name=request.param["template-name"],
+    ) as serving_runtime:
+        yield serving_runtime
 
 
 @pytest.fixture(scope="class")
@@ -204,11 +180,11 @@ def inference_service(
 
 @pytest.fixture()
 def predictor_pod(admin_client: DynamicClient, inference_service: InferenceService) -> Pod:
-    return get_pod_by_name_prefix(
+    return get_pods_by_name_prefix(
         client=admin_client,
         pod_prefix=f"{inference_service.name}-predictor",
         namespace=inference_service.namespace,
-    )
+    )[0]
 
 
 @pytest.fixture()

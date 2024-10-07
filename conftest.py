@@ -1,16 +1,17 @@
 import logging
 import shutil
 
+from simple_logger.logger import get_logger
 
 from utilities.pytest_utils import (
     separator,
 )
 
-LOGGER = logging.getLogger(__name__)
+LOGGER = get_logger(__name__)
 BASIC_LOGGER = logging.getLogger("basic")
 
 
-def pytest_report_teststatus(report, config):  # type: ignore
+def pytest_report_teststatus(report, config):
     test_name = report.head_line
     when = report.when
     call_str = "call"
@@ -28,11 +29,11 @@ def pytest_report_teststatus(report, config):  # type: ignore
             BASIC_LOGGER.info(f"\nTEST: {test_name} STATUS: \033[0;31mFAILED\033[0m")
 
 
-def pytest_fixture_setup(fixturedef, request):  # type: ignore
+def pytest_fixture_setup(fixturedef, request):
     LOGGER.info(f"Executing {fixturedef.scope} fixture: {fixturedef.argname}")
 
 
-def pytest_runtest_setup(item):  # type: ignore
+def pytest_runtest_setup(item):
     BASIC_LOGGER.info(f"\n{separator(symbol_='-', val=item.name)}")
     BASIC_LOGGER.info(f"{separator(symbol_='-', val='SETUP')}")
 
@@ -41,7 +42,7 @@ def pytest_runtest_teardown(item):
     BASIC_LOGGER.info(f"{separator(symbol_='-', val='TEARDOWN')}")
 
 
-def pytest_sessionfinish(session, exitstatus):  # type: ignore
+def pytest_sessionfinish(session, exitstatus):
     shutil.rmtree(path=session.config.option.basetemp, ignore_errors=True)
 
     reporter = session.config.pluginmanager.get_plugin("terminalreporter")

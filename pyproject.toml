@@ -41,7 +41,8 @@ python-simple-logger = "^1.0.39"
 openshift-python-wrapper = "^10.0.87"
 pytest-testconfig = "^0.2.0"
 pytest-progress = "^1.3.0"
-openshift-python-utilities = {path = "/home/rnetser/git/openshift-python-utilities"}
+pyyaml = "^6.0.2"
+openshift-python-utilities = "^5.0.67"
 
 
 [tool.poetry.group.dev.dependencies]
