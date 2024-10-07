@@ -7,8 +7,8 @@ from utilities.pytest_utils import (
     separator,
 )
 
-LOGGER = get_logger(__name__)
 BASIC_LOGGER = logging.getLogger("basic")
+LOGGER = get_logger(__name__)
 
 
 def pytest_report_teststatus(report, config):

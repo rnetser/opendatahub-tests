@@ -1,7 +1,8 @@
 import os
-from typing import Optional
+from typing import Optional, Any, Dict
 
-global config  # type: ignore[unused-ignore]
+global config
+config: Dict[Any, Any] = {}
 
 no_unprivileged_client: bool = False
 # AWS
@@ -22,4 +23,4 @@ for _dir in dir():
     if _dir in ["encoding", "py_file"]:
         continue
 
-    config[_dir] = locals()[_dir]  # type: ignore[name-defined] # noqa: F821
+    config[_dir] = locals()[_dir]  # type: ignore[unused-ignore] # noqa: F821
