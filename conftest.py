@@ -39,6 +39,10 @@ def pytest_runtest_setup(item):
     BASIC_LOGGER.info(f"{separator(symbol_='-', val='SETUP')}")
 
 
+def pytest_runtest_call(item):
+    BASIC_LOGGER.info(f"{separator(symbol_='-', val='CALL')}")
+
+
 def pytest_runtest_teardown(item):
     BASIC_LOGGER.info(f"{separator(symbol_='-', val='TEARDOWN')}")
 

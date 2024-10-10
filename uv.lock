@@ -668,7 +668,7 @@ requires-dist = [
     { name = "openshift-python-wrapper" },
     { name = "pytest-progress" },
     { name = "pytest-testconfig" },
-    { name = "python-simple-logger", specifier = ">=1.0.40" },
+    { name = "python-simple-logger" },
     { name = "pyyaml" },
 ]
 
