@@ -41,7 +41,7 @@ dependencies = [
     "openshift-python-wrapper",
     "pytest-progress",
     "pytest-testconfig",
-    "python-simple-logger",
+    "python-simple-logger>=1.0.40",
     "pyyaml",
 ]
 
