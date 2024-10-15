@@ -13,9 +13,11 @@ from ocp_resources.pod import Pod
 from ocp_resources.resource import ResourceEditor
 from ocp_resources.service_mesh_member import ServiceMeshMember
 from ocp_resources.serving_runtime import ServingRuntime
+from ocp_resources.storage_class import StorageClass
 from ocp_utilities.infra import get_pods_by_name_prefix
 from pytest_testconfig import config as py_config
 
+from tests.model_serving.model_server.storage.constants import NFS_STR
 from tests.model_serving.model_server.storage.pvc.utils import create_isvc
 from utilities.serving_runtime import ServingRuntimeFromTemplate
 
@@ -224,3 +226,9 @@ def patched_isvc(request, inference_service: InferenceService, first_predictor_p
     ):
         first_predictor_pod.wait_deleted()
         yield inference_service
+
+
+@pytest.fixture(scope="module")
+def skip_if_no_nfs_storage_class(admin_client):
+    if not StorageClass(client=admin_client, name=NFS_STR).exists:
+        pytest.skip(f"StorageClass {NFS_STR} is missing from the cluster")

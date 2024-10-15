@@ -11,3 +11,6 @@ KSERVE_OVMS_SERVING_RUNTIME_PARAMS: Dict[str, Any] = {
 }
 
 INFERENCE_SERVICE_PARAMS = {"name": "onnx"}
+
+# Storage
+NFS_STR = "nfs"
