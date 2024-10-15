@@ -10,17 +10,8 @@ LOGGER = logging.getLogger(__name__)
 BASIC_LOGGER = logging.getLogger("basic")
 
 
-def pytest_addoption(parser):
-    log_group = parser.getgroup(name="PytestLog")
-    log_group.addoption(
-        "--pytest-log-file",
-        help="Path to pytest log file",
-        default="pytest-tests.log",
-    )
-
-
 def pytest_sessionstart(session):
-    tests_log_file = session.config.getoption("pytest_log_file")
+    tests_log_file = session.config.getoption("log_file") or "pytest-tests.log"
     if os.path.exists(tests_log_file):
         pathlib.Path(tests_log_file).unlink()
 
