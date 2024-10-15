@@ -4,6 +4,11 @@ from ocp_resources.namespace import Namespace
 from ocp_resources.resource import get_client
 
 
+# @pytest.fixture(scope="session")
+# def junitxml_plugin(request, record_testsuite_property):
+#     return record_testsuite_property if request.config.pluginmanager.has_plugin("junitxml") else None
+
+
 @pytest.fixture(scope="session")
 def admin_client() -> DynamicClient:
     return get_client()
