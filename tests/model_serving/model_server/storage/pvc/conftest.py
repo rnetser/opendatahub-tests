@@ -207,6 +207,11 @@ def predictor_pods_scope_class(
 
 
 @pytest.fixture()
+def first_predictor_pod(predictor_pods_scope_function) -> Pod:
+    return predictor_pods_scope_function[0]
+
+
+@pytest.fixture()
 def patched_isvc(request, inference_service: InferenceService, first_predictor_pod: Pod) -> InferenceService:
     with ResourceEditor(
         patches={
