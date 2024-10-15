@@ -1,15 +1,20 @@
 import shlex
+from typing import List
+
 from ocp_resources.pod import ExecOnPodError
 import pytest
 from ocp_utilities.infra import get_pods_by_name_prefix
-from typing import List
 
-from tests.model_serving.model_server.storage.constants import KSERVE_CONTAINER_NAME
+from tests.model_serving.model_server.storage.constants import (
+    INFERENCE_SERVICE_PARAMS,
+    KSERVE_CONTAINER_NAME,
+    KSERVE_OVMS_SERVING_RUNTIME_PARAMS,
+)
 
 pytestmark = pytest.mark.usefixtures("valid_aws_config")
 
 
-POD_SPLIT_COMMAND: List[str] = shlex.split("touch /mnt/models/test")
+POD_TOUCH_SPLIT_COMMAND: List[str] = shlex.split("touch /mnt/models/test")
 
 
 @pytest.mark.parametrize(
@@ -18,23 +23,17 @@ POD_SPLIT_COMMAND: List[str] = shlex.split("touch /mnt/models/test")
         pytest.param(
             {"name": "pvc-write-access"},
             {"model-dir": "test-dir"},
-            {
-                "name": "ovms-runtime",
-                "model-name": "onnx",
-                "template-name": "kserve-ovms",
-                "model-version": "1",
-                "multi-model": False,
-            },
-            {"name": "onnx"},
+            KSERVE_OVMS_SERVING_RUNTIME_PARAMS,
+            INFERENCE_SERVICE_PARAMS,
         )
     ],
     indirect=True,
 )
 class TestKservePVCWriteAccess:
-    def test_pod_containers_not_restarted(self, predictor_pod):
+    def test_pod_containers_not_restarted(self, predictor_pods_scope_function):
         restarted_containers = [
             container.name
-            for container in predictor_pod.instance.status.containerStatuses
+            for container in predictor_pods_scope_function[0].instance.status.containerStatuses
             if container.restartCount > 0
         ]
         assert not restarted_containers, f"Containers {restarted_containers} restarted"
@@ -44,11 +43,11 @@ class TestKservePVCWriteAccess:
             "storage.kserve.io/readonly"
         ), "Read only annotation is set"
 
-    def test_isvc_read_only_annotation_default_value(self, predictor_pod):
+    def test_isvc_read_only_annotation_default_value(self, predictor_pods_scope_function):
         with pytest.raises(ExecOnPodError):
-            predictor_pod.execute(
+            predictor_pods_scope_function[0].execute(
                 container=KSERVE_CONTAINER_NAME,
-                command=POD_SPLIT_COMMAND,
+                command=POD_TOUCH_SPLIT_COMMAND,
             )
 
     @pytest.mark.parametrize(
@@ -68,7 +67,7 @@ class TestKservePVCWriteAccess:
         )[0]
         new_pod.execute(
             container=KSERVE_CONTAINER_NAME,
-            command=POD_SPLIT_COMMAND,
+            command=POD_TOUCH_SPLIT_COMMAND,
         )
 
     @pytest.mark.parametrize(
@@ -89,5 +88,5 @@ class TestKservePVCWriteAccess:
         with pytest.raises(ExecOnPodError):
             new_pod.execute(
                 container=KSERVE_CONTAINER_NAME,
-                command=POD_SPLIT_COMMAND,
+                command=POD_TOUCH_SPLIT_COMMAND,
             )
