@@ -30,10 +30,10 @@ POD_TOUCH_SPLIT_COMMAND: List[str] = shlex.split("touch /mnt/models/test")
     indirect=True,
 )
 class TestKservePVCWriteAccess:
-    def test_pod_containers_not_restarted(self, predictor_pods_scope_function):
+    def test_pod_containers_not_restarted(self, first_predictor_pod):
         restarted_containers = [
             container.name
-            for container in predictor_pods_scope_function[0].instance.status.containerStatuses
+            for container in first_predictor_pod.instance.status.containerStatuses
             if container.restartCount > 0
         ]
         assert not restarted_containers, f"Containers {restarted_containers} restarted"
@@ -43,9 +43,9 @@ class TestKservePVCWriteAccess:
             "storage.kserve.io/readonly"
         ), "Read only annotation is set"
 
-    def test_isvc_read_only_annotation_default_value(self, predictor_pods_scope_function):
+    def test_isvc_read_only_annotation_default_value(self, first_predictor_pod):
         with pytest.raises(ExecOnPodError):
-            predictor_pods_scope_function[0].execute(
+            first_predictor_pod.execute(
                 container=KSERVE_CONTAINER_NAME,
                 command=POD_TOUCH_SPLIT_COMMAND,
             )
