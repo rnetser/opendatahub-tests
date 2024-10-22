@@ -665,7 +665,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "openshift-python-utilities" },
-    { name = "openshift-python-wrapper" },
+    { name = "openshift-python-wrapper", specifier = ">=10.0.93" },
     { name = "pytest-progress" },
     { name = "pytest-testconfig" },
     { name = "python-simple-logger" },
