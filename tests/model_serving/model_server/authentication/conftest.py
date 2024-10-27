@@ -4,11 +4,14 @@ import pytest
 from kubernetes.dynamic import DynamicClient
 from ocp_resources.inference_service import InferenceService
 from ocp_resources.namespace import Namespace
+from ocp_resources.resource import ResourceEditor
+from ocp_resources.role_binding import RoleBinding
 from ocp_resources.secret import Secret
 from ocp_resources.service_account import ServiceAccount
 from ocp_resources.service_mesh_member import ServiceMeshMember
 from ocp_resources.serving_runtime import ServingRuntime
 from ocp_resources.authorino import Authorino
+from ocp_utilities.infra import get_pods_by_name_prefix
 from pyhelper_utils.shell import run_command
 from pytest_testconfig import config as py_config
 
@@ -79,6 +82,8 @@ def s3_serving_runtime(
         name=request.param["name"],
         namespace=model_namespace.name,
         template_name=request.param["template-name"],
+        enable_grpc=True,
+        enable_http=True,
     ) as model_runtime:
         yield model_runtime
 
@@ -92,29 +97,59 @@ def s3_inference_service(
     s3_models_storage_uri: str,
     model_service_account: ServiceAccount,
 ) -> InferenceService:
-    isvc_kwargs = {
-        "client": admin_client,
-        "name": request.param["name"],
-        "namespace": model_namespace.name,
-        "runtime": s3_serving_runtime.name,
-        "storage_uri": s3_models_storage_uri,
-        "model_format": s3_serving_runtime.instance.spec.supportedModelFormats[0].name,
-        "deployment_mode": request.param.get("deployment-mode", "Serverless"),
-        "model_service_account": model_service_account.name,
-    }
-
-    if min_replicas := request.param.get("min-replicas"):
-        isvc_kwargs["min_replicas"] = min_replicas
-
-    if enable_auth := request.param.get("enable-model-auth"):
-        isvc_kwargs["enable_auth"] = enable_auth
-
-    with create_isvc(**isvc_kwargs) as isvc:
+    with create_isvc(
+        client=admin_client,
+        name=request.param["name"],
+        namespace=model_namespace.name,
+        runtime=s3_serving_runtime.name,
+        storage_uri=s3_models_storage_uri,
+        model_format=s3_serving_runtime.instance.spec.supportedModelFormats[0].name,
+        deployment_mode=request.param.get("deployment-mode", "Serverless"),
+        model_service_account=model_service_account.name,
+        enable_auth=request.param.get("enable-model-auth"),
+    ) as isvc:
         yield isvc
 
 
 @pytest.fixture(scope="class")
-def inference_token(model_namespace: Namespace, model_service_account: ServiceAccount) -> str:
-    return run_command(command=shlex.split(f"oc create token -n {model_namespace.name} {model_service_account.name}"))[
-        1
-    ].strip()
+def view_role_binding(admin_client: DynamicClient, model_service_account: ServiceAccount) -> RoleBinding:
+    with RoleBinding(
+        client=admin_client,
+        namespace=model_service_account.namespace,
+        name=f"{model_service_account.name}-view",
+        role_ref_name="view",
+        role_ref_kind="ClusterRole",
+        subjects_kind=model_service_account.kind,
+        subjects_name=model_service_account.name,
+    ) as rb:
+        yield rb
+
+
+@pytest.fixture(scope="class")
+def inference_token(model_service_account: ServiceAccount, view_role_binding: RoleBinding) -> str:
+    return run_command(
+        command=shlex.split(f"oc create token -n {model_service_account.namespace} {model_service_account.name}")
+    )[1].strip()
+
+
+@pytest.fixture()
+def patched_remove_authentication_isvc(
+    admin_client: DynamicClient, s3_inference_service: InferenceService
+) -> InferenceService:
+    with ResourceEditor(
+        patches={
+            s3_inference_service: {
+                "metadata": {
+                    "annotations": {"security.opendatahub.io/enable-auth": "false"},
+                }
+            }
+        }
+    ):
+        predictor_pod = get_pods_by_name_prefix(
+            client=admin_client,
+            pod_prefix=f"{s3_inference_service.name}-predictor",
+            namespace=s3_inference_service.namespace,
+        )[0]
+        predictor_pod.wait_deleted()
+
+        yield s3_inference_service

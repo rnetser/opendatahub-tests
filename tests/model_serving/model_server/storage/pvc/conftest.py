@@ -104,7 +104,9 @@ def predictor_pods_scope_function(admin_client: DynamicClient, pvc_inference_ser
 
 @pytest.fixture(scope="class")
 def predictor_pods_scope_class(
-    admin_client: DynamicClient, pvc_inference_service: InferenceService, isvc_deployment_ready: None
+    admin_client: DynamicClient,
+    pvc_inference_service: InferenceService,
+    isvc_deployment_ready: None,
 ) -> List[Pod]:
     return get_pods_by_name_prefix(
         client=admin_client,
@@ -119,7 +121,9 @@ def first_predictor_pod(predictor_pods_scope_function) -> Pod:
 
 
 @pytest.fixture()
-def patched_isvc(request, pvc_inference_service: InferenceService, first_predictor_pod: Pod) -> InferenceService:
+def patched_read_only_isvc(
+    request, pvc_inference_service: InferenceService, first_predictor_pod: Pod
+) -> InferenceService:
     with ResourceEditor(
         patches={
             pvc_inference_service: {
@@ -165,20 +169,16 @@ def pvc_inference_service(
     model_pvc: PersistentVolumeClaim,
     downloaded_model_data: str,
 ) -> InferenceService:
-    isvc_kwargs = {
-        "client": admin_client,
-        "name": request.param["name"],
-        "namespace": model_namespace.name,
-        "runtime": pvc_serving_runtime.name,
-        "storage_uri": f"pvc://{model_pvc.name}/{downloaded_model_data}",
-        "model_format": pvc_serving_runtime.instance.spec.supportedModelFormats[0].name,
-        "deployment_mode": request.param.get("deployment-mode", "Serverless"),
-    }
-
-    if min_replicas := request.param.get("min-replicas"):
-        isvc_kwargs["min_replicas"] = min_replicas
-
-    with create_isvc(**isvc_kwargs) as isvc:
+    with create_isvc(
+        client=admin_client,
+        name=request.param["name"],
+        namespace=model_namespace.name,
+        runtime=pvc_serving_runtime.name,
+        storage_uri=f"pvc://{model_pvc.name}/{downloaded_model_data}",
+        model_format=pvc_serving_runtime.instance.spec.supportedModelFormats[0].name,
+        deployment_mode=request.param.get("deployment-mode", "Serverless"),
+        min_replicas=request.param.get("min-replicas"),
+    ) as isvc:
         yield isvc
 
 

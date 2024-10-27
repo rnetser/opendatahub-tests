@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from kubernetes.dynamic import DynamicClient
 from ocp_resources.inference_service import InferenceService
@@ -14,13 +14,12 @@ def create_isvc(
     storage_uri: str,
     model_format: str,
     runtime: str,
-    min_replicas: int = 1,
     wait: bool = True,
     enable_auth: bool = False,
     model_service_account: Optional[str] = "",
+    min_replicas: Optional[int] = None,
 ) -> InferenceService:
-    predictor_config = {
-        "minReplicas": min_replicas,
+    predictor_config: Dict[str, Any] = {
         "model": {
             "modelFormat": {"name": model_format},
             "version": "1",
@@ -30,6 +29,9 @@ def create_isvc(
     }
     if model_service_account:
         predictor_config["serviceAccountName"] = model_service_account
+
+    if min_replicas:
+        predictor_config["minReplicas"] = min_replicas
 
     annotations = {
         "serving.knative.openshift.io/enablePassthrough": "true",

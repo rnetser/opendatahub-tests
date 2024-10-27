@@ -51,7 +51,7 @@ class TestKservePVCWriteAccess:
             )
 
     @pytest.mark.parametrize(
-        "patched_isvc",
+        "patched_read_only_isvc",
         [
             pytest.param(
                 {"readonly": "false"},
@@ -59,11 +59,11 @@ class TestKservePVCWriteAccess:
         ],
         indirect=True,
     )
-    def test_isvc_read_only_annotation_false(self, admin_client, patched_isvc):
+    def test_isvc_read_only_annotation_false(self, admin_client, patched_read_only_isvc):
         new_pod = get_pods_by_name_prefix(
             client=admin_client,
-            pod_prefix=f"{patched_isvc.name}-predictor",
-            namespace=patched_isvc.namespace,
+            pod_prefix=f"{patched_read_only_isvc.name}-predictor",
+            namespace=patched_read_only_isvc.namespace,
         )[0]
         new_pod.execute(
             container=KSERVE_CONTAINER_NAME,
@@ -71,7 +71,7 @@ class TestKservePVCWriteAccess:
         )
 
     @pytest.mark.parametrize(
-        "patched_isvc",
+        "patched_read_only_isvc",
         [
             pytest.param(
                 {"readonly": "true"},
@@ -79,11 +79,11 @@ class TestKservePVCWriteAccess:
         ],
         indirect=True,
     )
-    def test_isvc_read_only_annotation_true(self, admin_client, patched_isvc):
+    def test_isvc_read_only_annotation_true(self, admin_client, patched_read_only_isvc):
         new_pod = get_pods_by_name_prefix(
             client=admin_client,
-            pod_prefix=f"{patched_isvc.name}-predictor",
-            namespace=patched_isvc.namespace,
+            pod_prefix=f"{patched_read_only_isvc.name}-predictor",
+            namespace=patched_read_only_isvc.namespace,
         )[0]
         with pytest.raises(ExecOnPodError):
             new_pod.execute(

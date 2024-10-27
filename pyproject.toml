@@ -41,6 +41,7 @@ classifiers = [
 dependencies = [
     "openshift-python-utilities>=5.0.71",
     "openshift-python-wrapper>=10.0.100",
+    "pytest-dependency>=0.6.0",
     "pytest-progress",
     "pytest-testconfig",
     "python-simple-logger",

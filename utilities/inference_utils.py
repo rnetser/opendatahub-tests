@@ -1,6 +1,9 @@
+from __future__ import annotations
 import json
+import re
 import shlex
 from functools import cache
+from json import JSONDecodeError
 from string import Template
 from typing import Any, Dict, Optional
 from urllib.parse import urlparse
@@ -21,6 +24,9 @@ INFERENCE_QUERIES: Dict[str, Dict[str, str]] = {
 
 
 class Inference:
+    ALL_TOKENS: str = "all-tokens"
+    STREAMING: str = "streaming"
+
     def __init__(self, inference_service: InferenceService, runtime: str, protocol: str, inference_type: str):
         """
         Args:
@@ -69,24 +75,35 @@ class Inference:
         text: str,
         insecure: bool = False,
         token: Optional[str] = None,
+        port: Optional[int] = None,
     ) -> str:
         data = self.get_inference_config()
-        header = Template(data["header"]).safe_substitute(model_name=model_name)
+        header = f"'{Template(data['header']).safe_substitute(model_name=model_name)}'"
         body = Template(data["body"]).safe_substitute(
             model_name=model_name,
             query_text=text,
         )
 
         if self.protocol == "http":
-            self.url = f"https://{self.url}"
+            self.url = f"https://{self.url}/{data['endpoint']}"
+            cmd_exec = "curl -i -s"
 
-        cmd = f"curl -H {header} -d '{body}' {self.url}/{data['endpoint']}"
+        elif self.protocol == "grpc":
+            self.url = f"{self.url}:{port or 443} {data['endpoint']}"
+            cmd_exec = "grpcurl"
+
+        else:
+            raise ValueError(f"Protocol {self.protocol} not supported")
+
+        cmd = f"{cmd_exec} -d '{body}'  -H {header}"
+
+        if token:
+            cmd += f' -H "Authorization: Bearer {token}"'
 
         if insecure:
             cmd += " --insecure"
 
-        if token:
-            cmd += f' -H "Authorization: Bearer {token}"'
+        cmd += f" {self.url}"
 
         return cmd
 
@@ -108,4 +125,21 @@ class Inference:
         if not res:
             raise ValueError(f"Inference failed with error: {err}\n" f"Output: {out}\n" f"Command: {cmd}")
 
-        return json.loads(out)
+        try:
+            if self.protocol == "http":
+                # with curl response headers are also returned
+                # TODO: check grpcurl
+                response_dict = {}
+                response_list = out.splitlines()
+                for line in response_list[:-2]:
+                    header_name, header_value = re.split(": | ", line.strip(), maxsplit=1)
+                    response_dict[header_name] = header_value
+
+                response_dict.update(json.loads(response_list[-1]))
+
+                return response_dict
+            else:
+                return json.loads(out)
+
+        except JSONDecodeError:
+            return {"output": out}
