@@ -49,7 +49,7 @@ class ServingRuntimeFromTemplate(ServingRuntime):
         _model_dict = self.get_model_dict_from_template()
 
         for container in _model_dict["spec"]["containers"]:
-            for env in container["env"]:
+            for env in container.get("env", []):
                 if env["name"] == "RUNTIME_HTTP_ENABLED" and self.enable_http is not None:
                     env["value"] = str(self.enable_http).lower()
 
