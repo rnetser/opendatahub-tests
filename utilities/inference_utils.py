@@ -135,7 +135,7 @@ class Inference:
                     header_name, header_value = re.split(": | ", line.strip(), maxsplit=1)
                     response_dict[header_name] = header_value
 
-                response_dict.update(json.loads(response_list[-1]))
+                response_dict["output"] = json.loads(response_list[-1])
 
                 return response_dict
             else:

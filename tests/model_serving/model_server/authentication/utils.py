@@ -40,7 +40,7 @@ def verify_inference_response(
     )
 
     try:
-        assert res[inference.inference_response_text_key_name] == expected_response_text
+        assert res["output"][inference.inference_response_text_key_name] == expected_response_text
 
     except KeyError:
         LOGGER.error(f"Inference response text not found in response. Response: {res}")
