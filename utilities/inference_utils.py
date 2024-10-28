@@ -12,7 +12,7 @@ from ocp_resources.inference_service import InferenceService
 from pyhelper_utils.shell import run_command
 from simple_logger.logger import get_logger
 
-from utilities.manifests.runtime_query_formats import RUNTIME_QUERY_FORMATS
+from utilities.manifests.runtime_query_config import RUNTIMES_QUERY_CONFIG
 
 LOGGER = get_logger(name=__name__)
 INFERENCE_QUERIES: Dict[str, Dict[str, str]] = {
@@ -46,7 +46,7 @@ class Inference:
 
     @cache
     def get_inference_config(self) -> Dict[str, Any]:
-        if runtime_config := RUNTIME_QUERY_FORMATS.get(self.runtime):
+        if runtime_config := RUNTIMES_QUERY_CONFIG.get(self.runtime):
             if inference_type := runtime_config.get(self.inference_type):
                 if data := inference_type.get(self.protocol):
                     return data
@@ -63,11 +63,11 @@ class Inference:
                 )
 
         else:
-            raise ValueError(f"Runtime {self.runtime} not supported. Supported runtimes are {RUNTIME_QUERY_FORMATS}")
+            raise ValueError(f"Runtime {self.runtime} not supported. Supported runtimes are {RUNTIMES_QUERY_CONFIG}")
 
     @property
-    def inference_response_text_key_name(self) -> str:
-        return self.get_inference_config()["response_fields_map"]["response_text"]
+    def inference_response_text_key_name(self) -> Optional[str]:
+        return self.get_inference_config()["response_fields_map"].get("response_text")
 
     def generate_command(
         self,
@@ -90,7 +90,7 @@ class Inference:
 
         elif self.protocol == "grpc":
             self.url = f"{self.url}:{port or 443} {data['endpoint']}"
-            cmd_exec = "grpcurl"
+            cmd_exec = "grpcurl -connect-timeout 10"
 
         else:
             raise ValueError(f"Protocol {self.protocol} not supported")

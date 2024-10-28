@@ -12,6 +12,7 @@ class ServingRuntimeFromTemplate(ServingRuntime):
         name: str,
         namespace: str,
         template_name: str,
+        multi_model: Optional[bool] = None,
         enable_http: Optional[bool] = None,
         enable_grpc: Optional[bool] = None,
     ):
@@ -19,6 +20,7 @@ class ServingRuntimeFromTemplate(ServingRuntime):
         self.name = name
         self.namespace = namespace
         self.template_name = template_name
+        self.multi_model = multi_model
         self.enable_http = enable_http
         self.enable_grpc = enable_grpc
 
@@ -48,6 +50,9 @@ class ServingRuntimeFromTemplate(ServingRuntime):
     def update_model_dict(self) -> Dict[str, Any]:
         _model_dict = self.get_model_dict_from_template()
 
+        if self.multi_model is not None:
+            _model_dict["spec"]["multiModel"] = self.multi_model
+
         for container in _model_dict["spec"]["containers"]:
             for env in container.get("env", []):
                 if env["name"] == "RUNTIME_HTTP_ENABLED" and self.enable_http is not None:
@@ -55,5 +60,8 @@ class ServingRuntimeFromTemplate(ServingRuntime):
 
                 if env["name"] == "RUNTIME_GRPC_ENABLED" and self.enable_grpc is not None:
                     env["value"] = str(self.enable_grpc).lower()
+
+                    if self.enable_grpc is True:
+                        container["ports"][0] = {"containerPort": 8085, "name": "h2c", "protocol": "TCP"}
 
         return _model_dict

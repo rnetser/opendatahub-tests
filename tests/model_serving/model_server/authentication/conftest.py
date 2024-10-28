@@ -15,7 +15,15 @@ from ocp_utilities.infra import get_pods_by_name_prefix
 from pyhelper_utils.shell import run_command
 from pytest_testconfig import config as py_config
 
-from tests.model_serving.model_server.authentication.utils import base64_encode_str
+from tests.model_serving.model_server.authentication.constants import (
+    CAIKIT_STR,
+    CAIKIT_TGIS_RUNTIME_STR,
+    CAIKIT_TGIS_SERVING_TEMPLATE_STR,
+    GRPC_STR,
+    HTTP_STR,
+    SERVERLESS_STR,
+)
+from tests.model_serving.model_server.authentication.utils import get_s3_secret_dict
 from tests.model_serving.model_server.utils import create_isvc
 from utilities.serving_runtime import ServingRuntimeFromTemplate
 
@@ -42,103 +50,97 @@ def endpoint_s3_secret(
     aws_access_key: str,
     aws_secret_access_key: str,
 ) -> Secret:
-    data = {
-        "AWS_ACCESS_KEY_ID": base64_encode_str(text=aws_access_key),
-        "AWS_SECRET_ACCESS_KEY": base64_encode_str(text=aws_secret_access_key),
-        "AWS_S3_BUCKET": base64_encode_str(text=py_config["model_s3_bucket_name"]),
-        "AWS_S3_ENDPOINT": base64_encode_str(text=py_config["model_s3_endpoint"]),
-    }
-    name = model_namespace.name
-
     with Secret(
         client=admin_client,
-        namespace=name,
-        name=name,
-        data_dict=data,
+        namespace=model_namespace.name,
+        name="models-bucket-secret",
+        data_dict=get_s3_secret_dict(aws_access_key=aws_access_key, aws_secret_access_key=aws_secret_access_key),
     ) as secret:
         yield secret
 
 
+# HTTP model serving
 @pytest.fixture(scope="class")
-def model_service_account(admin_client: DynamicClient, endpoint_s3_secret: Secret) -> ServiceAccount:
+def http_model_service_account(admin_client: DynamicClient, endpoint_s3_secret: Secret) -> ServiceAccount:
     with ServiceAccount(
         client=admin_client,
         namespace=endpoint_s3_secret.namespace,
-        name="models-bucket-sa",
+        name=f"{HTTP_STR}-models-bucket-sa",
         secrets=[{"name": endpoint_s3_secret.name}],
     ) as sa:
         yield sa
 
 
 @pytest.fixture(scope="class")
-def s3_serving_runtime(
-    request,
+def http_s3_serving_runtime(
     admin_client: DynamicClient,
     service_mesh_member: ServiceMeshMember,
     model_namespace: Namespace,
 ) -> ServingRuntime:
     with ServingRuntimeFromTemplate(
         client=admin_client,
-        name=request.param["name"],
+        name=f"{HTTP_STR}-{CAIKIT_TGIS_RUNTIME_STR}",
         namespace=model_namespace.name,
-        template_name=request.param["template-name"],
-        enable_grpc=True,
+        template_name=CAIKIT_TGIS_SERVING_TEMPLATE_STR,
+        multi_model=False,
         enable_http=True,
+        enable_grpc=False,
     ) as model_runtime:
         yield model_runtime
 
 
 @pytest.fixture(scope="class")
-def s3_inference_service(
-    request,
+def http_s3_inference_service(
     admin_client: DynamicClient,
     model_namespace: Namespace,
-    s3_serving_runtime: ServingRuntime,
+    http_s3_serving_runtime: ServingRuntime,
     s3_models_storage_uri: str,
-    model_service_account: ServiceAccount,
+    http_model_service_account: ServiceAccount,
 ) -> InferenceService:
     with create_isvc(
         client=admin_client,
-        name=request.param["name"],
+        name=f"{HTTP_STR}-{CAIKIT_STR}",
         namespace=model_namespace.name,
-        runtime=s3_serving_runtime.name,
+        runtime=http_s3_serving_runtime.name,
         storage_uri=s3_models_storage_uri,
-        model_format=s3_serving_runtime.instance.spec.supportedModelFormats[0].name,
-        deployment_mode=request.param.get("deployment-mode", "Serverless"),
-        model_service_account=model_service_account.name,
-        enable_auth=request.param.get("enable-model-auth"),
+        model_format=http_s3_serving_runtime.instance.spec.supportedModelFormats[0].name,
+        deployment_mode=SERVERLESS_STR,
+        model_service_account=http_model_service_account.name,
+        enable_auth=True,
     ) as isvc:
         yield isvc
 
 
 @pytest.fixture(scope="class")
-def view_role_binding(admin_client: DynamicClient, model_service_account: ServiceAccount) -> RoleBinding:
+def http_view_role_binding(admin_client: DynamicClient, http_model_service_account: ServiceAccount) -> RoleBinding:
     with RoleBinding(
         client=admin_client,
-        namespace=model_service_account.namespace,
-        name=f"{model_service_account.name}-view",
+        namespace=http_model_service_account.namespace,
+        name=f"{HTTP_STR}-{http_model_service_account.name}-view",
         role_ref_name="view",
         role_ref_kind="ClusterRole",
-        subjects_kind=model_service_account.kind,
-        subjects_name=model_service_account.name,
+        subjects_kind=http_model_service_account.kind,
+        subjects_name=http_model_service_account.name,
     ) as rb:
         yield rb
 
 
 @pytest.fixture(scope="class")
-def inference_token(model_service_account: ServiceAccount, view_role_binding: RoleBinding) -> str:
+def http_inference_token(http_model_service_account: ServiceAccount, http_view_role_binding: RoleBinding) -> str:
     return run_command(
-        command=shlex.split(f"oc create token -n {model_service_account.namespace} {model_service_account.name}")
+        command=shlex.split(
+            f"oc create token -n {http_model_service_account.namespace} {http_model_service_account.name}"
+        )
     )[1].strip()
 
 
 @pytest.fixture()
 def patched_remove_authentication_isvc(
-    admin_client: DynamicClient, s3_inference_service: InferenceService
+    admin_client: DynamicClient, http_s3_inference_service: InferenceService
 ) -> InferenceService:
     with ResourceEditor(
         patches={
-            s3_inference_service: {
+            http_s3_inference_service: {
                 "metadata": {
                     "annotations": {"security.opendatahub.io/enable-auth": "false"},
                 }
@@ -147,9 +149,84 @@ def patched_remove_authentication_isvc(
     ):
         predictor_pod = get_pods_by_name_prefix(
             client=admin_client,
-            pod_prefix=f"{s3_inference_service.name}-predictor",
-            namespace=s3_inference_service.namespace,
+            pod_prefix=f"{http_s3_inference_service.name}-predictor",
+            namespace=http_s3_inference_service.namespace,
         )[0]
         predictor_pod.wait_deleted()
 
-        yield s3_inference_service
+        yield http_s3_inference_service
+
+
+# HTTP model serving
+@pytest.fixture(scope="class")
+def grpc_model_service_account(admin_client: DynamicClient, endpoint_s3_secret: Secret) -> ServiceAccount:
+    with ServiceAccount(
+        client=admin_client,
+        namespace=endpoint_s3_secret.namespace,
+        name=f"{GRPC_STR}-models-bucket-sa",
+        secrets=[{"name": endpoint_s3_secret.name}],
+    ) as sa:
+        yield sa
+
+
+@pytest.fixture(scope="class")
+def grpc_s3_serving_runtime(
+    admin_client: DynamicClient,
+    service_mesh_member: ServiceMeshMember,
+    model_namespace: Namespace,
+) -> ServingRuntime:
+    with ServingRuntimeFromTemplate(
+        client=admin_client,
+        name=f"{GRPC_STR}-{CAIKIT_TGIS_RUNTIME_STR}",
+        namespace=model_namespace.name,
+        template_name=CAIKIT_TGIS_SERVING_TEMPLATE_STR,
+        multi_model=False,
+        enable_http=False,
+        enable_grpc=True,
+    ) as model_runtime:
+        yield model_runtime
+
+
+@pytest.fixture(scope="class")
+def grpc_s3_inference_service(
+    admin_client: DynamicClient,
+    model_namespace: Namespace,
+    grpc_s3_serving_runtime: ServingRuntime,
+    s3_models_storage_uri: str,
+    grpc_model_service_account: ServiceAccount,
+) -> InferenceService:
+    with create_isvc(
+        client=admin_client,
+        name=f"{GRPC_STR}-{CAIKIT_STR}",
+        namespace=model_namespace.name,
+        runtime=grpc_s3_serving_runtime.name,
+        storage_uri=s3_models_storage_uri,
+        model_format=grpc_s3_serving_runtime.instance.spec.supportedModelFormats[0].name,
+        deployment_mode=SERVERLESS_STR,
+        model_service_account=grpc_model_service_account.name,
+        enable_auth=True,
+    ) as isvc:
+        yield isvc
+
+
+@pytest.fixture(scope="class")
+def grpc_view_role_binding(admin_client: DynamicClient, grpc_model_service_account: ServiceAccount) -> RoleBinding:
+    with RoleBinding(
+        client=admin_client,
+        namespace=grpc_model_service_account.namespace,
+        name=f"{GRPC_STR}-{grpc_model_service_account.name}-view",
+        role_ref_name="view",
+        role_ref_kind="ClusterRole",
+        subjects_kind=grpc_model_service_account.kind,
+        subjects_name=grpc_model_service_account.name,
+    ) as rb:
+        yield rb
+
+
+@pytest.fixture(scope="class")
+def grpc_inference_token(grpc_model_service_account: ServiceAccount, grpc_view_role_binding: RoleBinding) -> str:
+    return run_command(
+        command=shlex.split(
+            f"oc create token -n {grpc_model_service_account.namespace} {grpc_model_service_account.name}"
+        )
+    )[1].strip()

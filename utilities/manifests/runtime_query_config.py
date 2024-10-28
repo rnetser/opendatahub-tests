@@ -1,6 +1,6 @@
 from typing import Any, Dict
 
-RUNTIME_QUERY_FORMATS: Dict[str, Any] = {
+RUNTIMES_QUERY_CONFIG: Dict[str, Any] = {
     "caikit-tgis-runtime": {
         "all-tokens": {
             "grpc": {
