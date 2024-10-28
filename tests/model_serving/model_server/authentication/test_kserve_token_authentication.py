@@ -30,6 +30,7 @@ FLAN_MODEL_NAME: str = f"flan-t5-small-{CAIKIT_STR}"
     indirect=True,
 )
 class TestKserveTokenAuthentication:
+    @pytest.mark.dependency(name="test_model_authentication_using_rest")
     def test_model_authentication_using_rest(self, http_s3_inference_service, http_inference_token):
         verify_inference_response(
             inference_service=http_s3_inference_service,
@@ -42,6 +43,7 @@ class TestKserveTokenAuthentication:
             token=http_inference_token,
         )
 
+    @pytest.mark.dependency(name="test_model_authentication_using_grpc")
     def test_model_authentication_using_grpc(self, grpc_s3_inference_service, grpc_inference_token):
         verify_inference_response(
             inference_service=grpc_s3_inference_service,
@@ -96,7 +98,14 @@ class TestKserveTokenAuthentication:
         if auth_reason := re.search(r"x-ext-auth-reason: (.*)", out["output"], re.MULTILINE):
             assert auth_reason.group(1) == "not authenticated"
 
+    @pytest.mark.dependency(
+        depends=[
+            "test_model_authentication_using_rest",
+            "test_model_authentication_using_grpc",
+        ]
+    )
     def test_block_cross_model_authentication(self, http_s3_inference_service, grpc_inference_token):
+        # TODO: fix
         verify_inference_response(
             inference_service=http_s3_inference_service,
             runtime=CAIKIT_TGIS_RUNTIME_STR,
