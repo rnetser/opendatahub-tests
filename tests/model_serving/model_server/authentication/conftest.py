@@ -14,7 +14,6 @@ from ocp_resources.serving_runtime import ServingRuntime
 from ocp_resources.authorino import Authorino
 from ocp_utilities.infra import get_pods_by_name_prefix
 from pyhelper_utils.shell import run_command
-from pytest_testconfig import config as py_config
 
 from tests.model_serving.model_server.authentication.constants import (
     CAIKIT_STR,
@@ -39,23 +38,59 @@ def skip_if_no_authorino_operator(admin_client: DynamicClient):
         pytest.skip("Authorino operator is missing from the cluster")
 
 
+@pytest.fixture(scope="session")
+def models_s3_bucket_name(pytestconfig) -> str:
+    bucket_name = pytestconfig.option.models_s3_bucket_name
+    if not bucket_name:
+        raise ValueError(
+            "Models bucket name is not set. "
+            "Either pass with `--models-s3-bucket-name` or set `MODELS_S3_BUCKET_NAME` environment variable"
+        )
+
+    return bucket_name
+
+
+@pytest.fixture(scope="session")
+def models_s3_bucket_region(pytestconfig) -> str:
+    bucket_name = pytestconfig.option.models_s3_bucket_region
+    if not bucket_name:
+        raise ValueError(
+            "Models bucket region is not set. "
+            "Either pass with `--models-s3-bucket-region` or set `MODELS_S3_BUCKET_REGION` environment variable"
+        )
+
+    return bucket_name
+
+
 @pytest.fixture(scope="class")
-def s3_models_storage_uri(request) -> str:
-    return f"s3://{py_config['model_s3_bucket_name']}/{request.param['model-dir']}/"
+def s3_models_storage_uri(request, models_s3_bucket_name) -> str:
+    return f"s3://{models_s3_bucket_name}/{request.param['model-dir']}/"
+
+
+@pytest.fixture(scope="session")
+def models_s3_endpoint(models_s3_bucket_region) -> str:
+    return f"https://{models_s3_bucket_region}.amazonaws.com/"
 
 
 @pytest.fixture(scope="class")
 def endpoint_s3_secret(
     admin_client: DynamicClient,
     model_namespace: Namespace,
-    aws_access_key: str,
+    aws_access_key_id: str,
     aws_secret_access_key: str,
+    models_s3_bucket_name: str,
+    models_s3_endpoint: str,
 ) -> Secret:
     with Secret(
         client=admin_client,
         namespace=model_namespace.name,
         name="models-bucket-secret",
-        data_dict=get_s3_secret_dict(aws_access_key=aws_access_key, aws_secret_access_key=aws_secret_access_key),
+        data_dict=get_s3_secret_dict(
+            aws_access_key=aws_access_key_id,
+            aws_secret_access_key=aws_secret_access_key,
+            aws_s3_bucket=models_s3_bucket_name,
+            aws_s3_endpoint=models_s3_endpoint,
+        ),
     ) as secret:
         yield secret
 
