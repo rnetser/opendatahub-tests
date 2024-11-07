@@ -1,5 +1,3 @@
-import re
-
 import pytest
 
 from tests.model_serving.model_server.authentication.constants import (
@@ -82,21 +80,16 @@ class TestKserveTokenAuthentication:
         )
 
     def test_model_authentication_using_invalid_token(self, http_s3_inference_service):
-        inference = Inference(
+        verify_inference_response(
             inference_service=http_s3_inference_service,
             runtime=CAIKIT_TGIS_RUNTIME_STR,
             inference_type=Inference.ALL_TOKENS,
             protocol=HTTP_STR,
-        )
-        out = inference.run_inference(
             model_name=CAIKIT_STR,
-            text=INFERENCE_QUERY["text"],
-            insecure=True,
+            inference_text=INFERENCE_QUERY["text"],
             token="dummy",
+            authorized_user=False,
         )
-
-        if auth_reason := re.search(r"x-ext-auth-reason: (.*)", out["output"], re.MULTILINE):
-            assert auth_reason.group(1) == "not authenticated"
 
     @pytest.mark.dependency(
         depends=[
@@ -105,7 +98,6 @@ class TestKserveTokenAuthentication:
         ]
     )
     def test_block_cross_model_authentication(self, http_s3_inference_service, grpc_inference_token):
-        # TODO: fix
         verify_inference_response(
             inference_service=http_s3_inference_service,
             runtime=CAIKIT_TGIS_RUNTIME_STR,
@@ -113,6 +105,6 @@ class TestKserveTokenAuthentication:
             protocol=HTTP_STR,
             model_name=CAIKIT_STR,
             inference_text=INFERENCE_QUERY["text"],
-            expected_response_text=INFERENCE_QUERY["response_text"],
             token=grpc_inference_token,
+            authorized_user=False,
         )

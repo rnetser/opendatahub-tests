@@ -53,7 +53,7 @@ class Inference:
 
                 else:
                     raise ValueError(
-                        f"Protocol {self.protocol} not supported.\n" f"Supported protocols are {inference_type}"
+                        f"Protocol {self.protocol} not supported.\nSupported protocols are {inference_type}"
                     )
 
             else:
@@ -121,9 +121,9 @@ class Inference:
             token=token,
         )
 
-        res, out, err = run_command(command=shlex.split(cmd), verify_stderr=False)
+        res, out, err = run_command(command=shlex.split(cmd), verify_stderr=False, check=False)
         if not res:
-            raise ValueError(f"Inference failed with error: {err}\n" f"Output: {out}\n" f"Command: {cmd}")
+            raise ValueError(f"Inference failed with error: {err}\nOutput: {out}\nCommand: {cmd}")
 
         try:
             if self.protocol == "http":

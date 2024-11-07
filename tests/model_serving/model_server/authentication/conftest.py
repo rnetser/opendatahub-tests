@@ -9,6 +9,7 @@ from ocp_resources.role_binding import RoleBinding
 from ocp_resources.secret import Secret
 from ocp_resources.service_account import ServiceAccount
 from ocp_resources.service_mesh_member import ServiceMeshMember
+from ocp_resources.role import Role
 from ocp_resources.serving_runtime import ServingRuntime
 from ocp_resources.authorino import Authorino
 from ocp_utilities.infra import get_pods_by_name_prefix
@@ -112,13 +113,35 @@ def http_s3_inference_service(
 
 
 @pytest.fixture(scope="class")
-def http_view_role_binding(admin_client: DynamicClient, http_model_service_account: ServiceAccount) -> RoleBinding:
+def http_view_role(admin_client: DynamicClient, http_s3_inference_service: InferenceService) -> Role:
+    with Role(
+        client=admin_client,
+        name=f"{http_s3_inference_service.name}-view",
+        namespace=http_s3_inference_service.namespace,
+        rules=[
+            {
+                "apiGroups": [http_s3_inference_service.api_group],
+                "resources": [http_s3_inference_service.kind],
+                "resourceNames:": [http_s3_inference_service.name],
+                "verbs": ["get"],
+            },
+        ],
+    ) as role:
+        yield role
+
+
+@pytest.fixture(scope="class")
+def http_role_binding(
+    admin_client: DynamicClient,
+    http_view_role: Role,
+    http_model_service_account: ServiceAccount,
+) -> RoleBinding:
     with RoleBinding(
         client=admin_client,
         namespace=http_model_service_account.namespace,
         name=f"{HTTP_STR}-{http_model_service_account.name}-view",
-        role_ref_name="view",
-        role_ref_kind="ClusterRole",
+        role_ref_name=http_view_role.name,
+        role_ref_kind=http_view_role.kind,
         subjects_kind=http_model_service_account.kind,
         subjects_name=http_model_service_account.name,
     ) as rb:
@@ -126,7 +149,7 @@ def http_view_role_binding(admin_client: DynamicClient, http_model_service_accou
 
 
 @pytest.fixture(scope="class")
-def http_inference_token(http_model_service_account: ServiceAccount, http_view_role_binding: RoleBinding) -> str:
+def http_inference_token(http_model_service_account: ServiceAccount, http_role_binding: RoleBinding) -> str:
     return run_command(
         command=shlex.split(
             f"oc create token -n {http_model_service_account.namespace} {http_model_service_account.name}"
@@ -210,13 +233,35 @@ def grpc_s3_inference_service(
 
 
 @pytest.fixture(scope="class")
-def grpc_view_role_binding(admin_client: DynamicClient, grpc_model_service_account: ServiceAccount) -> RoleBinding:
+def grpc_view_role(admin_client: DynamicClient, grpc_s3_inference_service: InferenceService) -> Role:
+    with Role(
+        client=admin_client,
+        name=f"{grpc_s3_inference_service.name}-view",
+        namespace=grpc_s3_inference_service.namespace,
+        rules=[
+            {
+                "apiGroups": [grpc_s3_inference_service.api_group],
+                "resources": [grpc_s3_inference_service.kind],
+                "resourceNames:": [grpc_s3_inference_service.name],
+                "verbs": ["get"],
+            },
+        ],
+    ) as role:
+        yield role
+
+
+@pytest.fixture(scope="class")
+def grpc_role_binding(
+    admin_client: DynamicClient,
+    grpc_view_role: Role,
+    grpc_model_service_account: ServiceAccount,
+) -> RoleBinding:
     with RoleBinding(
         client=admin_client,
         namespace=grpc_model_service_account.namespace,
-        name=f"{GRPC_STR}-{grpc_model_service_account.name}-view",
-        role_ref_name="view",
-        role_ref_kind="ClusterRole",
+        name=f"{HTTP_STR}-{grpc_model_service_account.name}-view",
+        role_ref_name=grpc_view_role.name,
+        role_ref_kind=grpc_view_role.kind,
         subjects_kind=grpc_model_service_account.kind,
         subjects_name=grpc_model_service_account.name,
     ) as rb:
@@ -224,7 +269,7 @@ def grpc_view_role_binding(admin_client: DynamicClient, grpc_model_service_accou
 
 
 @pytest.fixture(scope="class")
-def grpc_inference_token(grpc_model_service_account: ServiceAccount, grpc_view_role_binding: RoleBinding) -> str:
+def grpc_inference_token(grpc_model_service_account: ServiceAccount, grpc_role_binding: RoleBinding) -> str:
     return run_command(
         command=shlex.split(
             f"oc create token -n {grpc_model_service_account.namespace} {grpc_model_service_account.name}"

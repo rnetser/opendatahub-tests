@@ -16,6 +16,7 @@ def create_isvc(
     runtime: str,
     wait: bool = True,
     enable_auth: bool = False,
+    external_route: bool = False,
     model_service_account: Optional[str] = "",
     min_replicas: Optional[int] = None,
 ) -> InferenceService:

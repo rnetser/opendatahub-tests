@@ -23,9 +23,10 @@ def verify_inference_response(
     protocol: str,
     model_name: str,
     inference_text: str,
-    expected_response_text: str,
+    expected_response_text: Optional[str] = "",
     insecure: bool = True,
     token: Optional[str] = None,
+    authorized_user: Optional[bool] = None,
 ) -> None:
     inference = Inference(
         inference_service=inference_service,
@@ -40,6 +41,10 @@ def verify_inference_response(
         token=token,
         insecure=insecure,
     )
+
+    if authorized_user is False:
+        if auth_reason := re.search(r"x-ext-auth-reason: (.*)", res["output"], re.MULTILINE):
+            assert auth_reason.group(1) == "not authenticated"
 
     if inference.inference_response_text_key_name:
         assert res["output"][inference.inference_response_text_key_name] == expected_response_text
