@@ -618,7 +618,6 @@ dependencies = [
     { name = "openshift-python-wrapper" },
     { name = "pytest-dependency" },
     { name = "pytest-progress" },
-    { name = "pytest-testconfig" },
     { name = "python-simple-logger" },
     { name = "pyyaml" },
 ]
@@ -635,7 +634,6 @@ requires-dist = [
     { name = "openshift-python-wrapper", specifier = ">=10.0.100" },
     { name = "pytest-dependency", specifier = ">=0.6.0" },
     { name = "pytest-progress" },
-    { name = "pytest-testconfig" },
     { name = "python-simple-logger" },
     { name = "pyyaml" },
 ]
