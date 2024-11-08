@@ -15,7 +15,7 @@ from ocp_resources.serving_runtime import ServingRuntime
 from ocp_resources.storage_class import StorageClass
 from ocp_utilities.infra import get_pods_by_name_prefix
 
-from tests.model_serving.model_server.storage.constants import STANDARD_CSI_STR
+from tests.model_serving.model_server.storage.constants import NFS_STR
 from tests.model_serving.model_server.utils import create_isvc
 from utilities.serving_runtime import ServingRuntimeFromTemplate
 
@@ -149,9 +149,9 @@ def patched_read_only_isvc(
 
 
 @pytest.fixture(scope="module")
-def skip_if_no_standard_csi_storage_class(admin_client):
-    if not StorageClass(client=admin_client, name=STANDARD_CSI_STR).exists:
-        pytest.skip(f"StorageClass {STANDARD_CSI_STR} is missing from the cluster")
+def skip_if_no_nfs_storage_class(admin_client):
+    if not StorageClass(client=admin_client, name=NFS_STR).exists:
+        pytest.skip(f"StorageClass {NFS_STR} is missing from the cluster")
 
 
 @pytest.fixture(scope="class")

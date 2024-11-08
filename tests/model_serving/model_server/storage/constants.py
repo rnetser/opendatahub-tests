@@ -14,4 +14,4 @@ KSERVE_OVMS_SERVING_RUNTIME_PARAMS: Dict[str, Any] = {
 INFERENCE_SERVICE_PARAMS: Dict[str, str] = {"name": ONNX_STR}
 
 # Storage
-STANDARD_CSI_STR: str = "standard-csi"
+NFS_STR: str = "nfs"

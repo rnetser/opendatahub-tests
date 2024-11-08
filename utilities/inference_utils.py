@@ -36,8 +36,8 @@ class Inference:
         self.runtime = runtime
         self.protocol = protocol
         self.inference_type = inference_type
-        self.url = self.get_inference_url()
 
+    @cache
     def get_inference_url(self) -> str:
         if url := self.inference_service.instance.status.components.predictor.url:
             return urlparse(url).netloc
@@ -85,11 +85,11 @@ class Inference:
         )
 
         if self.protocol == "http":
-            self.url = f"https://{self.url}/{data['endpoint']}"
+            url = f"https://{self.get_inference_url()}/{data['endpoint']}"
             cmd_exec = "curl -i -s"
 
         elif self.protocol == "grpc":
-            self.url = f"{self.url}:{port or 443} {data['endpoint']}"
+            url = f"{self.get_inference_url()}:{port or 443} {data['endpoint']}"
             cmd_exec = "grpcurl -connect-timeout 10"
 
         else:
@@ -103,7 +103,7 @@ class Inference:
         if insecure:
             cmd += " --insecure"
 
-        cmd += f" {self.url}"
+        cmd += f" {url}"
 
         return cmd
 

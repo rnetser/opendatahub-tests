@@ -1,12 +1,14 @@
 import base64
 import re
+from contextlib import contextmanager
 from typing import Dict, Optional
 
+from kubernetes.dynamic import DynamicClient
 from ocp_resources.inference_service import InferenceService
+from ocp_resources.role import Role
 from simple_logger.logger import get_logger
 
 from utilities.inference_utils import Inference
-
 
 LOGGER = get_logger(name=__name__)
 
@@ -42,10 +44,15 @@ def verify_inference_response(
     )
 
     if authorized_user is False:
-        if auth_reason := re.search(r"x-ext-auth-reason: (.*)", res["output"], re.MULTILINE):
-            assert auth_reason.group(1) == "not authenticated"
+        if token:
+            if auth_reason := re.search(r"x-ext-auth-reason: (.*)", res["output"], re.MULTILINE):
+                assert auth_reason.group(1) == "not authenticated"
 
-    if inference.inference_response_text_key_name:
+        else:
+            if auth_reason := re.search(r"x-ext-auth-reason: (.*)", res["output"], re.MULTILINE):
+                assert auth_reason.group(1) == "credential not found"
+
+    elif inference.inference_response_text_key_name:
         assert res["output"][inference.inference_response_text_key_name] == expected_response_text
 
     elif output := re.findall(r"generated_text\": \"(.*)\"", res["output"], re.MULTILINE):
@@ -68,3 +75,20 @@ def get_s3_secret_dict(
         "AWS_S3_BUCKET": base64_encode_str(text=aws_s3_bucket),
         "AWS_S3_ENDPOINT": base64_encode_str(text=aws_s3_endpoint),
     }
+
+
+@contextmanager
+def create_isvc_view_role(client: DynamicClient, isvc: InferenceService, name: str) -> Role:
+    with Role(
+        client=client,
+        name=name,
+        namespace=isvc.namespace,
+        rules=[
+            {
+                "apiGroups": [isvc.api_group],
+                "resources": ["inferenceservices"],
+                "verbs": ["get"],
+            },
+        ],
+    ) as role:
+        yield role

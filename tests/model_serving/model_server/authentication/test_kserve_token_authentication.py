@@ -91,13 +91,26 @@ class TestKserveTokenAuthentication:
             authorized_user=False,
         )
 
+    def test_model_authentication_without_token(self, http_s3_inference_service):
+        verify_inference_response(
+            inference_service=http_s3_inference_service,
+            runtime=CAIKIT_TGIS_RUNTIME_STR,
+            inference_type=Inference.ALL_TOKENS,
+            protocol=HTTP_STR,
+            model_name=CAIKIT_STR,
+            inference_text=INFERENCE_QUERY["text"],
+            authorized_user=False,
+        )
+
     @pytest.mark.dependency(
         depends=[
             "test_model_authentication_using_rest",
             "test_model_authentication_using_grpc",
         ]
     )
-    def test_block_cross_model_authentication(self, http_s3_inference_service, grpc_inference_token):
+    def test_block_cross_model_authentication(
+        self, http_s3_inference_service, grpc_inference_token, http_inference_token
+    ):
         verify_inference_response(
             inference_service=http_s3_inference_service,
             runtime=CAIKIT_TGIS_RUNTIME_STR,

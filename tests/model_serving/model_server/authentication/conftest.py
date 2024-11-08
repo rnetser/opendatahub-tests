@@ -6,10 +6,10 @@ from ocp_resources.inference_service import InferenceService
 from ocp_resources.namespace import Namespace
 from ocp_resources.resource import ResourceEditor
 from ocp_resources.role_binding import RoleBinding
+from ocp_resources.role import Role
 from ocp_resources.secret import Secret
 from ocp_resources.service_account import ServiceAccount
 from ocp_resources.service_mesh_member import ServiceMeshMember
-from ocp_resources.role import Role
 from ocp_resources.serving_runtime import ServingRuntime
 from ocp_resources.authorino import Authorino
 from ocp_utilities.infra import get_pods_by_name_prefix
@@ -23,7 +23,10 @@ from tests.model_serving.model_server.authentication.constants import (
     HTTP_STR,
     SERVERLESS_STR,
 )
-from tests.model_serving.model_server.authentication.utils import get_s3_secret_dict
+from tests.model_serving.model_server.authentication.utils import (
+    create_isvc_view_role,
+    get_s3_secret_dict,
+)
 from tests.model_serving.model_server.utils import create_isvc
 from utilities.serving_runtime import ServingRuntimeFromTemplate
 
@@ -149,18 +152,10 @@ def http_s3_inference_service(
 
 @pytest.fixture(scope="class")
 def http_view_role(admin_client: DynamicClient, http_s3_inference_service: InferenceService) -> Role:
-    with Role(
+    with create_isvc_view_role(
         client=admin_client,
+        isvc=http_s3_inference_service,
         name=f"{http_s3_inference_service.name}-view",
-        namespace=http_s3_inference_service.namespace,
-        rules=[
-            {
-                "apiGroups": [http_s3_inference_service.api_group],
-                "resources": [http_s3_inference_service.kind],
-                "resourceNames:": [http_s3_inference_service.name],
-                "verbs": ["get"],
-            },
-        ],
     ) as role:
         yield role
 
@@ -170,7 +165,12 @@ def http_role_binding(
     admin_client: DynamicClient,
     http_view_role: Role,
     http_model_service_account: ServiceAccount,
+    http_s3_inference_service: InferenceService,
 ) -> RoleBinding:
+    rules = http_view_role.instance.rules
+    rules[0].update({"resourceNames:": [http_s3_inference_service.name]})
+    ResourceEditor(patches={http_view_role: {"rules": rules}}).update()
+
     with RoleBinding(
         client=admin_client,
         namespace=http_model_service_account.namespace,
@@ -269,18 +269,10 @@ def grpc_s3_inference_service(
 
 @pytest.fixture(scope="class")
 def grpc_view_role(admin_client: DynamicClient, grpc_s3_inference_service: InferenceService) -> Role:
-    with Role(
+    with create_isvc_view_role(
         client=admin_client,
+        isvc=grpc_s3_inference_service,
         name=f"{grpc_s3_inference_service.name}-view",
-        namespace=grpc_s3_inference_service.namespace,
-        rules=[
-            {
-                "apiGroups": [grpc_s3_inference_service.api_group],
-                "resources": [grpc_s3_inference_service.kind],
-                "resourceNames:": [grpc_s3_inference_service.name],
-                "verbs": ["get"],
-            },
-        ],
     ) as role:
         yield role
 
@@ -290,6 +282,7 @@ def grpc_role_binding(
     admin_client: DynamicClient,
     grpc_view_role: Role,
     grpc_model_service_account: ServiceAccount,
+    grpc_s3_inference_service: InferenceService,
 ) -> RoleBinding:
     with RoleBinding(
         client=admin_client,
@@ -300,6 +293,10 @@ def grpc_role_binding(
         subjects_kind=grpc_model_service_account.kind,
         subjects_name=grpc_model_service_account.name,
     ) as rb:
+        rules = grpc_view_role.instance.rules
+        rules[0].update({"resourceNames:": [grpc_s3_inference_service.name]})
+        ResourceEditor(patches={grpc_view_role: {"rules": rules}}).update()
+
         yield rb
 
 
