@@ -9,7 +9,6 @@ from ocp_resources.role_binding import RoleBinding
 from ocp_resources.role import Role
 from ocp_resources.secret import Secret
 from ocp_resources.service_account import ServiceAccount
-from ocp_resources.service_mesh_member import ServiceMeshMember
 from ocp_resources.serving_runtime import ServingRuntime
 from ocp_resources.authorino import Authorino
 from ocp_utilities.infra import get_pods_by_name_prefix
@@ -115,7 +114,6 @@ def http_model_service_account(admin_client: DynamicClient, endpoint_s3_secret: 
 @pytest.fixture(scope="class")
 def http_s3_serving_runtime(
     admin_client: DynamicClient,
-    service_mesh_member: ServiceMeshMember,
     model_namespace: Namespace,
 ) -> ServingRuntime:
     with ServingRuntimeFromTemplate(
@@ -229,7 +227,6 @@ def grpc_model_service_account(admin_client: DynamicClient, endpoint_s3_secret: 
 @pytest.fixture(scope="class")
 def grpc_s3_serving_runtime(
     admin_client: DynamicClient,
-    service_mesh_member: ServiceMeshMember,
     model_namespace: Namespace,
 ) -> ServingRuntime:
     with ServingRuntimeFromTemplate(

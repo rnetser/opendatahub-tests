@@ -10,7 +10,6 @@ from ocp_resources.namespace import Namespace
 from ocp_resources.persistent_volume_claim import PersistentVolumeClaim
 from ocp_resources.pod import Pod
 from ocp_resources.resource import ResourceEditor
-from ocp_resources.service_mesh_member import ServiceMeshMember
 from ocp_resources.serving_runtime import ServingRuntime
 from ocp_resources.storage_class import StorageClass
 from ocp_utilities.infra import get_pods_by_name_prefix
@@ -158,7 +157,6 @@ def skip_if_no_nfs_storage_class(admin_client):
 def pvc_serving_runtime(
     request,
     admin_client: DynamicClient,
-    service_mesh_member: ServiceMeshMember,
     model_namespace: Namespace,
     downloaded_model_data: str,
 ) -> ServingRuntime:
