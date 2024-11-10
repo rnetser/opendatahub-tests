@@ -213,7 +213,7 @@ def patched_remove_authentication_isvc(
         yield http_s3_inference_service
 
 
-# HTTP model serving
+# GRPC model serving
 @pytest.fixture(scope="class")
 def grpc_model_service_account(admin_client: DynamicClient, endpoint_s3_secret: Secret) -> ServiceAccount:
     with ServiceAccount(

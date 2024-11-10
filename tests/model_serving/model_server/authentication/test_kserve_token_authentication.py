@@ -108,9 +108,7 @@ class TestKserveTokenAuthentication:
             "test_model_authentication_using_grpc",
         ]
     )
-    def test_block_cross_model_authentication(
-        self, http_s3_inference_service, grpc_inference_token, http_inference_token
-    ):
+    def test_block_cross_model_authentication(self, http_s3_inference_service, grpc_inference_token):
         verify_inference_response(
             inference_service=http_s3_inference_service,
             runtime=CAIKIT_TGIS_RUNTIME_STR,
