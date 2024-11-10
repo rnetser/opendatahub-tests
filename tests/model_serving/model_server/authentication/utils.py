@@ -44,13 +44,20 @@ def verify_inference_response(
     )
 
     if authorized_user is False:
-        if token:
-            if auth_reason := re.search(r"x-ext-auth-reason: (.*)", res["output"], re.MULTILINE):
-                assert "not authenticated" in auth_reason.group(1).lower()
+        auth_header = "x-ext-auth-reason"
+
+        if auth_reason := re.search(rf"{auth_header}: (.*)", res["output"], re.MULTILINE):
+            reason = auth_reason.group(1).lower()
+
+            if token:
+                assert re.search(r"not (?:authenticated|authorized)", reason)
+
+            else:
+                assert "credential not found" in reason
 
         else:
-            if auth_reason := re.search(r"x-ext-auth-reason: (.*)", res["output"], re.MULTILINE):
-                assert "credential not found" in auth_reason.group(1).lower()
+            LOGGER.error(f"Auth header {auth_header} not found in response. Response: {res['output']}")
+            raise
 
     elif inference.inference_response_text_key_name:
         assert res["output"][inference.inference_response_text_key_name] == expected_response_text
