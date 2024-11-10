@@ -87,8 +87,9 @@ def endpoint_s3_secret(
 ) -> Secret:
     with Secret(
         client=admin_client,
-        namespace=model_namespace.name,
         name="models-bucket-secret",
+        namespace=model_namespace.name,
+        annotations={"opendatahub.io/connection-type": "s3"},
         data_dict=get_s3_secret_dict(
             aws_access_key=aws_access_key_id,
             aws_secret_access_key=aws_secret_access_key,
