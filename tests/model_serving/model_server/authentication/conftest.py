@@ -15,6 +15,7 @@ from ocp_resources.authorino import Authorino
 from ocp_utilities.infra import get_pods_by_name_prefix
 from pyhelper_utils.shell import run_command
 
+
 from tests.model_serving.model_server.authentication.constants import (
     CAIKIT_STR,
     CAIKIT_TGIS_RUNTIME_STR,
@@ -156,6 +157,7 @@ def http_view_role(admin_client: DynamicClient, http_s3_inference_service: Infer
         client=admin_client,
         isvc=http_s3_inference_service,
         name=f"{http_s3_inference_service.name}-view",
+        resource_names=[http_s3_inference_service.name],
     ) as role:
         yield role
 
@@ -167,10 +169,6 @@ def http_role_binding(
     http_model_service_account: ServiceAccount,
     http_s3_inference_service: InferenceService,
 ) -> RoleBinding:
-    rules = http_view_role.instance.rules
-    rules[0].update({"resourceNames:": [http_s3_inference_service.name]})
-    ResourceEditor(patches={http_view_role: {"rules": rules}}).update()
-
     with RoleBinding(
         client=admin_client,
         namespace=http_model_service_account.namespace,
@@ -273,6 +271,7 @@ def grpc_view_role(admin_client: DynamicClient, grpc_s3_inference_service: Infer
         client=admin_client,
         isvc=grpc_s3_inference_service,
         name=f"{grpc_s3_inference_service.name}-view",
+        resource_names=[grpc_s3_inference_service.name],
     ) as role:
         yield role
 
@@ -293,10 +292,6 @@ def grpc_role_binding(
         subjects_kind=grpc_model_service_account.kind,
         subjects_name=grpc_model_service_account.name,
     ) as rb:
-        rules = grpc_view_role.instance.rules
-        rules[0].update({"resourceNames:": [grpc_s3_inference_service.name]})
-        ResourceEditor(patches={grpc_view_role: {"rules": rules}}).update()
-
         yield rb
 
 

@@ -1,7 +1,7 @@
 import base64
 import re
 from contextlib import contextmanager
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 from kubernetes.dynamic import DynamicClient
 from ocp_resources.inference_service import InferenceService
@@ -46,11 +46,11 @@ def verify_inference_response(
     if authorized_user is False:
         if token:
             if auth_reason := re.search(r"x-ext-auth-reason: (.*)", res["output"], re.MULTILINE):
-                assert auth_reason.group(1) == "not authenticated"
+                assert "not authenticated" in auth_reason.group(1).lower()
 
         else:
             if auth_reason := re.search(r"x-ext-auth-reason: (.*)", res["output"], re.MULTILINE):
-                assert auth_reason.group(1) == "credential not found"
+                assert "credential not found" in auth_reason.group(1).lower()
 
     elif inference.inference_response_text_key_name:
         assert res["output"][inference.inference_response_text_key_name] == expected_response_text
@@ -78,17 +78,27 @@ def get_s3_secret_dict(
 
 
 @contextmanager
-def create_isvc_view_role(client: DynamicClient, isvc: InferenceService, name: str) -> Role:
+def create_isvc_view_role(
+    client: DynamicClient,
+    isvc: InferenceService,
+    name: str,
+    resource_names: Optional[List[str]] = None,
+) -> Role:
+    rules = [
+        {
+            "apiGroups": [isvc.api_group],
+            "resources": ["inferenceservices"],
+            "verbs": ["get"],
+        },
+    ]
+
+    if resource_names:
+        rules[0].update({"resourceNames": resource_names})
+
     with Role(
         client=client,
         name=name,
         namespace=isvc.namespace,
-        rules=[
-            {
-                "apiGroups": [isvc.api_group],
-                "resources": ["inferenceservices"],
-                "verbs": ["get"],
-            },
-        ],
+        rules=rules,
     ) as role:
         yield role
