@@ -28,6 +28,7 @@ FLAN_MODEL_NAME: str = f"flan-t5-small-{CAIKIT_STR}"
     indirect=True,
 )
 class TestKserveTokenAuthentication:
+    @pytest.mark.smoke
     @pytest.mark.dependency(name="test_model_authentication_using_rest")
     def test_model_authentication_using_rest(self, http_s3_inference_service, http_inference_token):
         verify_inference_response(
@@ -41,6 +42,7 @@ class TestKserveTokenAuthentication:
             token=http_inference_token,
         )
 
+    @pytest.mark.smoke
     @pytest.mark.dependency(name="test_model_authentication_using_grpc")
     def test_model_authentication_using_grpc(self, grpc_s3_inference_service, grpc_inference_token):
         verify_inference_response(
