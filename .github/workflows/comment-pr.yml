@@ -5,13 +5,15 @@ on:
     types: [opened, edited]
   pull_request_comment:
     types: [created]
+  push:
+    branches: [main]
 
 jobs:
   pr-comment-labeler:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v2
 
       - name: Add labels
         uses: actions/add-labels@v1
@@ -19,13 +21,29 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           labels: |
             {% if event.name == "pull_request_comment" %}
-              commented-by @{{ github.event.comment.user.login }}
-            {% elsif event.name == "pull_request" %}
-              changed-requested @{{ github.event.sender.login }}
+              {% if github.event.comment.user.login != github.event.sender.login %}
+                commented-by @{{ github.event.comment.user.login }}
+              {% endif %}
+            {% elif event.name == "pull_request" %}
+              {% for reviewer in github.event.requested_reviewers %}
+                {% if reviewer.state == "APPROVE" or reviewer.state == "REVIEW" %}
+                  {% if reviewer.reason == "CHANGED_REQUESTED" %}
+                    changed-requested @{{ reviewer.login }}
+                  {% endif %}
+                {% endif %}
+              {% endfor %}
             {% endif %}
 
-      - name: Remove label on new push
+      - name: Remove labels on new push
         uses: actions/remove-label@v1
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
-          labels: commented-by
+          labels: |
+            {% for label in github.repository.get_labels().labels %}
+              {% if label.name =~ ^commented-by|^change-requested %}
+                {{ label.name }}
+              {% endif %}
+            {% endfor %}
+
+      - name: Checkout code
+        uses: actions/checkout@v2
