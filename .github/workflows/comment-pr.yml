@@ -24,7 +24,7 @@ jobs:
 
       - name: 'Create or update label for comment'
         if: ${{ steps.event-type.outputs.event_type == 'issue_comment' }}
-        uses: peter-evans/create-or-update-label@v1
+        uses: peter-evans/create-or-update-comment@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           name: 'commented-by-${{ steps.extract-commentator.outputs.commentator }}'
