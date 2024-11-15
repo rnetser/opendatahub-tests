@@ -1,58 +1,31 @@
-name: 'Add Labels on PR Events'
+name: PR Comment Labeler
 
 on:
-  issue_comment:
+  pull_request:
+    types: [opened, edited]
+  pull_request_comment:
     types: [created]
-  pull_request_review:
-    types: [submitted]
 
 jobs:
-  add-label:
+  pr-comment-labeler:
     runs-on: ubuntu-latest
     steps:
-      - name: 'Checkout code'
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: 'Determine event type'
-        id: event-type
-        run: echo "::set-output name=event_type::${{ github.event_name }}"
-
-      - name: 'Extract Commentator Name'
-        if: ${{ steps.event-type.outputs.event_type == 'issue_comment' }}
-        id: extract-commentator
-        run: echo "::set-output name=commentator::${{ github.event.comment.user.login }}"
-
-      - name: 'Create or update label for comment'
-        if: ${{ steps.event-type.outputs.event_type == 'issue_comment' }}
-        uses: peter-evans/create-or-update-comment@v4
+      - name: Add labels
+        uses: actions/add-labels@v1
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          name: 'commented-by-${{ steps.extract-commentator.outputs.commentator }}'
-          color: 'FF5733' # Choose a color for the label
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          labels: |
+            {% if event.name == "pull_request_comment" %}
+              commented-by @{{ github.event.comment.user.login }}
+            {% elsif event.name == "pull_request" %}
+              changed-requested @{{ github.event.sender.login }}
+            {% endif %}
 
-      - name: 'Apply label to PR for comment'
-        if: ${{ steps.event-type.outputs.event_type == 'issue_comment' }}
-        uses: actions-ecosystem/action-add-labels@v1
+      - name: Remove label on new push
+        uses: actions/remove-label@v1
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          labels: 'commented-by-${{ steps.extract-commentator.outputs.commentator }}'
-
-      - name: 'Extract Reviewer Name'
-        if: ${{ steps.event-type.outputs.event_type == 'pull_request_review' && github.event.review.state == 'changes_requested' }}
-        id: extract-reviewer
-        run: echo "::set-output name=reviewer::${{ github.event.review.user.login }}"
-
-      - name: 'Create or update label for review'
-        if: ${{ steps.event-type.outputs.event_type == 'pull_request_review' && github.event.review.state == 'changes_requested' }}
-        uses: peter-evans/create-or-update-label@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          name: 'changes-requested-by-${{ steps.extract-reviewer.outputs.reviewer }}'
-          color: 'FF0000' # Choose a color for the label
-
-      - name: 'Apply label to PR for review'
-        if: ${{ steps.event-type.outputs.event_type == 'pull_request_review' && github.event.review.state == 'changes_requested' }}
-        uses: actions-ecosystem/action-add-labels@v1
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          labels: 'changes-requested-by-${{ steps.extract-reviewer.outputs.reviewer }}'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          labels: commented-by
