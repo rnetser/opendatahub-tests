@@ -1,4 +1,4 @@
-name: Code check
+name: Tox check
 
 on:
   pull_request:
@@ -25,11 +25,7 @@ jobs:
       - name: Install Python
         if: matrix.python-version != '3.13'
         run: uv python install --python-preference only-managed ${{ matrix.python-version }}
-      - name: Setup test suite
-        run: tox run -vv --notest --skip-missing-interpreters false
-        env:
-          TOX_GH_MAJOR_MINOR: ${{ matrix.python-version }}
-      - name: Run test suite
-        run: tox run --skip-pkg-install
+      - name: Run tox
+        run: tox
         env:
           TOX_GH_MAJOR_MINOR: ${{ matrix.python-version }}
