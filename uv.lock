@@ -614,6 +614,7 @@ name = "opendatahub-tests"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "ipython" },
     { name = "openshift-python-utilities" },
     { name = "openshift-python-wrapper" },
     { name = "pytest-dependency" },
@@ -630,6 +631,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "ipython", specifier = ">=8.18.1" },
     { name = "openshift-python-utilities", specifier = ">=5.0.71" },
     { name = "openshift-python-wrapper", specifier = ">=10.0.100" },
     { name = "pytest-dependency", specifier = ">=0.6.0" },
