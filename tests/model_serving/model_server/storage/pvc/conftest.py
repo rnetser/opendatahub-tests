@@ -75,14 +75,10 @@ def downloaded_model_data(
                 {"name": "AWS_ACCESS_KEY_ID", "value": aws_access_key_id},
                 {"name": "AWS_SECRET_ACCESS_KEY", "value": aws_secret_access_key},
             ],
-            "volumeMounts": [
-                {"mountPath": mount_path, "name": model_pvc.name, "subPath": model_dir}
-            ],
+            "volumeMounts": [{"mountPath": mount_path, "name": model_pvc.name, "subPath": model_dir}],
         }
     ]
-    volumes = [
-        {"name": model_pvc.name, "persistentVolumeClaim": {"claimName": model_pvc.name}}
-    ]
+    volumes = [{"name": model_pvc.name, "persistentVolumeClaim": {"claimName": model_pvc.name}}]
 
     with Pod(
         client=admin_client,
@@ -92,19 +88,13 @@ def downloaded_model_data(
         volumes=volumes,
     ) as pod:
         pod.wait_for_status(status=Pod.Status.RUNNING)
-        pod.execute(
-            command=shlex.split(
-                f"aws s3 cp --recursive {ci_s3_storage_uri} /{mount_path}/{model_dir}"
-            )
-        )
+        pod.execute(command=shlex.split(f"aws s3 cp --recursive {ci_s3_storage_uri} /{mount_path}/{model_dir}"))
 
     return model_dir
 
 
 @pytest.fixture()
-def predictor_pods_scope_function(
-    admin_client: DynamicClient, pvc_inference_service: InferenceService
-) -> List[Pod]:
+def predictor_pods_scope_function(admin_client: DynamicClient, pvc_inference_service: InferenceService) -> List[Pod]:
     return get_pods_by_name_prefix(
         client=admin_client,
         pod_prefix=f"{pvc_inference_service.name}-predictor",
@@ -133,9 +123,7 @@ def patched_read_only_isvc(
         patches={
             pvc_inference_service: {
                 "metadata": {
-                    "annotations": {
-                        "storage.kserve.io/readonly": request.param["readonly"]
-                    },
+                    "annotations": {"storage.kserve.io/readonly": request.param["readonly"]},
                 }
             }
         }
@@ -176,9 +164,7 @@ def inference_service(
         "runtime": serving_runtime.name,
         "storage_uri": f"pvc://{model_pvc.name}/{downloaded_model_data}",
         "model_format": serving_runtime.instance.spec.supportedModelFormats[0].name,
-        "deployment_mode": request.param.get(
-            "deployment-mode", KServeDeploymentType.SERVERLESS
-        ),
+        "deployment_mode": request.param.get("deployment-mode", KServeDeploymentType.SERVERLESS),
     }
 
     if min_replicas := request.param.get("min-replicas"):
@@ -189,9 +175,7 @@ def inference_service(
 
 
 @pytest.fixture(scope="class")
-def isvc_deployment_ready(
-    admin_client: DynamicClient, inference_service: InferenceService
-) -> None:
+def isvc_deployment_ready(admin_client: DynamicClient, inference_service: InferenceService) -> None:
     deployment_name_prefix = f"{inference_service.name}-predictor"
     deployment = list(
         Deployment.get(
@@ -204,9 +188,7 @@ def isvc_deployment_ready(
         deployment[0].wait_for_replicas()
         return
 
-    raise ResourceNotFoundError(
-        f"Deployment with prefix {deployment_name_prefix} not found"
-    )
+    raise ResourceNotFoundError(f"Deployment with prefix {deployment_name_prefix} not found")
 
 
 @pytest.fixture()
@@ -224,9 +206,7 @@ def patched_isvc(
         patches={
             inference_service: {
                 "metadata": {
-                    "annotations": {
-                        "storage.kserve.io/readonly": request.param["readonly"]
-                    },
+                    "annotations": {"storage.kserve.io/readonly": request.param["readonly"]},
                 }
             }
         }
