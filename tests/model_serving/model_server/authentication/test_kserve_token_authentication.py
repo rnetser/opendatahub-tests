@@ -26,6 +26,7 @@ class TestKserveTokenAuthentication:
     @pytest.mark.smoke
     @pytest.mark.dependency(name="test_model_authentication_using_rest")
     def test_model_authentication_using_rest(self, http_s3_inference_service, http_inference_token):
+        # Verify model query with token using REST
         verify_inference_response(
             inference_service=http_s3_inference_service,
             runtime=RuntimeQueryKeys.CAIKIT_TGIS_RUNTIME,
@@ -38,8 +39,8 @@ class TestKserveTokenAuthentication:
         )
 
     @pytest.mark.smoke
-    @pytest.mark.dependency(name="test_model_authentication_using_grpc")
     def test_model_authentication_using_grpc(self, grpc_s3_inference_service, grpc_inference_token):
+        # Verify model query with token using GRPC
         verify_inference_response(
             inference_service=grpc_s3_inference_service,
             runtime=RuntimeQueryKeys.CAIKIT_TGIS_RUNTIME,
@@ -53,6 +54,7 @@ class TestKserveTokenAuthentication:
 
     @pytest.mark.dependency(name="test_disabled_model_authentication")
     def test_disabled_model_authentication(self, patched_remove_authentication_isvc):
+        # Verify model query after authentication is disabled
         verify_inference_response(
             inference_service=patched_remove_authentication_isvc,
             runtime=RuntimeQueryKeys.CAIKIT_TGIS_RUNTIME,
@@ -65,6 +67,7 @@ class TestKserveTokenAuthentication:
 
     @pytest.mark.dependency(depends=["test_disabled_model_authentication"])
     def test_re_enabled_model_authentication(self, http_s3_inference_service, http_inference_token):
+        # Verify model query after authentication is re-enabled
         verify_inference_response(
             inference_service=http_s3_inference_service,
             runtime=RuntimeQueryKeys.CAIKIT_TGIS_RUNTIME,
@@ -77,6 +80,7 @@ class TestKserveTokenAuthentication:
         )
 
     def test_model_authentication_using_invalid_token(self, http_s3_inference_service):
+        # Verify model query with an invalid token
         verify_inference_response(
             inference_service=http_s3_inference_service,
             runtime=RuntimeQueryKeys.CAIKIT_TGIS_RUNTIME,
@@ -89,6 +93,7 @@ class TestKserveTokenAuthentication:
         )
 
     def test_model_authentication_without_token(self, http_s3_inference_service):
+        # Verify model query without providing a token
         verify_inference_response(
             inference_service=http_s3_inference_service,
             runtime=RuntimeQueryKeys.CAIKIT_TGIS_RUNTIME,
@@ -99,13 +104,9 @@ class TestKserveTokenAuthentication:
             authorized_user=False,
         )
 
-    @pytest.mark.dependency(
-        depends=[
-            "test_model_authentication_using_rest",
-            "test_model_authentication_using_grpc",
-        ]
-    )
+    @pytest.mark.sanity
     def test_block_cross_model_authentication(self, http_s3_inference_service, grpc_inference_token):
+        # Verify model query with a second model's token is blocked
         verify_inference_response(
             inference_service=http_s3_inference_service,
             runtime=RuntimeQueryKeys.CAIKIT_TGIS_RUNTIME,

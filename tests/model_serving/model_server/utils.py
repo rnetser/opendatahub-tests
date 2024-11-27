@@ -1,3 +1,4 @@
+import base64
 from contextlib import contextmanager
 from typing import Any, Dict, Generator, Optional
 
@@ -85,3 +86,19 @@ def _check_storage_arguments(
 ) -> None:
     if (storage_uri and storage_path) or (not storage_uri and not storage_key) or (storage_key and not storage_path):
         raise InvalidStorageArgument(storage_uri, storage_key, storage_path)
+
+
+def b64_encoded_string(string_to_encode: str) -> str:
+    """Returns openshift compliant base64 encoding of a string
+
+    encodes the input string to bytes-like, encodes the bytes-like to base 64,
+    decodes the b64 to a string and returns it. This is needed for openshift
+    resources expecting b64 encoded values in the yaml.
+
+    Args:
+        string_to_encode: The string to encode in base64
+
+    Returns:
+        A base64 encoded string that is compliant with openshift's yaml format
+    """
+    return base64.b64encode(string_to_encode.encode()).decode()

@@ -17,10 +17,10 @@ from pyhelper_utils.shell import run_command
 
 from tests.model_serving.model_server.authentication.utils import (
     create_isvc_view_role,
-    get_s3_secret_dict,
 )
 from tests.model_serving.model_server.utils import create_isvc
 from utilities.constants import KServeDeploymentType, ModelFormat, Protocols, RuntimeQueryKeys, RuntimeTemplates
+from utilities.infra import s3_endpoint_secret
 from utilities.serving_runtime import ServingRuntimeFromTemplate
 
 
@@ -52,18 +52,18 @@ def endpoint_s3_secret(
     aws_secret_access_key: str,
     models_s3_bucket_name: str,
     models_s3_endpoint: str,
+    models_s3_bucket_region: str,
+    models_s3_bucket_endpoint: str,
 ) -> Secret:
-    with Secret(
-        client=admin_client,
+    with s3_endpoint_secret(
+        admin_client=admin_client,
         name="models-bucket-secret",
         namespace=model_namespace.name,
-        annotations={"opendatahub.io/connection-type": "s3"},
-        data_dict=get_s3_secret_dict(
-            aws_access_key=aws_access_key_id,
-            aws_secret_access_key=aws_secret_access_key,
-            aws_s3_bucket=models_s3_bucket_name,
-            aws_s3_endpoint=models_s3_endpoint,
-        ),
+        aws_access_key=aws_access_key_id,
+        aws_secret_access_key=aws_secret_access_key,
+        aws_s3_region=models_s3_bucket_region,
+        aws_s3_bucket=models_s3_bucket_name,
+        aws_s3_endpoint=models_s3_bucket_endpoint,
     ) as secret:
         yield secret
 

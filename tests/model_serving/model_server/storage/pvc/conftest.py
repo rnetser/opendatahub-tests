@@ -130,7 +130,7 @@ def patched_read_only_isvc(
 
 
 @pytest.fixture(scope="class")
-def serving_runtime(
+def pvc_serving_runtime(
     request: FixtureRequest,
     admin_client: DynamicClient,
     model_namespace: Namespace,
@@ -150,7 +150,7 @@ def pvc_inference_service(
     request: FixtureRequest,
     admin_client: DynamicClient,
     model_namespace: Namespace,
-    serving_runtime: ServingRuntime,
+    pvc_serving_runtime: ServingRuntime,
     model_pvc: PersistentVolumeClaim,
     downloaded_model_data: str,
 ) -> Generator[InferenceService, Any, Any]:
@@ -158,9 +158,9 @@ def pvc_inference_service(
         "client": admin_client,
         "name": request.param["name"],
         "namespace": model_namespace.name,
-        "runtime": serving_runtime.name,
+        "runtime": pvc_serving_runtime.name,
         "storage_uri": f"pvc://{model_pvc.name}/{downloaded_model_data}",
-        "model_format": serving_runtime.instance.spec.supportedModelFormats[0].name,
+        "model_format": pvc_serving_runtime.instance.spec.supportedModelFormats[0].name,
         "deployment_mode": request.param.get("deployment-mode", KServeDeploymentType.SERVERLESS),
     }
 

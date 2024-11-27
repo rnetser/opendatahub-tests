@@ -1,4 +1,3 @@
-import base64
 import re
 from contextlib import contextmanager
 from typing import Dict, List, Optional
@@ -8,13 +7,10 @@ from ocp_resources.inference_service import InferenceService
 from ocp_resources.role import Role
 from simple_logger.logger import get_logger
 
+from tests.model_serving.model_server.utils import b64_encoded_string
 from utilities.inference_utils import Inference
 
 LOGGER = get_logger(name=__name__)
-
-
-def base64_encode_str(text: str) -> str:
-    return base64.b64encode(text.encode()).decode()
 
 
 def verify_inference_response(
@@ -75,12 +71,14 @@ def get_s3_secret_dict(
     aws_secret_access_key: str,
     aws_s3_bucket: str,
     aws_s3_endpoint: str,
+    aws_s3_region: str,
 ) -> Dict[str, str]:
     return {
-        "AWS_ACCESS_KEY_ID": base64_encode_str(text=aws_access_key),
-        "AWS_SECRET_ACCESS_KEY": base64_encode_str(text=aws_secret_access_key),
-        "AWS_S3_BUCKET": base64_encode_str(text=aws_s3_bucket),
-        "AWS_S3_ENDPOINT": base64_encode_str(text=aws_s3_endpoint),
+        "AWS_ACCESS_KEY_ID": b64_encoded_string(string_to_encode=aws_access_key),
+        "AWS_SECRET_ACCESS_KEY": b64_encoded_string(string_to_encode=aws_secret_access_key),
+        "AWS_S3_BUCKET": b64_encoded_string(string_to_encode=aws_s3_bucket),
+        "AWS_S3_ENDPOINT": b64_encoded_string(string_to_encode=aws_s3_endpoint),
+        "AWS_DEFAULT_REGION": b64_encoded_string(string_to_encode=aws_s3_region),
     }
 
 

@@ -60,6 +60,7 @@ def create_ocp_token(namespace: Namespace) -> str:
     return subprocess.check_output(["oc", "create", "token", "test-user", "-n", namespace.name]).decode().strip()
 
 
+# TODO: Refactor code to be under utilities.inference_utils.Inference
 def send_inference_request(
     token: str,
     inference_route: Route,

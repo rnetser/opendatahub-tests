@@ -6,6 +6,9 @@ from kubernetes.dynamic.exceptions import ResourceNotFoundError, ResourceNotUniq
 from ocp_resources.deployment import Deployment
 from ocp_resources.inference_service import InferenceService
 from ocp_resources.namespace import Namespace
+from ocp_resources.secret import Secret
+
+from tests.model_serving.model_server.authentication.utils import get_s3_secret_dict
 
 
 @contextmanager
@@ -49,3 +52,31 @@ def wait_for_kserve_predictor_deployment_replicas(client: DynamicClient, isvc: I
 
     else:
         raise ResourceNotFoundError(f"Predictor deployment not found in namespace {ns}")
+
+
+@contextmanager
+def s3_endpoint_secret(
+    admin_client: DynamicClient,
+    name: str,
+    namespace: str,
+    aws_access_key: str,
+    aws_secret_access_key: str,
+    aws_s3_bucket: str,
+    aws_s3_endpoint: str,
+    aws_s3_region: str,
+) -> Generator[Secret, None, None]:
+    with Secret(
+        client=admin_client,
+        name=name,
+        namespace=namespace,
+        annotations={"opendatahub.io/connection-type": "s3"},
+        data_dict=get_s3_secret_dict(
+            aws_access_key=aws_access_key,
+            aws_secret_access_key=aws_secret_access_key,
+            aws_s3_bucket=aws_s3_bucket,
+            aws_s3_endpoint=aws_s3_endpoint,
+            aws_s3_region=aws_s3_region,
+        ),
+        wait_for_resource=True,
+    ) as secret:
+        yield secret

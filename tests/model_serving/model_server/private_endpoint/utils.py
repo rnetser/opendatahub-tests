@@ -1,5 +1,4 @@
 import shlex
-import base64
 from typing import Optional, Any, Generator
 from urllib.parse import urlparse
 from contextlib import contextmanager
@@ -7,7 +6,6 @@ from contextlib import contextmanager
 from ocp_resources.pod import Pod
 from kubernetes.dynamic.client import DynamicClient
 from ocp_resources.inference_service import InferenceService
-from pyhelper_utils.shell import run_command
 from simple_logger.logger import get_logger
 
 from utilities.constants import Protocols
@@ -68,33 +66,25 @@ def create_sidecar_pod(
     use_istio: bool,
     pod_name: str,
 ) -> Generator[Pod, Any, Any]:
-    cmd = f"oc run {pod_name} -n {namespace} --image=registry.access.redhat.com/rhel7/rhel-tools"
+    containers = [
+        {
+            "name": pod_name,
+            "image": "registry.access.redhat.com/rhel7/rhel-tools",
+            "imagePullPolicy": "Always",
+            "args": ["sleep", "infinity"],
+            "securityContext": {
+                "allowPrivilegeEscalation": False,
+                "seccompProfile": {"type": "RuntimeDefault"},
+                "capabilities": {"drop": ["ALL"]},
+            },
+        }
+    ]
+
+    pod_kwargs = {"client": admin_client, "name": pod_name, "namespace": namespace, "containers": containers}
+
     if use_istio:
-        cmd = f'{cmd} --annotations=sidecar.istio.io/inject="true"'
+        pod_kwargs.update({"annotations": {"sidecar.istio.io/inject": "true"}})
 
-    cmd += " -- sleep infinity"
-
-    _, _, err = run_command(command=shlex.split(cmd), check=False)
-    if err:
-        LOGGER.error(msg=err)
-
-    pod = Pod(name=pod_name, namespace=namespace, client=admin_client)
-    pod.wait_for_condition(condition="Ready", status="True")
-    yield pod
-    pod.clean_up()
-
-
-def b64_encoded_string(string_to_encode: str) -> str:
-    """Returns openshift compliant base64 encoding of a string
-
-    encodes the input string to bytes-like, encodes the bytes-like to base 64,
-    decodes the b64 to a string and returns it. This is needed for openshift
-    resources expecting b64 encoded values in the yaml.
-
-    Args:
-        string_to_encode: The string to encode in base64
-
-    Returns:
-        A base64 encoded string that is compliant with openshift's yaml format
-    """
-    return base64.b64encode(string_to_encode.encode()).decode()
+    with Pod(**pod_kwargs) as pod:
+        pod.wait_for_condition(condition="Ready", status="True")
+        yield pod
