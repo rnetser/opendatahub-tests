@@ -13,10 +13,9 @@ from utilities.serving_runtime import ServingRuntimeFromTemplate
 from tests.model_serving.model_server.utils import create_isvc
 from tests.model_serving.model_server.private_endpoint.utils import (
     create_sidecar_pod,
-    get_kserve_predictor_deployment,
     b64_encoded_string,
 )
-from utilities.infra import create_ns
+from utilities.infra import create_ns, wait_for_kserve_predictor_deployment_replicas
 from utilities.constants import KServeDeploymentType, ModelStoragePath, ModelFormat
 
 
@@ -184,8 +183,7 @@ def diff_pod_without_istio_sidecar(
 
 @pytest.fixture()
 def ready_predictor(admin_client: DynamicClient, endpoint_isvc: InferenceService) -> None:
-    get_kserve_predictor_deployment(
-        namespace=endpoint_isvc.namespace,
+    wait_for_kserve_predictor_deployment_replicas(
         client=admin_client,
-        name_prefix=endpoint_isvc.name,
+        isvc=endpoint_isvc,
     )

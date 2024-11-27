@@ -20,3 +20,17 @@ class CurlOutput:
 
 class ModelEndpoint:
     HEALTH: str = "health"
+
+
+class RuntimeTemplates:
+    CAIKIT_TGIS_SERVING: str = "caikit-tgis-serving-template"
+
+
+class RuntimeQueryKeys:
+    CAIKIT_TGIS_RUNTIME: str = f"{ModelFormat.CAIKIT}-tgis-runtime"
+
+
+class Protocols:
+    HTTP: str = "http"
+    HTTPS: str = "https"
+    GRPC: str = "grpc"

@@ -11,23 +11,16 @@ from ocp_resources.secret import Secret
 from ocp_resources.service_account import ServiceAccount
 from ocp_resources.serving_runtime import ServingRuntime
 from ocp_resources.authorino import Authorino
-from ocp_utilities.infra import get_pods_by_name_prefix
+from ocp_utilities.infra import get_pods_by_isvc_label
 from pyhelper_utils.shell import run_command
 
 
-from tests.model_serving.model_server.authentication.constants import (
-    CAIKIT_STR,
-    CAIKIT_TGIS_RUNTIME_STR,
-    CAIKIT_TGIS_SERVING_TEMPLATE_STR,
-    GRPC_STR,
-    HTTP_STR,
-    SERVERLESS_STR,
-)
 from tests.model_serving.model_server.authentication.utils import (
     create_isvc_view_role,
     get_s3_secret_dict,
 )
 from tests.model_serving.model_server.utils import create_isvc
+from utilities.constants import KServeDeploymentType, ModelFormat, Protocols, RuntimeQueryKeys, RuntimeTemplates
 from utilities.serving_runtime import ServingRuntimeFromTemplate
 
 
@@ -39,30 +32,6 @@ def skip_if_no_authorino_operator(admin_client: DynamicClient):
         namespace="redhat-ods-applications-auth-provider",
     ).exists:
         pytest.skip("Authorino operator is missing from the cluster")
-
-
-@pytest.fixture(scope="session")
-def models_s3_bucket_name(pytestconfig) -> str:
-    bucket_name = pytestconfig.option.models_s3_bucket_name
-    if not bucket_name:
-        raise ValueError(
-            "Models bucket name is not set. "
-            "Either pass with `--models-s3-bucket-name` or set `MODELS_S3_BUCKET_NAME` environment variable"
-        )
-
-    return bucket_name
-
-
-@pytest.fixture(scope="session")
-def models_s3_bucket_region(pytestconfig) -> str:
-    bucket_name = pytestconfig.option.models_s3_bucket_region
-    if not bucket_name:
-        raise ValueError(
-            "Models bucket region is not set. "
-            "Either pass with `--models-s3-bucket-region` or set `MODELS_S3_BUCKET_REGION` environment variable"
-        )
-
-    return bucket_name
 
 
 @pytest.fixture(scope="class")
@@ -105,7 +74,7 @@ def http_model_service_account(admin_client: DynamicClient, endpoint_s3_secret: 
     with ServiceAccount(
         client=admin_client,
         namespace=endpoint_s3_secret.namespace,
-        name=f"{HTTP_STR}-models-bucket-sa",
+        name=f"{Protocols.HTTP}-models-bucket-sa",
         secrets=[{"name": endpoint_s3_secret.name}],
     ) as sa:
         yield sa
@@ -118,9 +87,9 @@ def http_s3_serving_runtime(
 ) -> ServingRuntime:
     with ServingRuntimeFromTemplate(
         client=admin_client,
-        name=f"{HTTP_STR}-{CAIKIT_TGIS_RUNTIME_STR}",
+        name=f"{Protocols.HTTP}-{RuntimeQueryKeys.CAIKIT_TGIS_RUNTIME}",
         namespace=model_namespace.name,
-        template_name=CAIKIT_TGIS_SERVING_TEMPLATE_STR,
+        template_name=RuntimeTemplates.CAIKIT_TGIS_SERVING,
         multi_model=False,
         enable_http=True,
         enable_grpc=False,
@@ -138,12 +107,12 @@ def http_s3_inference_service(
 ) -> InferenceService:
     with create_isvc(
         client=admin_client,
-        name=f"{HTTP_STR}-{CAIKIT_STR}",
+        name=f"{Protocols.HTTP}-{ModelFormat.CAIKIT}",
         namespace=model_namespace.name,
         runtime=http_s3_serving_runtime.name,
         storage_uri=s3_models_storage_uri,
         model_format=http_s3_serving_runtime.instance.spec.supportedModelFormats[0].name,
-        deployment_mode=SERVERLESS_STR,
+        deployment_mode=KServeDeploymentType.SERVERLESS,
         model_service_account=http_model_service_account.name,
         enable_auth=True,
     ) as isvc:
@@ -171,7 +140,7 @@ def http_role_binding(
     with RoleBinding(
         client=admin_client,
         namespace=http_model_service_account.namespace,
-        name=f"{HTTP_STR}-{http_model_service_account.name}-view",
+        name=f"{Protocols.HTTP}-{http_model_service_account.name}-view",
         role_ref_name=http_view_role.name,
         role_ref_kind=http_view_role.kind,
         subjects_kind=http_model_service_account.kind,
@@ -202,10 +171,9 @@ def patched_remove_authentication_isvc(
             }
         }
     ):
-        predictor_pod = get_pods_by_name_prefix(
+        predictor_pod = get_pods_by_isvc_label(
             client=admin_client,
-            pod_prefix=f"{http_s3_inference_service.name}-predictor",
-            namespace=http_s3_inference_service.namespace,
+            isvc=http_s3_inference_service,
         )[0]
         predictor_pod.wait_deleted()
 
@@ -218,7 +186,7 @@ def grpc_model_service_account(admin_client: DynamicClient, endpoint_s3_secret: 
     with ServiceAccount(
         client=admin_client,
         namespace=endpoint_s3_secret.namespace,
-        name=f"{GRPC_STR}-models-bucket-sa",
+        name=f"{Protocols.GRPC}-models-bucket-sa",
         secrets=[{"name": endpoint_s3_secret.name}],
     ) as sa:
         yield sa
@@ -231,9 +199,9 @@ def grpc_s3_serving_runtime(
 ) -> ServingRuntime:
     with ServingRuntimeFromTemplate(
         client=admin_client,
-        name=f"{GRPC_STR}-{CAIKIT_TGIS_RUNTIME_STR}",
+        name=f"{Protocols.GRPC}-{RuntimeQueryKeys.CAIKIT_TGIS_RUNTIME}",
         namespace=model_namespace.name,
-        template_name=CAIKIT_TGIS_SERVING_TEMPLATE_STR,
+        template_name=RuntimeTemplates.CAIKIT_TGIS_SERVING,
         multi_model=False,
         enable_http=False,
         enable_grpc=True,
@@ -251,12 +219,12 @@ def grpc_s3_inference_service(
 ) -> InferenceService:
     with create_isvc(
         client=admin_client,
-        name=f"{GRPC_STR}-{CAIKIT_STR}",
+        name=f"{Protocols.GRPC}-{ModelFormat.CAIKIT}",
         namespace=model_namespace.name,
         runtime=grpc_s3_serving_runtime.name,
         storage_uri=s3_models_storage_uri,
         model_format=grpc_s3_serving_runtime.instance.spec.supportedModelFormats[0].name,
-        deployment_mode=SERVERLESS_STR,
+        deployment_mode=KServeDeploymentType.SERVERLESS,
         model_service_account=grpc_model_service_account.name,
         enable_auth=True,
     ) as isvc:
@@ -284,7 +252,7 @@ def grpc_role_binding(
     with RoleBinding(
         client=admin_client,
         namespace=grpc_model_service_account.namespace,
-        name=f"{HTTP_STR}-{grpc_model_service_account.name}-view",
+        name=f"{Protocols.GRPC}-{grpc_model_service_account.name}-view",
         role_ref_name=grpc_view_role.name,
         role_ref_kind=grpc_view_role.kind,
         subjects_kind=grpc_model_service_account.kind,

@@ -3,7 +3,7 @@ from typing import List
 
 from ocp_resources.pod import ExecOnPodError
 import pytest
-from ocp_utilities.infra import get_pods_by_name_prefix
+from ocp_utilities.infra import get_pods_by_isvc_label
 
 from tests.model_serving.model_server.storage.constants import (
     INFERENCE_SERVICE_PARAMS,
@@ -60,10 +60,9 @@ class TestKservePVCWriteAccess:
         indirect=True,
     )
     def test_isvc_read_only_annotation_false(self, admin_client, patched_read_only_isvc):
-        new_pod = get_pods_by_name_prefix(
+        new_pod = get_pods_by_isvc_label(
             client=admin_client,
-            pod_prefix=f"{patched_read_only_isvc.name}-predictor",
-            namespace=patched_read_only_isvc.namespace,
+            isvc=patched_read_only_isvc,
         )[0]
         new_pod.execute(
             container=KSERVE_CONTAINER_NAME,
@@ -80,10 +79,9 @@ class TestKservePVCWriteAccess:
         indirect=True,
     )
     def test_isvc_read_only_annotation_true(self, admin_client, patched_read_only_isvc):
-        new_pod = get_pods_by_name_prefix(
+        new_pod = get_pods_by_isvc_label(
             client=admin_client,
-            pod_prefix=f"{patched_read_only_isvc.name}-predictor",
-            namespace=patched_read_only_isvc.namespace,
+            isvc=patched_read_only_isvc,
         )[0]
         with pytest.raises(ExecOnPodError):
             new_pod.execute(

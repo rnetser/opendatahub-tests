@@ -6,8 +6,7 @@ from ocp_resources.inference_service import InferenceService
 from ocp_resources.pod import Pod
 from ocp_resources.deployment import Deployment
 from tests.model_serving.model_server.private_endpoint.utils import curl_from_pod
-from utilities.constants import CurlOutput, ModelEndpoint
-
+from utilities.constants import CurlOutput, ModelEndpoint, Protocols
 
 LOGGER = get_logger(name=__name__)
 
@@ -55,7 +54,7 @@ class TestKserveInternalEndpoint:
             isvc=endpoint_isvc,
             pod=diff_pod_with_istio_sidecar,
             endpoint=ModelEndpoint.HEALTH,
-            protocol="https",
+            protocol=Protocols.HTTPS,
         )
         assert curl_stdout == CurlOutput.HEALTH_OK
 
@@ -70,7 +69,7 @@ class TestKserveInternalEndpoint:
             isvc=endpoint_isvc,
             pod=endpoint_pod_without_istio_sidecar,
             endpoint=ModelEndpoint.HEALTH,
-            protocol="https",
+            protocol=Protocols.HTTPS,
         )
         assert curl_stdout == CurlOutput.HEALTH_OK
 
@@ -85,6 +84,6 @@ class TestKserveInternalEndpoint:
             isvc=endpoint_isvc,
             pod=diff_pod_without_istio_sidecar,
             endpoint=ModelEndpoint.HEALTH,
-            protocol="https",
+            protocol=Protocols.HTTPS,
         )
         assert curl_stdout == CurlOutput.HEALTH_OK

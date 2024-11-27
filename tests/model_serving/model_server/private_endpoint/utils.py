@@ -5,13 +5,12 @@ from urllib.parse import urlparse
 from contextlib import contextmanager
 
 from ocp_resources.pod import Pod
-from ocp_resources.deployment import Deployment
 from kubernetes.dynamic.client import DynamicClient
-from kubernetes.dynamic.exceptions import ResourceNotFoundError, ResourceNotUniqueError
 from ocp_resources.inference_service import InferenceService
 from pyhelper_utils.shell import run_command
 from simple_logger.logger import get_logger
 
+from utilities.constants import Protocols
 
 LOGGER = get_logger(name=__name__)
 
@@ -47,33 +46,13 @@ class InvalidStorageArgument(Exception):
         return msg
 
 
-def get_kserve_predictor_deployment(client: DynamicClient, namespace: str, name_prefix: str) -> Deployment:
-    deployments = list(
-        Deployment.get(
-            label_selector=f"serving.kserve.io/inferenceservice={name_prefix}",
-            client=client,
-            namespace=namespace,
-        )
-    )
-
-    if len(deployments) == 1:
-        deployment = deployments[0]
-        if deployment.exists:
-            deployment.wait_for_replicas()
-            return deployment
-    elif len(deployments) > 1:
-        raise ResourceNotUniqueError(f"Multiple predictor deployments found in namespace {namespace}")
-    else:
-        raise ResourceNotFoundError(f"Predictor deployment not found in namespace {namespace}")
-
-
 def curl_from_pod(
     isvc: InferenceService,
     pod: Pod,
     endpoint: str,
-    protocol: str = "http",
+    protocol: str = Protocols.HTTP,
 ) -> str:
-    if protocol not in ("https", "http"):
+    if protocol not in (Protocols.HTTPS, Protocols.HTTP):
         raise ProtocolNotSupported(protocol)
     host = isvc.instance.status.address.url
     if protocol == "http":

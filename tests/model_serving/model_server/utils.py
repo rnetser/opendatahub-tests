@@ -4,7 +4,10 @@ from typing import Any, Dict, Generator, Optional
 from kubernetes.dynamic import DynamicClient
 from ocp_resources.inference_service import InferenceService
 
-from tests.model_serving.model_server.private_endpoint.utils import InvalidStorageArgument
+from tests.model_serving.model_server.private_endpoint.utils import (
+    InvalidStorageArgument,
+)
+from utilities.constants import KServeDeploymentType
 
 
 @contextmanager
@@ -44,15 +47,20 @@ def create_isvc(
     if min_replicas:
         predictor_dict["minReplicas"] = min_replicas
 
-    annotations = {
-        "serving.knative.openshift.io/enablePassthrough": "true",
-        "sidecar.istio.io/inject": "true",
-        "sidecar.istio.io/rewriteAppHTTPProbers": "true",
-        "serving.kserve.io/deploymentMode": deployment_mode,
-    }
+    annotations = {"serving.kserve.io/deploymentMode": deployment_mode}
+
+    if deployment_mode == KServeDeploymentType.SERVERLESS:
+        annotations.update({
+            "serving.knative.openshift.io/enablePassthrough": "true",
+            "sidecar.istio.io/inject": "true",
+            "sidecar.istio.io/rewriteAppHTTPProbers": "true",
+        })
 
     if enable_auth:
         annotations["security.opendatahub.io/enable-auth"] = "true"
+
+    if external_route:
+        annotations["networking.kserve.io/visibility"] = "exposed"
 
     with InferenceService(
         client=client,
