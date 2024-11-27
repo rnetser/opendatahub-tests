@@ -184,25 +184,6 @@ def first_predictor_pod(predictor_pods_scope_function: List[Pod]) -> Pod:
     return predictor_pods_scope_function[0]
 
 
-@pytest.fixture()
-def patched_isvc(
-    request: FixtureRequest,
-    pvc_inference_service: InferenceService,
-    first_predictor_pod: Pod,
-) -> Generator[InferenceService, Any, Any]:
-    with ResourceEditor(
-        patches={
-            pvc_inference_service: {
-                "metadata": {
-                    "annotations": {"storage.kserve.io/readonly": request.param["readonly"]},
-                }
-            }
-        }
-    ):
-        first_predictor_pod.wait_deleted()
-        yield pvc_inference_service
-
-
 @pytest.fixture(scope="module")
 def skip_if_no_nfs_storage_class(admin_client: DynamicClient) -> None:
     if not StorageClass(client=admin_client, name=NFS_STR).exists:
