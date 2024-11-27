@@ -1,8 +1,10 @@
 from contextlib import contextmanager
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Generator, Optional
 
 from kubernetes.dynamic import DynamicClient
 from ocp_resources.inference_service import InferenceService
+
+from tests.model_serving.model_server.private_endpoint.utils import InvalidStorageArgument
 
 
 @contextmanager
@@ -11,28 +13,36 @@ def create_isvc(
     name: str,
     namespace: str,
     deployment_mode: str,
-    storage_uri: str,
     model_format: str,
     runtime: str,
+    storage_uri: Optional[str] = None,
+    storage_key: Optional[str] = None,
+    storage_path: Optional[str] = None,
     wait: bool = True,
     enable_auth: bool = False,
     external_route: bool = False,
     model_service_account: Optional[str] = "",
     min_replicas: Optional[int] = None,
-) -> InferenceService:
-    predictor_config: Dict[str, Any] = {
+) -> Generator[InferenceService, Any, Any]:
+    predictor_dict: Dict[str, Any] = {
+        "minReplicas": min_replicas,
         "model": {
             "modelFormat": {"name": model_format},
             "version": "1",
             "runtime": runtime,
-            "storageUri": storage_uri,
         },
     }
+
+    _check_storage_arguments(storage_uri, storage_key, storage_path)
+    if storage_uri:
+        predictor_dict["model"]["storageUri"] = storage_uri
+    elif storage_key:
+        predictor_dict["model"]["storage"] = {"key": storage_key, "path": storage_path}
     if model_service_account:
-        predictor_config["serviceAccountName"] = model_service_account
+        predictor_dict["serviceAccountName"] = model_service_account
 
     if min_replicas:
-        predictor_config["minReplicas"] = min_replicas
+        predictor_dict["minReplicas"] = min_replicas
 
     annotations = {
         "serving.knative.openshift.io/enablePassthrough": "true",
@@ -49,7 +59,7 @@ def create_isvc(
         name=name,
         namespace=namespace,
         annotations=annotations,
-        predictor=predictor_config,
+        predictor=predictor_dict,
     ) as inference_service:
         if wait:
             inference_service.wait_for_condition(
@@ -57,5 +67,13 @@ def create_isvc(
                 status=inference_service.Condition.Status.TRUE,
                 timeout=10 * 60,
             )
-
         yield inference_service
+
+
+def _check_storage_arguments(
+    storage_uri: Optional[str],
+    storage_key: Optional[str],
+    storage_path: Optional[str],
+) -> None:
+    if (storage_uri and storage_path) or (not storage_uri and not storage_key) or (storage_key and not storage_path):
+        raise InvalidStorageArgument(storage_uri, storage_key, storage_path)
