@@ -3,7 +3,7 @@ import pytest
 from tests.model_serving.model_server.authentication.utils import (
     verify_inference_response,
 )
-from utilities.constants import ModelFormat, ModelName, Protocols, RuntimeQueryKeys
+from utilities.constants import ModelFormat, ModelStoragePath, Protocols, RuntimeQueryKeys
 from utilities.inference_utils import INFERENCE_QUERIES, Inference
 
 pytestmark = pytest.mark.usefixtures("skip_if_no_authorino_operator", "valid_aws_config")
@@ -16,7 +16,7 @@ INFERENCE_QUERY = INFERENCE_QUERIES["nitrogen-boil-temp"]
     [
         pytest.param(
             {"name": "kserve-token-authentication"},
-            {"model-dir": ModelName.FLAN_T5_SMALL},
+            {"model-dir": ModelStoragePath.FLAN_T5_SMALL},
         )
     ],
     indirect=True,
