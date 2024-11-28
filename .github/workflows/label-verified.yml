@@ -1,0 +1,53 @@
+name: Manage Verified Label
+
+on:
+  issue_comment:
+    types: [created]
+  push:
+    branches:
+      - '*'
+  pull_request:
+    types: [synchronize]
+
+jobs:
+  add-verified-label:
+    if: github.event_name == 'issue_comment' && startsWith(github.event.comment.body, '/verified')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add Verified Label
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            const issue_number = context.issue.number;
+            const label = 'verified';
+            await github.rest.issues.addLabels({
+              ...context.repo,
+              issue_number,
+              labels: [label]
+            });
+
+  remove-verified-label:
+    if: >
+      (github.event_name == 'issue_comment' && startsWith(github.event.comment.body, '/verified cancel')) ||
+      github.event_name == 'push' ||
+      github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remove Verified Label
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            try {
+              const issue_number = context.issue.number;
+              const label = 'verified';
+              await github.rest.issues.removeLabel({
+                ...context.repo,
+                issue_number,
+                name: label
+              });
+            } catch (error) {
+              // Label might not exist, so we can ignore the error
+              console.log('Label not found or already removed');
+            }
