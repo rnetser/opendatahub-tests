@@ -11,11 +11,15 @@ class ModelFormat:
 
 
 class ModelName:
-    FLAN_T5_SMALL: str = f"flan-t5-small-{ModelFormat.CAIKIT}"
+    FLAN_T5_SMALL: str = "flan-t5-small"
+
+
+class ModelAndFormat:
+    FLAN_T5_SMALL_CAIKIT: str = f"{ModelName.FLAN_T5_SMALL}-{ModelFormat.CAIKIT}"
 
 
 class ModelStoragePath:
-    FLAN_T5_SMALL: str = f"flan-t5-small/{ModelName.FLAN_T5_SMALL}"
+    FLAN_T5_SMALL: str = f"{ModelName.FLAN_T5_SMALL}/{ModelAndFormat.FLAN_T5_SMALL_CAIKIT}"
 
 
 class CurlOutput:
