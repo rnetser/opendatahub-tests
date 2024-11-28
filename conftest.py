@@ -46,7 +46,7 @@ def pytest_addoption(parser: Parser) -> None:
     )
     buckets_group.addoption(
         "--models-s3-bucket-region",
-        default=os.environ.get("MODELS_S3_BUCKET_REGION", "us-east-1"),
+        default=os.environ.get("MODELS_S3_BUCKET_REGION"),
         help="Models S3 bucket region",
     )
 
