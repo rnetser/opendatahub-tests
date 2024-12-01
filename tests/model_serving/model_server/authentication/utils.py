@@ -57,8 +57,7 @@ def verify_inference_response(
                 assert "credential not found" in reason
 
         else:
-            LOGGER.error(f"Auth header {auth_header} not found in response. Response: {res['output']}")
-            raise
+            raise ValueError(f"Auth header {auth_header} not found in response. Response: {res['output']}")
 
     else:
         if use_default_query:
