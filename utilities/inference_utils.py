@@ -135,7 +135,6 @@ class LlmInference(Inference):
         try:
             if self.protocol == "http":
                 # with curl response headers are also returned
-                # TODO: check grpcurl
                 response_dict = {}
                 response_list = out.splitlines()
                 for line in response_list[:-2]:

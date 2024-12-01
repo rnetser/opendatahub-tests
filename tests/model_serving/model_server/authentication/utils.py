@@ -1,16 +1,19 @@
 import re
 from contextlib import contextmanager
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from kubernetes.dynamic import DynamicClient
 from ocp_resources.inference_service import InferenceService
 from ocp_resources.role import Role
 from simple_logger.logger import get_logger
 
-from tests.model_serving.model_server.utils import b64_encoded_string
 from utilities.inference_utils import LlmInference
 
 LOGGER = get_logger(name=__name__)
+
+
+class InferenceResponseError(Exception):
+    pass
 
 
 def verify_inference_response(
@@ -60,32 +63,23 @@ def verify_inference_response(
     else:
         if use_default_query:
             expected_response_text = inference.inference_config["default_query_model"]["model"].get("response_text")
+            if not expected_response_text:
+                raise ValueError(f"Missing response text key for inference {runtime}")
 
         if inference.inference_response_text_key_name:
-            assert res["output"][inference.inference_response_text_key_name] == expected_response_text
+            if inference_type == inference.STREAMING:
+                if output := re.findall(
+                    rf"{inference.inference_response_text_key_name}\": \"(.*)\"",
+                    res["output"],
+                    re.MULTILINE,
+                ):
+                    assert "".join(output) == expected_response_text
 
-        elif output := re.findall(r"generated_text\": \"(.*)\"", res["output"], re.MULTILINE):
-            assert "".join(output) == expected_response_text
+            else:
+                assert res["output"][inference.inference_response_text_key_name] == expected_response_text
 
         else:
-            LOGGER.error(f"Inference response text not found in response. Response: {res}")
-            raise
-
-
-def get_s3_secret_dict(
-    aws_access_key: str,
-    aws_secret_access_key: str,
-    aws_s3_bucket: str,
-    aws_s3_endpoint: str,
-    aws_s3_region: str,
-) -> Dict[str, str]:
-    return {
-        "AWS_ACCESS_KEY_ID": b64_encoded_string(string_to_encode=aws_access_key),
-        "AWS_SECRET_ACCESS_KEY": b64_encoded_string(string_to_encode=aws_secret_access_key),
-        "AWS_S3_BUCKET": b64_encoded_string(string_to_encode=aws_s3_bucket),
-        "AWS_S3_ENDPOINT": b64_encoded_string(string_to_encode=aws_s3_endpoint),
-        "AWS_DEFAULT_REGION": b64_encoded_string(string_to_encode=aws_s3_region),
-    }
+            raise InferenceResponseError(f"Inference response text not found in response. Response: {res}")
 
 
 @contextmanager

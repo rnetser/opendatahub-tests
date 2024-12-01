@@ -26,22 +26,18 @@ from utilities.serving_runtime import ServingRuntimeFromTemplate
 
 @pytest.fixture(scope="session")
 def skip_if_no_authorino_operator(admin_client: DynamicClient):
+    name = "authorino"
     if not Authorino(
         client=admin_client,
-        name="authorino",
+        name=name,
         namespace="redhat-ods-applications-auth-provider",
     ).exists:
-        pytest.skip("Authorino operator is missing from the cluster")
+        pytest.skip(f"{name} operator is missing from the cluster")
 
 
 @pytest.fixture(scope="class")
 def s3_models_storage_uri(request, models_s3_bucket_name) -> str:
     return f"s3://{models_s3_bucket_name}/{request.param['model-dir']}/"
-
-
-@pytest.fixture(scope="session")
-def models_s3_endpoint(models_s3_bucket_region) -> str:
-    return f"https://{models_s3_bucket_region}.amazonaws.com/"
 
 
 @pytest.fixture(scope="class")
@@ -51,7 +47,6 @@ def endpoint_s3_secret(
     aws_access_key_id: str,
     aws_secret_access_key: str,
     models_s3_bucket_name: str,
-    models_s3_endpoint: str,
     models_s3_bucket_region: str,
     models_s3_bucket_endpoint: str,
 ) -> Secret:

@@ -14,8 +14,6 @@ RUNTIMES_QUERY_CONFIG: Dict[str, Any] = {
                 "header": "mm-model-id: $model_name",
                 "body": '{"text": "$query_text"}',
                 "response_fields_map": {
-                    "response": "",
-                    "response_tokens": "generated_tokens",
                     "response_text": "generated_text",
                 },
             },
@@ -24,8 +22,6 @@ RUNTIMES_QUERY_CONFIG: Dict[str, Any] = {
                 "header": "Content-type:application/json",
                 "body": '{"model_id": "$model_name","inputs": "$query_text"}',
                 "response_fields_map": {
-                    "response": "",
-                    "response_tokens": "generated_tokens",
                     "response_text": "generated_text",
                 },
             },
@@ -35,13 +31,13 @@ RUNTIMES_QUERY_CONFIG: Dict[str, Any] = {
                 "endpoint": "caikit.runtime.Nlp.NlpService/ServerStreamingTextGenerationTaskPredict",
                 "header": "mm-model-id: $model_name",
                 "body": '{"text": "$query_text"}',
-                "response_fields_map": {"response": ""},
+                "response_fields_map": {"response_text": "generated_text"},
             },
             "http": {
                 "endpoint": "api/v1/task/server-streaming-text-generation",
                 "header": "Content-type:application/json",
                 "body": '{"model_id": "$model_name","inputs": "$query_text"}',
-                "response_fields_map": {"response": ""},
+                "response_fields_map": {"response_text": "generated_text"},
             },
         },
     }

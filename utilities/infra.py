@@ -8,7 +8,7 @@ from ocp_resources.inference_service import InferenceService
 from ocp_resources.namespace import Namespace
 from ocp_resources.secret import Secret
 
-from tests.model_serving.model_server.authentication.utils import get_s3_secret_dict
+from utilities.general import get_s3_secret_dict
 
 
 @contextmanager
@@ -16,7 +16,7 @@ def create_ns(
     name: str,
     admin_client: DynamicClient,
     teardown: bool = True,
-    delete_timeout: int = 6 * 10,
+    delete_timeout: int = 4 * 60,
     labels: Optional[Dict[str, str]] = None,
 ) -> Generator[Namespace, None, None]:
     with Namespace(
