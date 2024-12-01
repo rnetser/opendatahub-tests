@@ -30,6 +30,7 @@ class Inference:
         self.inference_url = self.get_inference_url()
 
     def get_inference_url(self) -> str:
+        # TODO: add ModelMesh support
         if url := self.inference_service.instance.status.components.predictor.url:
             return urlparse(url).netloc
         else:
