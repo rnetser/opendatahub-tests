@@ -4,11 +4,9 @@ from tests.model_serving.model_server.authentication.utils import (
     verify_inference_response,
 )
 from utilities.constants import ModelFormat, ModelStoragePath, Protocols, RuntimeQueryKeys
-from utilities.inference_utils import INFERENCE_QUERIES, Inference
+from utilities.inference_utils import Inference
 
 pytestmark = pytest.mark.usefixtures("skip_if_no_authorino_operator", "valid_aws_config")
-
-INFERENCE_QUERY = INFERENCE_QUERIES["nitrogen-boil-temp"]
 
 
 @pytest.mark.parametrize(
@@ -32,8 +30,7 @@ class TestKserveTokenAuthentication:
             inference_type=Inference.ALL_TOKENS,
             protocol=Protocols.HTTP,
             model_name=ModelFormat.CAIKIT,
-            inference_text=INFERENCE_QUERY["text"],
-            expected_response_text=INFERENCE_QUERY["response_text"],
+            use_default_query=True,
             token=http_inference_token,
         )
 
@@ -46,8 +43,7 @@ class TestKserveTokenAuthentication:
             inference_type=Inference.STREAMING,
             protocol=Protocols.GRPC,
             model_name=ModelFormat.CAIKIT,
-            inference_text=INFERENCE_QUERY["text"],
-            expected_response_text=INFERENCE_QUERY["response_text"],
+            use_default_query=True,
             token=grpc_inference_token,
         )
 
@@ -60,8 +56,7 @@ class TestKserveTokenAuthentication:
             inference_type=Inference.ALL_TOKENS,
             protocol=Protocols.HTTP,
             model_name=ModelFormat.CAIKIT,
-            inference_text=INFERENCE_QUERY["text"],
-            expected_response_text=INFERENCE_QUERY["response_text"],
+            use_default_query=True,
         )
 
     @pytest.mark.dependency(depends=["test_disabled_model_authentication"])
@@ -73,8 +68,7 @@ class TestKserveTokenAuthentication:
             inference_type=Inference.ALL_TOKENS,
             protocol=Protocols.HTTP,
             model_name=ModelFormat.CAIKIT,
-            inference_text=INFERENCE_QUERY["text"],
-            expected_response_text=INFERENCE_QUERY["response_text"],
+            use_default_query=True,
             token=http_inference_token,
         )
 
@@ -86,7 +80,7 @@ class TestKserveTokenAuthentication:
             inference_type=Inference.ALL_TOKENS,
             protocol=Protocols.HTTP,
             model_name=ModelFormat.CAIKIT,
-            inference_text=INFERENCE_QUERY["text"],
+            use_default_query=True,
             token="dummy",
             authorized_user=False,
         )
@@ -99,7 +93,7 @@ class TestKserveTokenAuthentication:
             inference_type=Inference.ALL_TOKENS,
             protocol=Protocols.HTTP,
             model_name=ModelFormat.CAIKIT,
-            inference_text=INFERENCE_QUERY["text"],
+            use_default_query=True,
             authorized_user=False,
         )
 
@@ -112,7 +106,7 @@ class TestKserveTokenAuthentication:
             inference_type=Inference.ALL_TOKENS,
             protocol=Protocols.HTTP,
             model_name=ModelFormat.CAIKIT,
-            inference_text=INFERENCE_QUERY["text"],
+            use_default_query=True,
             token=grpc_inference_token,
             authorized_user=False,
         )

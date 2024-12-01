@@ -1,7 +1,13 @@
 from typing import Any, Dict
 
+from utilities.manifests.models_inqueries import INQUIRIES
+
 RUNTIMES_QUERY_CONFIG: Dict[str, Any] = {
     "caikit-tgis-runtime": {
+        "default_query_model": {
+            "text": INQUIRIES["water_boil"]["query_text"],
+            "model": INQUIRIES["water_boil"]["models"]["flan-t5-small-caikit"],
+        },
         "all-tokens": {
             "grpc": {
                 "endpoint": "caikit.runtime.Nlp.NlpService/TextGenerationTaskPredict",
@@ -38,91 +44,5 @@ RUNTIMES_QUERY_CONFIG: Dict[str, Any] = {
                 "response_fields_map": {"response": ""},
             },
         },
-    },
-    "tgis-runtime": {
-        "all-tokens": {
-            "grpc": {
-                "endpoint": "fmaas.GenerationService/Generate",
-                "header": "mm-model-id: $model_name",
-                "body": '{"requests": [{"text":"$query_text"}]}',
-                "args": "proto=text-generation-inference/proto/generation.proto",
-                "response_fields_map": {
-                    "response": "responses",
-                    "response_tokens": "generatedTokenCount",
-                    "response_text": "text",
-                },
-            }
-        },
-        "streaming": {
-            "grpc": {
-                "endpoint": "fmaas.GenerationService/GenerateStream",
-                "header": "mm-model-id: $model_name",
-                "body": '{"request": [{"text":"$query_text"}]}',
-                "args": "proto=text-generation-inference/proto/generation.proto",
-                "response_fields_map": {"response": ""},
-            }
-        },
-        "tokenize": {
-            "grpc": {
-                "endpoint": "fmaas.GenerationService/Tokenize",
-                "header": "mm-model-id: $model_name",
-                "body": '{"requests": [{"text":"$query_text"}], "return_tokens":"true"}',
-                "args": "proto=text-generation-inference/proto/generation.proto",
-                "response_fields_map": {
-                    "response": "",
-                    "response_tokens": "",
-                    "response_text": "",
-                },
-            }
-        },
-        "model-info": {
-            "grpc": {
-                "endpoint": "fmaas.GenerationService/ModelInfo",
-                "header": "",
-                "body": '{"model_id": "$model_name"}',
-                "args": "proto=text-generation-inference/proto/generation.proto",
-                "response_fields_map": {"response": ""},
-            }
-        },
-    },
-    "caikit-standalone-runtime": {"containers": ["kserve-container"]},
-    "caikit-standalone-runtime-grpc": {"containers": ["kserve-container", "queue-proxy", "istio-proxy"]},
-    "vllm-runtime": {
-        "chat-completions": {
-            "http": {
-                "endpoint": "v1/chat/completions",
-                "header": "Content-Type:application/json",
-                "body": '{"model": "$model_name","messages": [$query_text]}',
-                "response_fields_map": {
-                    "response": "choices",
-                    "completion_tokens": "completion_tokens",
-                    "response_text": "content",
-                },
-            }
-        },
-        "completions": {
-            "http": {
-                "endpoint": "v1/completions",
-                "header": "Content-Type:application/json",
-                "body": '{"model": "$model_name","prompt": "$query_text"}',
-                "response_fields_map": {
-                    "response": "choices",
-                    "completion_tokens": "completion_tokens",
-                    "response_text": "text",
-                },
-            }
-        },
-        "embeddings": {
-            "http": {
-                "endpoint": "v1/embeddings",
-                "header": "Content-Type:application/json",
-                "body": '{"encoding_format": "float", "model": "$model_name","input": "${query_text}"}',
-                "response_fields_map": {
-                    "response": "data",
-                    "completion_tokens": "completion_tokens",
-                    "response_text": "embedding",
-                },
-            }
-        },
-    },
+    }
 }

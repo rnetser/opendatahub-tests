@@ -2,7 +2,6 @@ from __future__ import annotations
 import json
 import re
 import shlex
-from functools import cache
 from json import JSONDecodeError
 from string import Template
 from typing import Any, Dict, Optional
@@ -15,81 +14,87 @@ from simple_logger.logger import get_logger
 from utilities.manifests.runtime_query_config import RUNTIMES_QUERY_CONFIG
 
 LOGGER = get_logger(name=__name__)
-INFERENCE_QUERIES: Dict[str, Dict[str, str]] = {
-    "nitrogen-boil-temp": {
-        "text": "At what temperature does liquid Nitrogen boil?",
-        "response_text": "74 degrees F",
-    }
-}
 
 
 class Inference:
     ALL_TOKENS: str = "all-tokens"
     STREAMING: str = "streaming"
 
-    def __init__(self, inference_service: InferenceService, runtime: str, protocol: str, inference_type: str):
+    def __init__(self, inference_service: InferenceService, runtime: str):
         """
         Args:
             inference_service: InferenceService object
         """
         self.inference_service = inference_service
         self.runtime = runtime
-        self.protocol = protocol
-        self.inference_type = inference_type
+        self.inference_url = self.get_inference_url()
 
-    @cache
     def get_inference_url(self) -> str:
         if url := self.inference_service.instance.status.components.predictor.url:
             return urlparse(url).netloc
         else:
             raise ValueError(f"{self.inference_service.name}: No url found in InferenceService status")
 
-    @cache
+
+class LlmInference(Inference):
+    def __init__(self, protocol: str, inference_type: str, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+
+        self.protocol = protocol
+        self.inference_type = inference_type
+        self.inference_config = self.get_inference_config()
+        self.runtime_config = self.get_runtime_config()
+
     def get_inference_config(self) -> Dict[str, Any]:
         if runtime_config := RUNTIMES_QUERY_CONFIG.get(self.runtime):
-            if inference_type := runtime_config.get(self.inference_type):
-                if data := inference_type.get(self.protocol):
-                    return data
-
-                else:
-                    raise ValueError(
-                        f"Protocol {self.protocol} not supported.\nSupported protocols are {inference_type}"
-                    )
-
-            else:
-                raise ValueError(
-                    f"Inference type {inference_type} not supported.\n"
-                    f"Supported inference types are {runtime_config['endpoints']}"
-                )
+            return runtime_config
 
         else:
             raise ValueError(f"Runtime {self.runtime} not supported. Supported runtimes are {RUNTIMES_QUERY_CONFIG}")
 
+    def get_runtime_config(self) -> Dict[str, Any]:
+        if inference_type := self.inference_config.get(self.inference_type):
+            if data := inference_type.get(self.protocol):
+                return data
+
+            else:
+                raise ValueError(f"Protocol {self.protocol} not supported.\nSupported protocols are {inference_type}")
+
+        else:
+            raise ValueError(
+                f"Inference type {inference_type} not supported.\nSupported inference types are {self.inference_config}"
+            )
+
     @property
     def inference_response_text_key_name(self) -> Optional[str]:
-        return self.get_inference_config()["response_fields_map"].get("response_text")
+        return self.runtime_config["response_fields_map"].get("response_text")
 
     def generate_command(
         self,
         model_name: str,
-        text: str,
+        text: Optional[str] = None,
+        use_default_query: bool = False,
         insecure: bool = False,
         token: Optional[str] = None,
         port: Optional[int] = None,
     ) -> str:
-        data = self.get_inference_config()
-        header = f"'{Template(data['header']).safe_substitute(model_name=model_name)}'"
-        body = Template(data["body"]).safe_substitute(
+        if use_default_query:
+            text = self.inference_config.get("default_query_model", {}).get("text")
+            if not text:
+                raise ValueError(f"Missing default query dict for {model_name}")
+
+        header = f"'{Template(self.runtime_config['header']).safe_substitute(model_name=model_name)}'"
+        body = Template(self.runtime_config["body"]).safe_substitute(
             model_name=model_name,
             query_text=text,
         )
 
         if self.protocol == "http":
-            url = f"https://{self.get_inference_url()}/{data['endpoint']}"
+            url = f"https://{self.inference_url}/{self.runtime_config['endpoint']}"
             cmd_exec = "curl -i -s"
 
         elif self.protocol == "grpc":
-            url = f"{self.get_inference_url()}:{port or 443} {data['endpoint']}"
+            url = f"{self.inference_url}:{port or 443} {self.runtime_config['endpoint']}"
             cmd_exec = "grpcurl -connect-timeout 10"
 
         else:
@@ -110,13 +115,15 @@ class Inference:
     def run_inference(
         self,
         model_name: str,
-        text: str,
+        text: Optional[str] = None,
+        use_default_query: bool = False,
         insecure: bool = False,
         token: Optional[str] = None,
     ) -> Dict[str, Any]:
         cmd = self.generate_command(
             model_name=model_name,
             text=text,
+            use_default_query=use_default_query,
             insecure=insecure,
             token=token,
         )

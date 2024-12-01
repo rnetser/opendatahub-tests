@@ -8,7 +8,7 @@ from ocp_resources.role import Role
 from simple_logger.logger import get_logger
 
 from tests.model_serving.model_server.utils import b64_encoded_string
-from utilities.inference_utils import Inference
+from utilities.inference_utils import LlmInference
 
 LOGGER = get_logger(name=__name__)
 
@@ -19,13 +19,14 @@ def verify_inference_response(
     inference_type: str,
     protocol: str,
     model_name: str,
-    inference_text: str,
-    expected_response_text: Optional[str] = "",
+    text: Optional[str] = None,
+    use_default_query: bool = False,
+    expected_response_text: Optional[str] = None,
     insecure: bool = True,
     token: Optional[str] = None,
     authorized_user: Optional[bool] = None,
 ) -> None:
-    inference = Inference(
+    inference = LlmInference(
         inference_service=inference_service,
         runtime=runtime,
         inference_type=inference_type,
@@ -34,7 +35,8 @@ def verify_inference_response(
 
     res = inference.run_inference(
         model_name=model_name,
-        text=inference_text,
+        text=text,
+        use_default_query=use_default_query,
         token=token,
         insecure=insecure,
     )
@@ -55,15 +57,19 @@ def verify_inference_response(
             LOGGER.error(f"Auth header {auth_header} not found in response. Response: {res['output']}")
             raise
 
-    elif inference.inference_response_text_key_name:
-        assert res["output"][inference.inference_response_text_key_name] == expected_response_text
-
-    elif output := re.findall(r"generated_text\": \"(.*)\"", res["output"], re.MULTILINE):
-        assert "".join(output) == expected_response_text
-
     else:
-        LOGGER.error(f"Inference response text not found in response. Response: {res}")
-        raise
+        if use_default_query:
+            expected_response_text = inference.inference_config["default_query_model"]["model"].get("response_text")
+
+        if inference.inference_response_text_key_name:
+            assert res["output"][inference.inference_response_text_key_name] == expected_response_text
+
+        elif output := re.findall(r"generated_text\": \"(.*)\"", res["output"], re.MULTILINE):
+            assert "".join(output) == expected_response_text
+
+        else:
+            LOGGER.error(f"Inference response text not found in response. Response: {res}")
+            raise
 
 
 def get_s3_secret_dict(
