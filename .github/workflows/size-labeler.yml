@@ -1,5 +1,8 @@
 name: size-label
-on: pull_request_target
+on:
+  push:
+  pull_request:
+
 jobs:
   size-label:
     permissions:
