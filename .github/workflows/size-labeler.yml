@@ -2,7 +2,6 @@ name: Label PRs by Size
 
 on:
   pull_request_target:
-    types: [assigned, opened, synchronize, reopened]
 
 jobs:
   label-pr:
