@@ -4,67 +4,46 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
 jobs:
   size-labeler:
-    permissions:
-      contents: read
-      pull-requests: write
-      issues: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Calculate PR Size and Add Label
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{secrets.GITHUB_TOKEN}}
-          script: |
-            try {
-              const { owner, repo, number } = context.issue;
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Get PR details
+          PR_DETAILS=$(gh pr view ${{ github.event.pull_request.number }} --json additions,deletions)
 
-              // Fetch the pull request details
-              const pr = await github.rest.pulls.get({
-                owner,
-                repo,
-                pull_number: number
-              });
+          # Calculate total changes
+          TOTAL_CHANGES=$(echo $PR_DETAILS | jq '.additions + .deletions')
 
-              // Calculate total lines changed
-              const totalChanges = pr.data.additions + pr.data.deletions;
+          # Determine size label
+          if [ $TOTAL_CHANGES -gt 500 ]; then
+            SIZE_LABEL="size/xl"
+          elif [ $TOTAL_CHANGES -gt 100 ]; then
+            SIZE_LABEL="size/l"
+          elif [ $TOTAL_CHANGES -gt 30 ]; then
+            SIZE_LABEL="size/m"
+          elif [ $TOTAL_CHANGES -gt 10 ]; then
+            SIZE_LABEL="size/s"
+          else
+            SIZE_LABEL="size/xs"
+          fi
 
-              // Determine size label
-              let sizeLabel = 'size/xs';
-              if (totalChanges > 500) sizeLabel = 'size/xl';
-              else if (totalChanges > 100) sizeLabel = 'size/l';
-              else if (totalChanges > 30) sizeLabel = 'size/m';
-              else if (totalChanges > 10) sizeLabel = 'size/s';
+          # Remove existing size labels
+          EXISTING_LABELS=$(gh pr view ${{ github.event.pull_request.number }} --json labels | jq -r '.labels[].name | select(startswith("size/"))')
 
-              // Remove existing size labels
-              const existingLabels = await github.rest.issues.listLabelsOnIssue({
-                owner,
-                repo,
-                issue_number: number
-              });
+          for LABEL in $EXISTING_LABELS; do
+            gh pr edit ${{ github.event.pull_request.number }} --remove-label "$LABEL"
+          done
 
-              const sizeLabelPrefix = 'size/';
-              for (const label of existingLabels.data) {
-                if (label.name.startsWith(sizeLabelPrefix)) {
-                  await github.rest.issues.removeLabel({
-                    owner,
-                    repo,
-                    issue_number: number,
-                    name: label.name
-                  });
-                }
-              }
-
-              // Add new size label
-              await github.rest.issues.addLabels({
-                owner,
-                repo,
-                issue_number: number,
-                labels: [sizeLabel]
-              });
-            } catch (error) {
-              console.error('Error in size labeler:', error);
-              throw error;
-            }
+          # Add new size label
+          gh pr edit ${{ github.event.pull_request.number }} --add-label "$SIZE_LABEL"
