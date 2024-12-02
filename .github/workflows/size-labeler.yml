@@ -10,7 +10,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
 
     - name: Calculate PR size and label
       id: size
@@ -38,5 +38,5 @@ jobs:
     - name: Add label to PR
       uses: actions-ecosystem/action-add-labels@v1
       with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
+        github_token: ${{ secrets.REPO_TOKEN }}
         labels: ${{ steps.size.outputs.label }}
