@@ -1,49 +1,23 @@
-name: PR Size Labeler
-
-on:
-  pull_request:
-    types: [opened, synchronize, reopened]
-
-permissions:
-  contents: read
-  pull-requests: write
-  issues: write
-
+name: size-label
+on: pull_request_target
 jobs:
-  size-labeler:
+  size-label:
+    permissions:
+      contents: read
+      pull-requests: write
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Calculate PR Size and Add Label
+      - name: size-label
+        uses: "pascalgn/size-label-action@v0.5.5"
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          # Get PR details
-          PR_DETAILS=$(gh pr view ${{ github.event.pull_request.number }} --json additions,deletions)
-
-          # Calculate total changes
-          TOTAL_CHANGES=$(echo $PR_DETAILS | jq '.additions + .deletions')
-
-          # Determine size label
-          if [ $TOTAL_CHANGES -gt 500 ]; then
-            SIZE_LABEL="size/xl"
-          elif [ $TOTAL_CHANGES -gt 100 ]; then
-            SIZE_LABEL="size/l"
-          elif [ $TOTAL_CHANGES -gt 30 ]; then
-            SIZE_LABEL="size/m"
-          elif [ $TOTAL_CHANGES -gt 10 ]; then
-            SIZE_LABEL="size/s"
-          else
-            SIZE_LABEL="size/xs"
-          fi
-
-          # Remove existing size labels
-          EXISTING_LABELS=$(gh pr view ${{ github.event.pull_request.number }} --json labels | jq -r '.labels[].name | select(startswith("size/"))')
-
-          for LABEL in $EXISTING_LABELS; do
-            gh pr edit ${{ github.event.pull_request.number }} --remove-label "$LABEL"
-          done
-
-          # Add new size label
-          gh pr edit ${{ github.event.pull_request.number }} --add-label "$SIZE_LABEL"
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+        with:
+          sizes: >
+            {
+              "0": "XS",
+              "20": "S",
+              "50": "M",
+              "200": "L",
+              "800": "XL",
+              "2000": "XXL"
+            }
