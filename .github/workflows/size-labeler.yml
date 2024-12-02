@@ -1,8 +1,8 @@
 name: Label PRs by Size
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
+  pull_request_target:
+    types: [assigned, opened, synchronize, reopened]
 
 jobs:
   label-pr:
@@ -38,5 +38,5 @@ jobs:
     - name: Add label to PR
       uses: actions-ecosystem/action-add-labels@v1
       with:
-        github_token: ${{ secrets.REPO_TOKEN }}
+        github_token: ${{ secrets.GITHUB_TOKEN }}
         labels: ${{ steps.size.outputs.label }}
