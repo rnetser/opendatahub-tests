@@ -3,9 +3,6 @@ name: PR Size Labeler
 on:
   pull_request:
     types: [opened, synchronize, reopened]
-  push:
-    branches:
-      - main
 
 jobs:
   size-labeler:
@@ -15,7 +12,53 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/labeler@v4
+      - name: Calculate PR Size and Add Label
+        uses: actions/github-script@v7
         with:
-          repo-token: "${{ secrets.GITHUB_TOKEN }}"
-          configuration-path: .github/size-labels.yml
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            const { owner, repo, number } = context.issue;
+
+            // Fetch the pull request details
+            const pr = await github.rest.pulls.get({
+              owner,
+              repo,
+              pull_number: number
+            });
+
+            // Calculate total lines changed
+            const totalChanges = pr.data.additions + pr.data.deletions;
+
+            // Determine size label
+            let sizeLabel = 'size/xs';
+            if (totalChanges > 500) sizeLabel = 'size/xl';
+            else if (totalChanges > 100) sizeLabel = 'size/l';
+            else if (totalChanges > 30) sizeLabel = 'size/m';
+            else if (totalChanges > 10) sizeLabel = 'size/s';
+
+            // Remove existing size labels
+            const existingLabels = await github.rest.issues.listLabelsOnIssue({
+              owner,
+              repo,
+              issue_number: number
+            });
+
+            const sizeLabelPrefix = 'size/';
+            for (const label of existingLabels.data) {
+              if (label.name.startsWith(sizeLabelPrefix)) {
+                await github.rest.issues.removeLabel({
+                  owner,
+                  repo,
+                  issue_number: number,
+                  name: label.name
+                });
+              }
+            }
+
+            // Add new size label
+            await github.rest.issues.addLabels({
+              owner,
+              repo,
+              issue_number: number,
+              labels: [sizeLabel]
+            });
