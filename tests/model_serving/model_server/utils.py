@@ -1,9 +1,11 @@
 import base64
 from contextlib import contextmanager
-from typing import Any, Dict, Generator, Optional
+from typing import Any, Dict, Generator, List, Optional
 
 from kubernetes.dynamic import DynamicClient
 from ocp_resources.inference_service import InferenceService
+from ocp_resources.pod import Pod
+from kubernetes.dynamic.exceptions import ResourceNotFoundError
 
 from tests.model_serving.model_server.private_endpoint.utils import (
     InvalidStorageArgument,
@@ -102,3 +104,28 @@ def b64_encoded_string(string_to_encode: str) -> str:
         A base64 encoded string that is compliant with openshift's yaml format
     """
     return base64.b64encode(string_to_encode.encode()).decode()
+
+
+def get_pods_by_isvc_label(client: DynamicClient, isvc: InferenceService) -> List[Pod]:
+    """
+    Args:
+        client (DynamicClient): OCP Client to use.
+        isvc (InferenceService):InferenceService object.
+
+    Returns:
+        list[Pod]: A list of all matching pods
+
+    Raises:
+        ResourceNotFoundError: if no pods are found.
+    """
+    if pods := [
+        pod
+        for pod in Pod.get(
+            dyn_client=client,
+            namespace=isvc.namespace,
+            label_selector=f"{isvc.ApiGroup.SERVING_KSERVE_IO}/inferenceservice={isvc.name}",
+        )
+    ]:
+        return pods
+
+    raise ResourceNotFoundError(f"{isvc.name} has no pods")

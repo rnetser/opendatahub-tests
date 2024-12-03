@@ -3,13 +3,13 @@ from typing import List
 
 from ocp_resources.pod import ExecOnPodError
 import pytest
-from ocp_utilities.infra import get_pods_by_isvc_label
 
 from tests.model_serving.model_server.storage.constants import (
     INFERENCE_SERVICE_PARAMS,
     KSERVE_CONTAINER_NAME,
     KSERVE_OVMS_SERVING_RUNTIME_PARAMS,
 )
+from tests.model_serving.model_server.utils import get_pods_by_isvc_label
 
 pytestmark = pytest.mark.usefixtures("valid_aws_config")
 

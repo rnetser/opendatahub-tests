@@ -10,11 +10,10 @@ from ocp_resources.pod import Pod
 from ocp_resources.resource import ResourceEditor
 from ocp_resources.serving_runtime import ServingRuntime
 from ocp_resources.storage_class import StorageClass
-from ocp_utilities.infra import get_pods_by_isvc_label
 from pytest import FixtureRequest
 
 from tests.model_serving.model_server.storage.constants import NFS_STR
-from tests.model_serving.model_server.utils import create_isvc
+from tests.model_serving.model_server.utils import create_isvc, get_pods_by_isvc_label
 from utilities.constants import KServeDeploymentType
 from utilities.infra import wait_for_kserve_predictor_deployment_replicas
 from utilities.serving_runtime import ServingRuntimeFromTemplate

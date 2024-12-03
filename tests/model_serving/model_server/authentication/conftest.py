@@ -11,14 +11,13 @@ from ocp_resources.secret import Secret
 from ocp_resources.service_account import ServiceAccount
 from ocp_resources.serving_runtime import ServingRuntime
 from ocp_resources.authorino import Authorino
-from ocp_utilities.infra import get_pods_by_isvc_label
 from pyhelper_utils.shell import run_command
 
 
 from tests.model_serving.model_server.authentication.utils import (
     create_isvc_view_role,
 )
-from tests.model_serving.model_server.utils import create_isvc
+from tests.model_serving.model_server.utils import create_isvc, get_pods_by_isvc_label
 from utilities.constants import KServeDeploymentType, ModelFormat, Protocols, RuntimeQueryKeys, RuntimeTemplates
 from utilities.infra import s3_endpoint_secret
 from utilities.serving_runtime import ServingRuntimeFromTemplate
