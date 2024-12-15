@@ -84,7 +84,7 @@ class TestRawDeployment:
         "patched_grpc_isvc_visibility_annotation",
         [
             pytest.param(
-                {"visibility": "external"},
+                {"visibility": "exposed"},
             )
         ],
         indirect=True,
