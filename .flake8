@@ -1,5 +1,5 @@
 [flake8]
-select=M511
+select=M511,FCN
 
 exclude =
     doc,
@@ -9,3 +9,6 @@ exclude =
     Pipfile.*,
     docs/*,
     .cache/*
+
+enable-extensions =
+    FCN,
