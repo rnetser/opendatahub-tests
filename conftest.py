@@ -16,7 +16,7 @@ BASIC_LOGGER = logging.getLogger("basic")
 def pytest_addoption(parser: Parser) -> None:
     aws_group = parser.getgroup(name="AWS")
     buckets_group = parser.getgroup(name="Buckets")
-
+    runtime_group = parser.getgroup(name="Runtime Details")
     # AWS config and credentials options
     aws_group.addoption(
         "--aws-secret-access-key",
@@ -33,7 +33,6 @@ def pytest_addoption(parser: Parser) -> None:
     buckets_group.addoption(
         "--ci-s3-bucket-name", default=os.environ.get("CI_S3_BUCKET_NAME"), help="Ci S3 bucket name"
     )
-
     buckets_group.addoption(
         "--ci-s3-bucket-region", default=os.environ.get("CI_S3_BUCKET_REGION"), help="Ci S3 bucket region"
     )
@@ -43,11 +42,8 @@ def pytest_addoption(parser: Parser) -> None:
     )
 
     buckets_group.addoption(
-        "--models-s3-bucket-name",
-        default=os.environ.get("MODELS_S3_BUCKET_NAME"),
-        help="Models S3 bucket name",
+        "--models-s3-bucket-name", default=os.environ.get("MODELS_S3_BUCKET_NAME"), help="Models S3 bucket name"
     )
-
     buckets_group.addoption(
         "--models-s3-bucket-region",
         default=os.environ.get("MODELS_S3_BUCKET_REGION"),
@@ -58,6 +54,17 @@ def pytest_addoption(parser: Parser) -> None:
         "--models-s3-bucket-endpoint",
         default=os.environ.get("MODELS_S3_BUCKET_ENDPOINT"),
         help="Models S3 bucket endpoint",
+    )
+    # Runtime options
+    runtime_group.addoption(
+        "--supported-accelerator-type",
+        default=os.environ.get("SUPPORTED_ACCLERATOR_TYPE"),
+        help="Supported accelerator type : Nvidia,AMD,Gaudi",
+    )
+    runtime_group.addoption(
+        "--vllm-runtime-image",
+        default=os.environ.get("VLLM_RUNTIME_IMAGE"),
+        help="Specify the runtime image to use for the tests",
     )
 
 

@@ -55,6 +55,7 @@ class TrustyAIServiceRequestHandler:
         return self._send_request(endpoint="/info", method="GET")
 
 
+# TODO: Refactor code to be under utilities.inference_utils.Inference
 def send_inference_request(
     token: str,
     inference_route: Route,
