@@ -20,12 +20,6 @@ def patched_isvc_visibility_annotation(
             }
         }
     ):
-        predictor_pod = get_pods_by_isvc_label(
-            client=admin_client,
-            isvc=http_s3_inference_service,
-        )[0]
-        predictor_pod.wait_deleted()
-
         yield http_s3_inference_service
 
 

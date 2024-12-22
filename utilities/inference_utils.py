@@ -11,7 +11,11 @@ from ocp_resources.inference_service import InferenceService
 from pyhelper_utils.shell import run_command
 from simple_logger.logger import get_logger
 
+from tests.model_serving.model_server.utils import (
+    get_services_by_isvc_label,
+)
 from utilities.manifests.runtime_query_config import RUNTIMES_QUERY_CONFIG
+import portforward
 
 LOGGER = get_logger(name=__name__)
 
@@ -27,14 +31,21 @@ class Inference:
         """
         self.inference_service = inference_service
         self.runtime = runtime
+        self.visibility_exposed = (
+            self.inference_service.instance.metadata.annotations.get("networking.kserve.io/visibility") == "exposed"
+        )
         self.inference_url = self.get_inference_url()
 
     def get_inference_url(self) -> str:
         # TODO: add ModelMesh support
-        if url := self.inference_service.instance.status.components.predictor.url:
-            return urlparse(url).netloc
+        if self.visibility_exposed:
+            if url := self.inference_service.instance.status.components.predictor.url:
+                return urlparse(url).netloc
+            else:
+                raise ValueError(f"{self.inference_service.name}: No url found in InferenceService status")
+
         else:
-            raise ValueError(f"{self.inference_service.name}: No url found in InferenceService status")
+            return "localhost"
 
 
 class LlmInference(Inference):
@@ -78,6 +89,7 @@ class LlmInference(Inference):
         insecure: bool = False,
         token: Optional[str] = None,
         port: Optional[int] = None,
+        is_exposed: bool = False,
     ) -> str:
         if use_default_query:
             text = self.inference_config.get("default_query_model", {}).get("text")
@@ -129,13 +141,23 @@ class LlmInference(Inference):
             token=token,
         )
 
-        if (
-            self.inference_service.instance.metatadata.annotations.get("networking.kserve.io/visibility", "")
-            != "exposed"
-        ):
-            pass
+        # For internal inference, we need to forward the port to the service
+        if not self.visibility_exposed:
+            svc = get_services_by_isvc_label(client=self.inference_service.client, isvc=self.inference_service)[0]
 
-        res, out, err = run_command(command=shlex.split(cmd), verify_stderr=False, check=False)
+            port = svc.instance.spec.ports[0].targetPort
+
+            with portforward.forward(
+                pod_or_service=svc.name,
+                namespace=svc.namespace,
+                from_port=port,
+                to_port=port,
+            ):
+                res, out, err = run_command(command=shlex.split(cmd), verify_stderr=False, check=False)
+
+        else:
+            res, out, err = run_command(command=shlex.split(cmd), verify_stderr=False, check=False)
+
         if not res:
             raise ValueError(f"Inference failed with error: {err}\nOutput: {out}\nCommand: {cmd}")
 

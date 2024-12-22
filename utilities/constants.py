@@ -1,6 +1,3 @@
-APPLICATIONS_NAMESPACE: str = "redhat-ods-applications"
-
-
 class KServeDeploymentType:
     SERVERLESS: str = "Serverless"
     RAW_DEPLOYMENT: str = "RawDeployment"
