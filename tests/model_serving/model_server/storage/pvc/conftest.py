@@ -46,6 +46,7 @@ def model_pvc(
     pvc_kwargs["accessmodes"] = access_mode
 
     with PersistentVolumeClaim(**pvc_kwargs) as pvc:
+        pvc.wait_for_status(status=pvc.Status.BOUND, timeout=120)
         yield pvc
 
 

@@ -13,7 +13,7 @@ from ocp_resources.service_account import ServiceAccount
 from ocp_resources.authorino import Authorino
 from ocp_resources.serving_runtime import ServingRuntime
 from pyhelper_utils.shell import run_command
-
+from pytest_testconfig import config as py_config
 
 from tests.model_serving.model_server.authentication.utils import (
     create_isvc_view_role,
@@ -29,7 +29,7 @@ def skip_if_no_authorino_operator(admin_client: DynamicClient):
     if not Authorino(
         client=admin_client,
         name=name,
-        namespace="redhat-ods-applications-auth-provider",
+        namespace=f"{py_config['applications_namespace']}-auth-provider",
     ).exists:
         pytest.skip(f"{name} operator is missing from the cluster")
 
@@ -87,12 +87,12 @@ def grpc_s3_inference_service(
 
 
 @pytest.fixture(scope="class")
-def http_view_role(admin_client: DynamicClient, http_s3_inference_service: InferenceService) -> Role:
+def http_view_role(admin_client: DynamicClient, http_s3_caikit_serverless_inference_service: InferenceService) -> Role:
     with create_isvc_view_role(
         client=admin_client,
-        isvc=http_s3_inference_service,
-        name=f"{http_s3_inference_service.name}-view",
-        resource_names=[http_s3_inference_service.name],
+        isvc=http_s3_caikit_serverless_inference_service,
+        name=f"{http_s3_caikit_serverless_inference_service.name}-view",
+        resource_names=[http_s3_caikit_serverless_inference_service.name],
     ) as role:
         yield role
 
@@ -102,7 +102,7 @@ def http_role_binding(
     admin_client: DynamicClient,
     http_view_role: Role,
     http_model_service_account: ServiceAccount,
-    http_s3_inference_service: InferenceService,
+    http_s3_caikit_serverless_inference_service: InferenceService,
 ) -> RoleBinding:
     with RoleBinding(
         client=admin_client,
@@ -127,11 +127,11 @@ def http_inference_token(http_model_service_account: ServiceAccount, http_role_b
 
 @pytest.fixture()
 def patched_remove_authentication_isvc(
-    admin_client: DynamicClient, http_s3_inference_service: InferenceService
+    admin_client: DynamicClient, http_s3_caikit_serverless_inference_service: InferenceService
 ) -> InferenceService:
     with ResourceEditor(
         patches={
-            http_s3_inference_service: {
+            http_s3_caikit_serverless_inference_service: {
                 "metadata": {
                     "annotations": {"security.opendatahub.io/enable-auth": "false"},
                 }
@@ -140,11 +140,11 @@ def patched_remove_authentication_isvc(
     ):
         predictor_pod = get_pods_by_isvc_label(
             client=admin_client,
-            isvc=http_s3_inference_service,
+            isvc=http_s3_caikit_serverless_inference_service,
         )[0]
         predictor_pod.wait_deleted()
 
-        yield http_s3_inference_service
+        yield http_s3_caikit_serverless_inference_service
 
 
 @pytest.fixture(scope="class")
@@ -184,3 +184,26 @@ def grpc_inference_token(grpc_model_service_account: ServiceAccount, grpc_role_b
             f"oc create token -n {grpc_model_service_account.namespace} {grpc_model_service_account.name}"
         )
     )[1].strip()
+
+
+@pytest.fixture(scope="class")
+def http_s3_caikit_serverless_inference_service(
+    request: FixtureRequest,
+    admin_client: DynamicClient,
+    model_namespace: Namespace,
+    http_s3_caikit_serving_runtime: ServingRuntime,
+    s3_models_storage_uri: str,
+    http_model_service_account: ServiceAccount,
+) -> InferenceService:
+    with create_isvc(
+        client=admin_client,
+        name=f"{Protocols.HTTP}-{ModelFormat.CAIKIT}",
+        namespace=model_namespace.name,
+        runtime=http_s3_caikit_serving_runtime.name,
+        storage_uri=s3_models_storage_uri,
+        model_format=http_s3_caikit_serving_runtime.instance.spec.supportedModelFormats[0].name,
+        deployment_mode=KServeDeploymentType.SERVERLESS,
+        model_service_account=http_model_service_account.name,
+        enable_auth=True,
+    ) as isvc:
+        yield isvc
