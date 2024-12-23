@@ -34,11 +34,12 @@ class Inference:
         self.inference_service = inference_service
         self.runtime = runtime
 
-        self.visibility_exposed = self.inference_service.labels and (
-            self.inference_service.instance.metadata.labels.get("networking.kserve.io/visibility") == "exposed"
-            or self.inference_service.instance.metadata.labels.get("networking.knative.dev/visibility")
-            != "cluster-local"
+        labels = self.inference_service.labels
+        self.visibility_exposed = labels and (
+            labels.get("networking.kserve.io/visibility") == "exposed"
+            or labels.get("networking.knative.dev/visibility") != "cluster-local"
         )
+
         self.inference_url = self.get_inference_url()
 
     def get_inference_url(self) -> str:
