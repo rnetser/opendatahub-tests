@@ -65,7 +65,6 @@ def grpc_s3_serving_runtime(
 
 @pytest.fixture(scope="class")
 def grpc_s3_inference_service(
-    request: FixtureRequest,
     admin_client: DynamicClient,
     model_namespace: Namespace,
     grpc_s3_serving_runtime: ServingRuntime,
@@ -79,7 +78,7 @@ def grpc_s3_inference_service(
         runtime=grpc_s3_serving_runtime.name,
         storage_uri=s3_models_storage_uri,
         model_format=grpc_s3_serving_runtime.instance.spec.supportedModelFormats[0].name,
-        deployment_mode=request.param.get("deployment-mode", KServeDeploymentType.SERVERLESS),
+        deployment_mode=KServeDeploymentType.SERVERLESS,
         model_service_account=grpc_model_service_account.name,
         enable_auth=True,
     ) as isvc:
