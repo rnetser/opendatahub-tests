@@ -111,7 +111,6 @@ class LlmInference(Inference):
         insecure: bool = False,
         token: Optional[str] = None,
         port: Optional[int] = None,
-        is_exposed: bool = False,
     ) -> str:
         if use_default_query:
             text = self.inference_config.get("default_query_model", {}).get("text")
