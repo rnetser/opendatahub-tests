@@ -15,7 +15,7 @@ from simple_logger.logger import get_logger
 from tests.model_serving.model_server.utils import (
     get_services_by_isvc_label,
 )
-from utilities.constants import Protocols
+from utilities.constants import KServeDeploymentType, Protocols
 from utilities.manifests.runtime_query_config import RUNTIMES_QUERY_CONFIG
 import portforward
 
@@ -33,12 +33,7 @@ class Inference:
         """
         self.inference_service = inference_service
         self.runtime = runtime
-
-        labels = self.inference_service.labels
-        self.visibility_exposed = labels and (
-            labels.get("networking.kserve.io/visibility") == "exposed"
-            or labels.get("networking.knative.dev/visibility") != "cluster-local"
-        )
+        self.visibility_exposed = self.is_service_exposed()
 
         self.inference_url = self.get_inference_url()
 
@@ -52,6 +47,26 @@ class Inference:
 
         else:
             return "localhost"
+
+    def is_service_exposed(self) -> bool:
+        labels = self.inference_service.labels
+        inference_type = self.inference_service.instance.metadata.annotations["serving.kserve.io/deploymentMode"]
+
+        if inference_type == KServeDeploymentType.RAW_DEPLOYMENT:
+            if labels and labels.get("networking.kserve.io/visibility") == "exposed":
+                return True
+            else:
+                return False
+
+        elif inference_type == KServeDeploymentType.SERVERLESS:
+            if labels and labels.get("networking.knative.dev/visibility") == "cluster-local":
+                return False
+            else:
+                return True
+
+        else:
+            # TODO: add support for ModelMesh
+            return False
 
 
 class LlmInference(Inference):
@@ -148,7 +163,7 @@ class LlmInference(Inference):
             token=token,
         )
 
-        # For internal inference, we need to forward the port to the service
+        # For internal inference, we need to use port forwarding to the service
         if not self.visibility_exposed:
             svc = get_services_by_isvc_label(client=self.inference_service.client, isvc=self.inference_service)[0]
 
