@@ -27,7 +27,7 @@ def create_isvc(
     storage_path: Optional[str] = None,
     wait: bool = True,
     enable_auth: bool = False,
-    external_route: bool = False,
+    external_route: Optional[bool] = None,
     model_service_account: Optional[str] = "",
     min_replicas: Optional[int] = None,
     argument: Optional[list[str]] = None,
@@ -35,6 +35,7 @@ def create_isvc(
     volumes: Optional[dict[str, Any]] = None,
     volumes_mounts: Optional[dict[str, Any]] = None,
 ) -> Generator[InferenceService, Any, Any]:
+    labels: Dict[str, str] = {}
     predictor_dict: Dict[str, Any] = {
         "minReplicas": min_replicas,
         "model": {
@@ -72,10 +73,21 @@ def create_isvc(
         })
 
     if enable_auth:
-        annotations["security.opendatahub.io/enable-auth"] = "true"
+        # TODO: add modelmesh support
+        if deployment_mode == KServeDeploymentType.SERVERLESS:
+            annotations["security.opendatahub.io/enable-auth"] = "true"
+        elif deployment_mode == KServeDeploymentType.RAW_DEPLOYMENT:
+            labels["security.openshift.io/enable-authentication"] = "true"
 
-    if external_route:
-        annotations["networking.kserve.io/visibility"] = "exposed"
+    # default to True if deployment_mode is Serverless (default behavior of Serverless) if was not provided by the user
+    if external_route is None and deployment_mode == KServeDeploymentType.SERVERLESS:
+        external_route = True
+
+    if external_route and deployment_mode == KServeDeploymentType.RAW_DEPLOYMENT:
+        labels["networking.kserve.io/visibility"] = "exposed"
+
+    if deployment_mode == KServeDeploymentType.SERVERLESS and external_route is False:
+        labels["networking.knative.dev/visibility"] = "cluster-local"
 
     with InferenceService(
         client=client,
@@ -83,6 +95,7 @@ def create_isvc(
         namespace=namespace,
         annotations=annotations,
         predictor=predictor_dict,
+        label=labels,
     ) as inference_service:
         if wait:
             inference_service.wait_for_condition(
