@@ -56,7 +56,7 @@ class TestRestRawDeployment:
             inference_service=patched_http_s3_caikit_raw_isvc_visibility_label,
             runtime=RuntimeQueryKeys.CAIKIT_TGIS_RUNTIME,
             inference_type=Inference.ALL_TOKENS,
-            protocol=Protocols.HTTP,
+            protocol=Protocols.HTTPS,
             model_name=ModelFormat.CAIKIT,
             use_default_query=True,
         )
