@@ -231,9 +231,23 @@ class LlmInference(Inference):
             svc_protocol = self.protocol
 
         for port in svc.instance.spec.ports:
-            if (
-                port.name and port.name.lower() == self.protocol.lower()
-            ) or port.protocol.lower() == svc_protocol.lower():
-                return port.targetPort if isinstance(port.targetPort, int) else port.port
+            svc_port = port.targetPort if isinstance(port.targetPort, int) else port.port
 
-        raise ValueError(f"No port found for protocol {self.protocol} service {svc.name}")
+            if (
+                self.deployment_mode == KServeDeploymentType.MODEL_MESH
+                and port.protocol.lower() == svc_protocol.lower()
+                and port.name == self.protocol
+            ):
+                return svc_port
+
+            elif (
+                self.deployment_mode
+                in (
+                    KServeDeploymentType.RAW_DEPLOYMENT,
+                    KServeDeploymentType.SERVERLESS,
+                )
+                and port.protocol.lower() == svc_protocol.lower()
+            ):
+                return svc_port
+
+        raise ValueError(f"No port found for protocol {self.protocol} service {svc.instance}")
