@@ -225,11 +225,17 @@ class LlmInference(Inference):
         return svc
 
     def get_target_port(self, svc: Service) -> int:
-        if port := [
-            item.targetPort if isinstance(item.targetPort, int) else item.port
-            for item in svc.instance.spec.ports
-            if item.name == self.protocol.lower()
-        ]:
-            return port[0]
+        if self.protocol in Protocols.TCP_PROTOCOLS:
+            svc_protocol = "TCP"
+        elif self.protocol == Protocols.GRPC:
+            svc_protocol = "h2c"
+        else:
+            svc_protocol = self.protocol
+
+        for port in svc.instance.spec.ports:
+            if (
+                port.name and port.name.lower() == self.protocol.lower()
+            ) or port.protocol.lower() == svc_protocol.lower():
+                return port.targetPort if isinstance(port.targetPort, int) else port.port
 
         raise ValueError(f"No port found for protocol {self.protocol} service {svc.name}")
