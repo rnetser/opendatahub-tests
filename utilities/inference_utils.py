@@ -225,7 +225,7 @@ class LlmInference(Inference):
         return svc
 
     def get_target_port(self, svc: Service) -> int:
-        if self.protocol in (Protocols.TCP_PROTOCOLS, Protocols.GRPC):
+        if self.protocol in Protocols.ALL_SUPPORTED_PROTOCOLS:
             svc_protocol = "TCP"
         else:
             svc_protocol = self.protocol
