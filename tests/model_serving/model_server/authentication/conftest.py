@@ -52,6 +52,23 @@ def grpc_model_service_account(admin_client: DynamicClient, models_endpoint_s3_s
 
 
 @pytest.fixture(scope="class")
+def grpc_s3_caikit_serving_runtime(
+    admin_client: DynamicClient,
+    model_namespace: Namespace,
+) -> ServingRuntime:
+    with ServingRuntimeFromTemplate(
+        client=admin_client,
+        name=f"{Protocols.GRPC}-{RuntimeQueryKeys.CAIKIT_TGIS_RUNTIME}",
+        namespace=model_namespace.name,
+        template_name=RuntimeTemplates.CAIKIT_TGIS_SERVING,
+        multi_model=False,
+        enable_http=False,
+        enable_grpc=True,
+    ) as model_runtime:
+        yield model_runtime
+
+
+@pytest.fixture(scope="class")
 def grpc_s3_inference_service(
     admin_client: DynamicClient,
     model_namespace: Namespace,
