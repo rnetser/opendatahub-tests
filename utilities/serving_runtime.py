@@ -33,7 +33,7 @@ class ServingRuntimeFromTemplate(ServingRuntime):
 
         self.model_dict = self.update_model_dict()
 
-        super().__init__(client=self.unprivileged_client or self.client, kind_dict=self.model_dict)
+        super().__init__(client=self.unprivileged_client or self.admin_client, kind_dict=self.model_dict)
 
     def get_model_template(self) -> Template:
         # Only admin client can get templates from the cluster
