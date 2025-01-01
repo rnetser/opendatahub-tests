@@ -71,6 +71,13 @@ def pytest_addoption(parser: Parser) -> None:
     )
 
 
+def pytest_cmdline_main(config, tmpdir_factory) -> None:
+    # TODO: Reduce cognitive complexity
+    # Make pytest tmp dir unique for current session
+    config.option.basetemp = f"{config.option.basetemp}-{config.option.session_id}"
+    py_config["tmpdir"] = tmpdir_factory.mktemp("ca_bundles")
+
+
 def pytest_sessionstart(session: Session) -> None:
     tests_log_file = session.config.getoption("log_file") or "pytest-tests.log"
     if os.path.exists(tests_log_file):

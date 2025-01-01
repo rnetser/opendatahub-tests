@@ -90,3 +90,5 @@ class AcceleratorType:
 
 
 MODELMESH_SERVING: str = "modelmesh-serving"
+ISTIO_CA_BUNDLE: str = "istio_knative.crt"
+OPENSHIFT_CA_BUNDLE: str = "openshift_ca.crt"

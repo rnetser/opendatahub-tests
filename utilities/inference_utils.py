@@ -23,6 +23,8 @@ from utilities.constants import (
 )
 import portforward
 
+from utilities.infra import get_ca_bundle
+
 LOGGER = get_logger(name=__name__)
 
 
@@ -181,6 +183,14 @@ class UserInference(Inference):
 
         if insecure:
             cmd += " --insecure"
+
+        else:
+            if ca := get_ca_bundle(client=self.inference_service.client, deployment_mode=self.deployment_mode):
+                cmd += f" --cacert {ca} "
+
+            else:
+                LOGGER.error("No CA bundle found, using insecure aceess")
+                cmd += " --insecure"
 
         if cmd_args := self.runtime_config.get("args"):
             cmd += f" {cmd_args} "
