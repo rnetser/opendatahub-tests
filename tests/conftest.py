@@ -195,13 +195,10 @@ def kubconfig_filepath() -> str:
     kubeconfig_path = os.path.join(os.path.expanduser("~"), ".kube/config")
     kubeconfig_path_from_env = os.getenv("KUBECONFIG", "")
 
-    if os.path.isfile(kubeconfig_path) and os.path.isfile(kubeconfig_path_from_env):
-        raise ValueError(
-            f"Both `KUBECONFIG` {kubeconfig_path_from_env} and {kubeconfig_path} exist. "
-            f"Only one should be used, Remove {kubeconfig_path}"
-        )
+    if os.path.isfile(kubeconfig_path_from_env):
+        return kubeconfig_path_from_env
 
-    return kubeconfig_path if os.path.isfile(kubeconfig_path) else kubeconfig_path_from_env
+    return kubeconfig_path
 
 
 @pytest.fixture(scope="session")
