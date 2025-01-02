@@ -27,7 +27,8 @@ def skip_if_no_deployed_openshift_serverless(admin_client: DynamicClient):
         pytest.skip("OpenShift Serverless is not deployed")
 
     csv = csvs[0]
-    if not (csv.exists and csv.status == csv.STATUS.SUCCEEDED):
+
+    if not (csv.exists and csv.status == csv.Status.SUCCEEDED):
         pytest.skip("OpenShift Serverless is not deployed")
 
 
