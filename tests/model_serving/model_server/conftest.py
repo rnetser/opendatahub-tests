@@ -20,7 +20,7 @@ def skip_if_no_deployed_openshift_serverless(admin_client: DynamicClient):
         ClusterServiceVersion.get(
             client=admin_client,
             namespace="openshift-serverless",
-            label_selector={"operators.coreos.com/serverless-operator.openshift-serverless": "''"},
+            label_selector="operators.coreos.com/serverless-operator.openshift-serverless",
         )
     )
     if not csvs:
