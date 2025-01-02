@@ -31,6 +31,7 @@ class TestOpenVINO:
             inference_type=Inference.INFER,
             protocol=Protocols.HTTP,
             use_default_query=True,
+            insecure=False,
         )
 
     @pytest.mark.sanity

@@ -2,16 +2,19 @@ from __future__ import annotations
 
 import base64
 import os
+import shutil
 from typing import List, Tuple, Any, Generator
 
 import pytest
 import yaml
+from _pytest.tmpdir import TempPathFactory
 from ocp_resources.secret import Secret
 from pyhelper_utils.shell import run_command
 from pytest import FixtureRequest, Config
 from kubernetes.dynamic import DynamicClient
 from ocp_resources.namespace import Namespace
 from ocp_resources.resource import get_client
+from pytest_testconfig import config as py_config
 from simple_logger.logger import get_logger
 
 from utilities.infra import create_ns, login_with_user_password
@@ -24,6 +27,18 @@ LOGGER = get_logger(name=__name__)
 @pytest.fixture(scope="session")
 def admin_client() -> DynamicClient:
     return get_client()
+
+
+@pytest.mark.early(order=0)
+@pytest.fixture(scope="session", autouse=True)
+def tests_tmp_dir(request: FixtureRequest, tmp_path_factory: TempPathFactory) -> None:
+    base_path = os.path.join(request.config.option.basetemp, "tests")
+    tests_tmp_path = tmp_path_factory.mktemp(base_path)
+    py_config["tmp_base_dir"] = str(tests_tmp_path)
+
+    yield
+
+    shutil.rmtree(str(tests_tmp_path))
 
 
 @pytest.fixture(scope="class")

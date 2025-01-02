@@ -2,6 +2,7 @@ import logging
 import os
 import pathlib
 import shutil
+
 from pytest import Parser, Session, FixtureRequest, FixtureDef, Item, Config, CollectReport
 from _pytest.terminal import TerminalReporter
 from typing import Optional, Any
@@ -69,13 +70,6 @@ def pytest_addoption(parser: Parser) -> None:
         default=os.environ.get("VLLM_RUNTIME_IMAGE"),
         help="Specify the runtime image to use for the tests",
     )
-
-
-def pytest_cmdline_main(config, tmpdir_factory) -> None:
-    # TODO: Reduce cognitive complexity
-    # Make pytest tmp dir unique for current session
-    config.option.basetemp = f"{config.option.basetemp}-{config.option.session_id}"
-    py_config["tmpdir"] = tmpdir_factory.mktemp("ca_bundles")
 
 
 def pytest_sessionstart(session: Session) -> None:

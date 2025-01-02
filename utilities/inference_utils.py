@@ -15,6 +15,7 @@ from simple_logger.logger import get_logger
 from tests.model_serving.model_server.utils import (
     get_services_by_isvc_label,
 )
+from utilities.certificates_utils import get_ca_bundle
 from utilities.constants import (
     KServeDeploymentType,
     MODELMESH_SERVING,
@@ -22,8 +23,6 @@ from utilities.constants import (
     Protocols,
 )
 import portforward
-
-from utilities.infra import get_ca_bundle
 
 LOGGER = get_logger(name=__name__)
 

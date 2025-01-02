@@ -1,16 +1,12 @@
 from __future__ import annotations
 
-import base64
 import json
-import os
 import shlex
 from contextlib import contextmanager
-from functools import cache
 from typing import Dict, Generator, List, Optional
 
 from kubernetes.dynamic import DynamicClient
 from kubernetes.dynamic.exceptions import ResourceNotFoundError, ResourceNotUniqueError
-from ocp_resources.catalog_source import CatalogSource
 from ocp_resources.deployment import Deployment
 from ocp_resources.inference_service import InferenceService
 from ocp_resources.namespace import Namespace
@@ -19,11 +15,9 @@ from ocp_resources.project_request import ProjectRequest
 from ocp_resources.role import Role
 from ocp_resources.secret import Secret
 from pyhelper_utils.shell import run_command
-from pytest_testconfig import config as py_config
 from simple_logger.logger import get_logger
 
 from tests.model_serving.model_server.utils import b64_encoded_string
-from utilities.constants import ISTIO_CA_BUNDLE, KServeDeploymentType, OPENSHIFT_CA_BUNDLE
 from utilities.general import get_s3_secret_dict
 
 
@@ -192,71 +186,3 @@ def login_with_user_password(api_address: str, user: str, password: str | None =
     _, out, _ = run_command(command=shlex.split(login_command))
 
     return "Login successful" in out
-
-
-@cache
-def is_self_managed_operator(client: DynamicClient) -> bool:
-    """
-    Check if the operator is self-managed.
-    """
-    if py_config["distribution"] == "upstream":
-        return True
-
-    if CatalogSource(
-        client=client,
-        name="addon-managed-odh-catalog",
-        namespace=py_config["applications_namespace"],
-    ).exists:
-        return True
-
-    return False
-
-
-@cache
-def create_knative_ca_bundle_file(client: DynamicClient) -> str:
-    istio_secret = Secret(
-        client=client,
-        name="knative-serving-cert",
-        namespace="istio-system",
-    )
-
-    if istio_secret.exists:
-        bundle = base64.b64decode(istio_secret.instance.data["tls.crt"]).decode()
-        filepath = os.path.join(py_config["ca_bundles"], ISTIO_CA_BUNDLE)
-        with open(filepath, "w") as fd:
-            fd.write(bundle)
-
-        return filepath
-
-    raise Exception("Could not find knative-serving-cert secret")
-
-
-@cache
-def create_openshift_ca_bundle_file(client: DynamicClient) -> str:
-    certs_secret = Secret(
-        client=client,
-        name="router-certs-default",
-        namespace=" openshift-ingress",
-    )
-
-    if certs_secret.exists:
-        bundle = base64.b64decode(certs_secret.instance.data["tls.crt"]).decode()
-        filepath = os.path.join(py_config["ca_bundles"], OPENSHIFT_CA_BUNDLE)
-        with open(filepath, "w") as fd:
-            fd.write(bundle)
-
-        return filepath
-
-    raise Exception("Could not find router-certs-default secret")
-
-
-@cache
-def get_ca_bundle(client: DynamicClient, deployment_mode: str) -> str:
-    if deployment_mode in (KServeDeploymentType.SERVERLESS, KServeDeploymentType.RAW_DEPLOYMENT):
-        return create_knative_ca_bundle_file(client=client)
-
-    elif deployment_mode == KServeDeploymentType.MODEL_MESH and is_self_managed_operator(client=client):
-        return create_openshift_ca_bundle_file(client=client)
-
-    else:
-        raise ValueError(f"Unknown deployment mode: {deployment_mode}")
