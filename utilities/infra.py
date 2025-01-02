@@ -219,7 +219,7 @@ def is_managed_cluster(client: DynamicClient) -> bool:
     infra = Infrastructure(client=client, name="cluster")
 
     if not infra.exists:
-        LOGGER.warning(f"Cluster {infra.name} does not exist")
+        LOGGER.warning(f"Infrastructure {infra.name} resource does not exist in the cluster")
         return False
 
     platform_statuses = infra.instance.status.platformStatus
