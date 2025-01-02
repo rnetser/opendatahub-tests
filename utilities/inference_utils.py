@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
 
 from ocp_resources.inference_service import InferenceService
+from ocp_resources.resource import get_client
 from ocp_resources.service import Service
 from pyhelper_utils.shell import run_command
 from simple_logger.logger import get_logger
@@ -184,7 +185,9 @@ class UserInference(Inference):
             cmd += " --insecure"
 
         else:
-            if ca := get_ca_bundle(client=self.inference_service.client, deployment_mode=self.deployment_mode):
+            # admin client is needed to check if cluster is managed
+            _client = get_client()
+            if ca := get_ca_bundle(client=_client, deployment_mode=self.deployment_mode):
                 cmd += f" --cacert {ca} "
 
             else:
