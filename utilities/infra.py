@@ -188,7 +188,7 @@ def login_with_user_password(api_address: str, user: str, password: str | None =
     if password:
         login_command += f" -p '{password}'"
 
-    _, out, _ = run_command(command=shlex.split(login_command))
+    _, out, _ = run_command(command=shlex.split(login_command), hide_log_command=True)
 
     return "Login successful" in out
 
