@@ -206,9 +206,9 @@ def is_self_managed_operator(client: DynamicClient) -> bool:
         name="addon-managed-odh-catalog",
         namespace=py_config["applications_namespace"],
     ).exists:
-        return True
+        return False
 
-    return False
+    return True
 
 
 @cache
