@@ -5,29 +5,15 @@ import os
 from functools import cache
 
 from kubernetes.dynamic import DynamicClient
-from ocp_resources.catalog_source import CatalogSource
 from ocp_resources.secret import Secret
 from pytest_testconfig import config as py_config
 
-from utilities.constants import ISTIO_CA_BUNDLE_FILENAME, KServeDeploymentType, OPENSHIFT_CA_BUNDLE_FILENAME
-
-
-@cache
-def is_self_managed_operator(client: DynamicClient) -> bool:
-    """
-    Check if the operator is self-managed.
-    """
-    if py_config["distribution"] == "upstream":
-        return True
-
-    if CatalogSource(
-        client=client,
-        name="addon-managed-odh-catalog",
-        namespace=py_config["applications_namespace"],
-    ).exists:
-        return True
-
-    return False
+from utilities.constants import (
+    ISTIO_CA_BUNDLE_FILENAME,
+    KServeDeploymentType,
+    OPENSHIFT_CA_BUNDLE_FILENAME,
+)
+from utilities.infra import is_managed_cluster, is_self_managed_operator
 
 
 def create_ca_bundle_file(client: DynamicClient, ca_type: str) -> str:
@@ -63,7 +49,10 @@ def create_ca_bundle_file(client: DynamicClient, ca_type: str) -> str:
 
 @cache
 def get_ca_bundle(client: DynamicClient, deployment_mode: str) -> str:
-    if deployment_mode in (KServeDeploymentType.SERVERLESS, KServeDeploymentType.RAW_DEPLOYMENT):
+    if deployment_mode in (
+        KServeDeploymentType.SERVERLESS,
+        KServeDeploymentType.RAW_DEPLOYMENT,
+    ) and not is_managed_cluster(client):
         return create_ca_bundle_file(client=client, ca_type="knative")
 
     elif deployment_mode == KServeDeploymentType.MODEL_MESH and is_self_managed_operator(client=client):
