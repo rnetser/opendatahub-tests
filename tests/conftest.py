@@ -38,7 +38,7 @@ def tests_tmp_dir(request: FixtureRequest, tmp_path_factory: TempPathFactory) ->
 
     yield
 
-    shutil.rmtree(str(tests_tmp_path))
+    shutil.rmtree(str(tests_tmp_path), ignore_errors=True)
 
 
 @pytest.fixture(scope="class")
