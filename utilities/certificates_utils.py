@@ -55,8 +55,11 @@ def get_ca_bundle(client: DynamicClient, deployment_mode: str) -> str:
     ) and not is_managed_cluster(client):
         return create_ca_bundle_file(client=client, ca_type="knative")
 
-    elif deployment_mode == KServeDeploymentType.MODEL_MESH and is_self_managed_operator(client=client):
-        return create_ca_bundle_file(client=client, ca_type="openshift")
+    elif deployment_mode == KServeDeploymentType.MODEL_MESH:
+        if is_self_managed_operator(client=client):
+            return create_ca_bundle_file(client=client, ca_type="openshift")
+
+        return ""
 
     else:
         raise ValueError(f"Unknown deployment mode: {deployment_mode}")
