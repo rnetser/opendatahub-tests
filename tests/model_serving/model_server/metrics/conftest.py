@@ -23,7 +23,7 @@ def prometheus(admin_client: DynamicClient) -> Prometheus:
 @pytest.fixture(scope="class")
 def deleted_metrics(prometheus: Prometheus) -> None:
     for metric in ("tgi_request_success", "tgi_request_count"):
-        LOGGER.info(f"deleting {metric}")
+        LOGGER.info(f"deleting {metric} metric")
         requests.post(
             f"{prometheus.api_url}/api/v1/admin/tsdb/delete_series?match[]={metric}",
             headers=prometheus.headers,
