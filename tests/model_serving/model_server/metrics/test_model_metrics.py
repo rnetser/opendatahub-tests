@@ -19,7 +19,7 @@ pytestmark = pytest.mark.usefixtures("skip_if_no_deployed_openshift_serverless",
     "model_namespace, s3_models_storage_uri",
     [
         pytest.param(
-            {"name": "kserve-token-authentication"},
+            {"name": "kserve-tgis-metrics"},
             {"model-dir": ModelStoragePath.FLAN_T5_SMALL},
         )
     ],
