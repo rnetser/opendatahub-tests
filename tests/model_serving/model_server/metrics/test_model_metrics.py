@@ -11,7 +11,7 @@ from utilities.constants import (
 from utilities.inference_utils import Inference
 from utilities.monitoring import validate_metrics_value
 
-pytestmark = pytest.mark.usefixtures("skip_if_no_deployed_openshift_serverless", "valid_aws_config")
+pytestmark = pytest.mark.usefixtures("skip_if_no_deployed_openshift_serverless", "valid_aws_config", "deleted_metrics")
 
 
 @pytest.mark.serverless
@@ -25,7 +25,6 @@ pytestmark = pytest.mark.usefixtures("skip_if_no_deployed_openshift_serverless",
     ],
     indirect=True,
 )
-@pytest.mark.usefixtures("deleted_metrics")
 class TestModelMetrics:
     @pytest.mark.smoke
     @pytest.mark.polarion("ODS-2555")
