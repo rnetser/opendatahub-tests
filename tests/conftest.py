@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import os
+import shlex
 import shutil
 from typing import List, Tuple, Any, Generator
 
@@ -233,3 +234,8 @@ def unprivileged_client(
 
         else:
             yield admin_client
+
+
+@pytest.fixture(scope="class")
+def openshift_token():
+    return run_command(command=shlex.split("oc whoami -t"))[1].strip()

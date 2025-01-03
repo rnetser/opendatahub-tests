@@ -1,5 +1,3 @@
-import subprocess
-
 import pytest
 import yaml
 from kubernetes.dynamic import DynamicClient
@@ -41,11 +39,6 @@ def trustyai_service_with_pvc_storage(
         )
         trustyai_deployment.wait_for_replicas()
         yield trustyai_service
-
-
-@pytest.fixture(scope="class")
-def openshift_token(ns_with_modelmesh_enabled):
-    return subprocess.check_output(["oc", "whoami", "-t", ns_with_modelmesh_enabled.name]).decode().strip()
 
 
 @pytest.fixture(scope="class")

@@ -194,29 +194,6 @@ def grpc_inference_token(grpc_model_service_account: ServiceAccount, grpc_role_b
     )[1].strip()
 
 
-@pytest.fixture(scope="class")
-def http_s3_caikit_serverless_inference_service(
-    request: FixtureRequest,
-    admin_client: DynamicClient,
-    model_namespace: Namespace,
-    http_s3_caikit_tgis_serving_runtime: ServingRuntime,
-    s3_models_storage_uri: str,
-    http_model_service_account: ServiceAccount,
-) -> InferenceService:
-    with create_isvc(
-        client=admin_client,
-        name=f"{Protocols.HTTP}-{ModelFormat.CAIKIT}",
-        namespace=model_namespace.name,
-        runtime=http_s3_caikit_tgis_serving_runtime.name,
-        storage_uri=s3_models_storage_uri,
-        model_format=http_s3_caikit_tgis_serving_runtime.instance.spec.supportedModelFormats[0].name,
-        deployment_mode=KServeDeploymentType.SERVERLESS,
-        model_service_account=http_model_service_account.name,
-        enable_auth=True,
-    ) as isvc:
-        yield isvc
-
-
 # Unprivileged user tests
 @pytest.fixture(scope="class")
 def unprivileged_model_namespace(
