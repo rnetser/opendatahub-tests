@@ -28,7 +28,7 @@ pytestmark = pytest.mark.usefixtures("skip_if_no_deployed_openshift_serverless",
 class TestModelMetrics:
     @pytest.mark.smoke
     @pytest.mark.polarion("ODS-2555")
-    @pytest.mark.parametrize("deleted_metric", [["tgi_request_success"]], indirect=True)
+    @pytest.mark.parametrize("deleted_metric", ["tgi_request_success"], indirect=True)
     def test_model_metrics_num_success_requests(
         self, http_s3_caikit_serverless_inference_service_auth_disabled, deleted_metric, prometheus
     ):
@@ -49,7 +49,7 @@ class TestModelMetrics:
 
     @pytest.mark.smoke
     @pytest.mark.polarion("ODS-2555")
-    @pytest.mark.parametrize("deleted_metric", [["tgi_request_count"]], indirect=True)
+    @pytest.mark.parametrize("deleted_metric", ["tgi_request_count"], indirect=True)
     def test_model_metrics_num_total_requests(
         self, http_s3_caikit_serverless_inference_service_auth_disabled, deleted_metric, prometheus
     ):
