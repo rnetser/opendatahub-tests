@@ -63,6 +63,7 @@ class TestModelMetrics:
             protocol=Protocols.HTTPS,
             model_name=ModelFormat.CAIKIT,
             iterations=total_runs,
+            run_in_parallel=True,
         )
         validate_metrics_value(
             prometheus=prometheus,
