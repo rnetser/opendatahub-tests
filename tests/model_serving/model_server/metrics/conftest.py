@@ -25,7 +25,7 @@ def deleted_metrics(prometheus: Prometheus) -> None:
     for metric in ("tgi_request_success", "tgi_request_count"):
         LOGGER.info(f"deleting {metric} metric")
         requests.get(
-            f"{prometheus.api_url}api/v1/admin/tsdb/delete_series?match[]={metric}",
+            f"{prometheus.api_url}/api/v1/admin/tsdb/delete_series?match[]={metric}",
             headers=prometheus.headers,
             verify=prometheus.verify_ssl,
         )
