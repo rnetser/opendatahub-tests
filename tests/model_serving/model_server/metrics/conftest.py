@@ -23,7 +23,7 @@ def prometheus(admin_client: DynamicClient) -> Prometheus:
 
 @pytest.fixture()
 def deleted_metric(request: FixtureRequest, prometheus: Prometheus) -> None:
-    metric = request.param["metric-name"]
+    metric = request.param
 
     LOGGER.info(f"deleting {metric} metric")
 

@@ -22,7 +22,7 @@ def run_inference_multiple_times(
 
     with ThreadPoolExecutor() as executor:
         for iteration in range(iterations):
-            infre_kwargs = {
+            infer_kwargs = {
                 "inference_service": isvc,
                 "runtime": runtime,
                 "inference_type": inference_type,
@@ -32,9 +32,9 @@ def run_inference_multiple_times(
             }
 
             if run_in_parallel:
-                futures.append(executor.submit(verify_inference_response, **infre_kwargs))
+                futures.append(executor.submit(verify_inference_response, **infer_kwargs))
             else:
-                verify_inference_response(**infre_kwargs)
+                verify_inference_response(**infer_kwargs)
 
         if futures:
             for result in as_completed(futures):
