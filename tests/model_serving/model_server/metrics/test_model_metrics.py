@@ -25,6 +25,7 @@ pytestmark = pytest.mark.usefixtures("skip_if_no_deployed_openshift_serverless",
     ],
     indirect=True,
 )
+@pytest.mark.usefixtures("deleted_metrics")
 class TestModelMetrics:
     @pytest.mark.smoke
     @pytest.mark.polarion("ODS-2555")
