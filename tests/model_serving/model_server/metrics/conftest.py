@@ -2,6 +2,8 @@ import pytest
 from kubernetes.dynamic import DynamicClient
 from ocp_utilities.monitoring import Prometheus
 
+from utilities.infra import get_openshift_token
+
 
 # @pytest.fixture(scope="session")
 # def thanos_url(admin_client: DynamicClient) -> str:
@@ -13,10 +15,10 @@ from ocp_utilities.monitoring import Prometheus
 
 
 @pytest.fixture(scope="session")
-def prometheus(client: DynamicClient, openshift_token: str) -> Prometheus:
+def prometheus(admin_client: DynamicClient) -> Prometheus:
     return Prometheus(
-        client=client,
+        client=admin_client,
         resource_name="thanos-querier",
         verify_ssl=False,
-        bearer_token=openshift_token,
+        bearer_token=get_openshift_token(),
     )
