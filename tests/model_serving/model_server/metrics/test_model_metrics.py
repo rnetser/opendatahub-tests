@@ -25,12 +25,13 @@ pytestmark = pytest.mark.usefixtures("skip_if_no_deployed_openshift_serverless",
     ],
     indirect=True,
 )
+@pytest.mark.usefixtures("deleted_metrics")
 class TestModelMetrics:
     @pytest.mark.smoke
     @pytest.mark.polarion("ODS-2555")
-    @pytest.mark.parametrize("deleted_metric", ["tgi_request_success"], indirect=True)
+    @pytest.mark.dependency(name="test_model_metrics_num_success_requests")
     def test_model_metrics_num_success_requests(
-        self, http_s3_caikit_serverless_inference_service_auth_disabled, deleted_metric, prometheus
+        self, http_s3_caikit_serverless_inference_service_auth_disabled, prometheus
     ):
         """Verify number of successful model requests in OpenShift monitoring system (UserWorkloadMonitoring)metrics"""
         verify_inference_response(
@@ -49,9 +50,9 @@ class TestModelMetrics:
 
     @pytest.mark.smoke
     @pytest.mark.polarion("ODS-2555")
-    @pytest.mark.parametrize("deleted_metric", ["tgi_request_count"], indirect=True)
+    @pytest.mark.dependency(depends=["test_model_metrics_num_success_requests"])
     def test_model_metrics_num_total_requests(
-        self, http_s3_caikit_serverless_inference_service_auth_disabled, deleted_metric, prometheus
+        self, http_s3_caikit_serverless_inference_service_auth_disabled, prometheus
     ):
         """Verify number of total model requests in OpenShift monitoring system (UserWorkloadMonitoring)metrics"""
         total_runs = 5
@@ -68,5 +69,5 @@ class TestModelMetrics:
         validate_metrics_value(
             prometheus=prometheus,
             metric_name="tgi_request_count",
-            expected_value=str(total_runs),
+            expected_value=str(total_runs + 1),
         )
