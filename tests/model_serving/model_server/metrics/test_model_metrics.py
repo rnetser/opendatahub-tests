@@ -18,6 +18,7 @@ pytestmark = pytest.mark.usefixtures(
 
 
 @pytest.mark.serverless
+@pytest.mark.jira("RHOAIENG-3236", run=False)
 @pytest.mark.parametrize(
     "model_namespace, s3_models_storage_uri",
     [
