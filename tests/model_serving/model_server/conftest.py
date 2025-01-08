@@ -11,7 +11,6 @@ from ocp_resources.service_account import ServiceAccount
 from ocp_resources.serving_runtime import ServingRuntime
 
 from tests.model_serving.model_server.utils import create_isvc
-from utilities.constants import KServeDeploymentType, ModelFormat, Protocols
 from utilities.infra import s3_endpoint_secret
 from utilities.serving_runtime import ServingRuntimeFromTemplate
 
@@ -126,47 +125,4 @@ def s3_models_inference_service(
     isvc_kwargs["enable_auth"] = enable_auth
 
     with create_isvc(**isvc_kwargs) as isvc:
-        yield isvc
-
-
-@pytest.fixture(scope="class")
-def http_s3_caikit_serverless_inference_service_auth_enabled(
-    admin_client: DynamicClient,
-    model_namespace: Namespace,
-    http_s3_caikit_tgis_serving_runtime: ServingRuntime,
-    s3_models_storage_uri: str,
-    http_model_service_account: ServiceAccount,
-) -> InferenceService:
-    with create_isvc(
-        client=admin_client,
-        name=f"{Protocols.HTTP}-{ModelFormat.CAIKIT}",
-        namespace=model_namespace.name,
-        runtime=http_s3_caikit_tgis_serving_runtime.name,
-        storage_uri=s3_models_storage_uri,
-        model_format=http_s3_caikit_tgis_serving_runtime.instance.spec.supportedModelFormats[0].name,
-        deployment_mode=KServeDeploymentType.SERVERLESS,
-        model_service_account=http_model_service_account.name,
-        enable_auth=True,
-    ) as isvc:
-        yield isvc
-
-
-@pytest.fixture(scope="class")
-def http_s3_caikit_serverless_inference_service_auth_disabled(
-    admin_client: DynamicClient,
-    model_namespace: Namespace,
-    http_s3_caikit_tgis_serving_runtime: ServingRuntime,
-    s3_models_storage_uri: str,
-    http_model_service_account: ServiceAccount,
-) -> InferenceService:
-    with create_isvc(
-        client=admin_client,
-        name=f"{Protocols.HTTP}-{ModelFormat.CAIKIT}",
-        namespace=model_namespace.name,
-        runtime=http_s3_caikit_tgis_serving_runtime.name,
-        storage_uri=s3_models_storage_uri,
-        model_format=http_s3_caikit_tgis_serving_runtime.instance.spec.supportedModelFormats[0].name,
-        deployment_mode=KServeDeploymentType.SERVERLESS,
-        model_service_account=http_model_service_account.name,
-    ) as isvc:
         yield isvc
