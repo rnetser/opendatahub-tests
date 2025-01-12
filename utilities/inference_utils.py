@@ -13,7 +13,7 @@ from ocp_resources.service import Service
 from pyhelper_utils.shell import run_command
 from simple_logger.logger import get_logger
 
-from utilities.infra import get_services_by_isvc_label
+from utilities.infra import get_pods_by_isvc_label, get_services_by_isvc_label
 from utilities.certificates_utils import get_ca_bundle
 from utilities.constants import (
     KServeDeploymentType,
@@ -46,8 +46,16 @@ class Inference:
     def get_inference_url(self) -> str:
         # TODO: add ModelMesh support
         if self.visibility_exposed:
-            if url := self.inference_service.instance.status.components.predictor.url:
+            if self.deployment_mode == KServeDeploymentType.SERVERLESS and (
+                url := self.inference_service.instance.status.components.predictor.url
+            ):
                 return urlparse(url).netloc
+
+            elif self.deployment_mode == KServeDeploymentType.RAW_DEPLOYMENT and (
+                url := self.inference_service.instance.status.url
+            ):
+                return urlparse(url).netloc
+
             else:
                 raise ValueError(f"{self.inference_service.name}: No url found in InferenceService status")
 
@@ -295,7 +303,19 @@ class UserInference(Inference):
         else:
             svc_protocol = self.protocol
 
-        for port in svc.instance.spec.ports:
+        ports = svc.instance.spec.ports
+
+        # For multi node with headless service, we need to get the pod to get the port
+        # TODO: check behavior for both normal and headless service
+        if self.inference_service.instance.spec.predictor.workerSpec and not self.visibility_exposed:
+            pod = get_pods_by_isvc_label(client=self.inference_service.client, isvc=self.inference_service)[0]
+            if ports := pod.instance.spec.containers[0].ports:
+                return ports[0].containerPort
+
+        if not ports:
+            raise ValueError(f"Service {svc.name} has no ports")
+
+        for port in ports:
             svc_port = port.targetPort if isinstance(port.targetPort, int) else port.port
 
             if (
