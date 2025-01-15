@@ -107,7 +107,7 @@ def s3_models_inference_service(
     model_namespace: Namespace,
     serving_runtime_from_template: ServingRuntime,
     s3_models_storage_uri: str,
-    model_service_account: ServiceAccount,
+    models_endpoint_s3_secret: Secret,
 ) -> InferenceService:
     isvc_kwargs = {
         "client": admin_client,
@@ -116,8 +116,9 @@ def s3_models_inference_service(
         "runtime": serving_runtime_from_template.name,
         "storage_uri": s3_models_storage_uri,
         "model_format": serving_runtime_from_template.instance.spec.supportedModelFormats[0].name,
-        "model_service_account": model_service_account.name,
         "deployment_mode": request.param["deployment-mode"],
+        "storage_key": models_endpoint_s3_secret.name,
+        "storage_path": request.param["model-dir"],
     }
 
     if (external_route := request.param.get("external-route")) is not None:
