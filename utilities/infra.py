@@ -10,6 +10,7 @@ import kubernetes
 from kubernetes.dynamic import DynamicClient
 from kubernetes.dynamic.exceptions import ResourceNotFoundError, ResourceNotUniqueError
 from ocp_resources.catalog_source import CatalogSource
+from ocp_resources.config_map import ConfigMap
 from ocp_resources.deployment import Deployment
 from ocp_resources.inference_service import InferenceService
 from ocp_resources.infrastructure import Infrastructure
@@ -25,7 +26,7 @@ from pytest_testconfig import config as py_config
 from simple_logger.logger import get_logger
 
 from utilities.constants import KServeDeploymentType, MODELMESH_SERVING
-from utilities.general import b64_encoded_string, get_s3_secret_dict
+import utilities.general
 
 
 LOGGER = get_logger(name=__name__)
@@ -116,7 +117,9 @@ def s3_endpoint_secret(
         name=name,
         namespace=namespace,
         annotations={"opendatahub.io/connection-type": "s3"},
-        data_dict=get_s3_secret_dict(
+        # the labels are needed to set the secret as data connection by odh-model-controller
+        label={"opendatahub.io/managed": "true", "opendatahub.io/dashboard": "true"},
+        data_dict=utilities.general.get_s3_secret_dict(
             aws_access_key=aws_access_key,
             aws_secret_access_key=aws_secret_access_key,
             aws_s3_bucket=aws_s3_bucket,
@@ -148,7 +151,7 @@ def create_storage_config_secret(
         "secret_access_key": aws_secret_access_key,
         "type": "s3",
     }
-    data = {endpoint_secret_name: b64_encoded_string(string_to_encode=json.dumps(secret))}
+    data = {endpoint_secret_name: utilities.general.b64_encoded_string(string_to_encode=json.dumps(secret))}
     with Secret(
         client=admin_client,
         namespace=namespace,
@@ -298,3 +301,12 @@ def get_pods_by_isvc_label(client: DynamicClient, isvc: InferenceService) -> Lis
 
 def get_openshift_token() -> str:
     return run_command(command=shlex.split("oc whoami -t"))[1].strip()
+
+
+def get_kserve_storage_initialize_image(client: DynamicClient) -> str:
+    kserve_cm = ConfigMap(client=client, name="inferenceservice-config", namespace=py_config["applications_namespace"])
+
+    if not kserve_cm.exists:
+        raise ResourceNotFoundError(f"{kserve_cm.name} config map does not exist")
+
+    return json.loads(kserve_cm.instance.data.storageInitializer)["image"]
