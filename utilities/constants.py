@@ -91,7 +91,7 @@ class Protocols:
     GRPC: str = "grpc"
     REST: str = "rest"
     TCP_PROTOCOLS: set[str] = {HTTP, HTTPS}
-    ALL_SUPPORTED_PROTOCOLS: set[str] = TCP_PROTOCOLS.union({"GRPC"})
+    ALL_SUPPORTED_PROTOCOLS: set[str] = TCP_PROTOCOLS.union({GRPC})
 
 
 class HTTPRequest:
