@@ -273,7 +273,6 @@ def unprivileged_s3_caikit_serverless_inference_service(
     unprivileged_client: DynamicClient,
     unprivileged_model_namespace: Namespace,
     unprivileged_s3_caikit_serving_runtime: ServingRuntime,
-    s3_models_storage_uri: str,
     unprivileged_models_endpoint_s3_secret: Secret,
 ) -> InferenceService:
     with create_isvc(
@@ -284,7 +283,7 @@ def unprivileged_s3_caikit_serverless_inference_service(
         model_format=unprivileged_s3_caikit_serving_runtime.instance.spec.supportedModelFormats[0].name,
         deployment_mode=KServeDeploymentType.SERVERLESS,
         storage_key=unprivileged_models_endpoint_s3_secret.name,
-        storage_path=urlparse(s3_models_storage_uri).path,
+        storage_path=request.param["model-dir"],
     ) as isvc:
         yield isvc
 

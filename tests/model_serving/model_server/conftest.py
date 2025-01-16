@@ -106,7 +106,6 @@ def s3_models_inference_service(
     admin_client: DynamicClient,
     model_namespace: Namespace,
     serving_runtime_from_template: ServingRuntime,
-    s3_models_storage_uri: str,
     models_endpoint_s3_secret: Secret,
 ) -> InferenceService:
     isvc_kwargs = {
@@ -114,7 +113,6 @@ def s3_models_inference_service(
         "name": request.param["name"],
         "namespace": model_namespace.name,
         "runtime": serving_runtime_from_template.name,
-        "storage_uri": s3_models_storage_uri,
         "model_format": serving_runtime_from_template.instance.spec.supportedModelFormats[0].name,
         "deployment_mode": request.param["deployment-mode"],
         "storage_key": models_endpoint_s3_secret.name,
