@@ -30,17 +30,17 @@ class InvalidStorageArgumentError(Exception):
         storage_key: Optional[str],
         storage_path: Optional[str],
     ):
-        self.storageUri = storage_uri
+        self.storage_uri = storage_uri
         self.storage_key = storage_key
         self.storage_path = storage_path
 
     def __str__(self) -> str:
         msg = f"""
             You've passed the following parameters:
-            "storage_uri": {self.storageUri}
+            "storage_uri": {self.storage_uri}
             "storage_key": {self.storage_key}
             "storage_path: {self.storage_path}
-            In order to create a valid ISVC you need to specify either a storageUri value
+            In order to create a valid ISVC you need to specify either a storage_uri value
             or both a storage key and a storage path.
         """
         return msg
