@@ -1,11 +1,15 @@
+from __future__ import annotations
+
 import base64
 from typing import Dict
 
 from kubernetes.dynamic import DynamicClient
+from ocp_resources.inference_service import InferenceService
 from ocp_resources.pod import Pod
 from simple_logger.logger import get_logger
 
 import utilities.infra
+from utilities.constants import KServeDeploymentType, KubernetesAnnotations, MODELMESH_SERVING
 
 LOGGER = get_logger(name=__name__)
 
@@ -104,3 +108,15 @@ def download_model_data(
         pod.wait_for_status(status=Pod.Status.SUCCEEDED, timeout=25 * 60)
 
     return model_path
+
+
+def create_isvc_label_selector_str(isvc: InferenceService) -> str:
+    if isvc.instance.metadata.annotations.get(KubernetesAnnotations.DEPLOYMENT_MODE) in (
+        KServeDeploymentType.SERVERLESS,
+        KServeDeploymentType.RAW_DEPLOYMENT,
+    ):
+        label_selector = f"{isvc.ApiGroup.SERVING_KSERVE_IO}/inferenceservice={isvc.name}"
+
+    else:
+        label_selector = f"modelmesh-service={MODELMESH_SERVING}"
+    return label_selector

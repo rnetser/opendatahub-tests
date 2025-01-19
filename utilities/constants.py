@@ -112,6 +112,7 @@ class KubernetesAnnotations:
     INSTANCE: str = f"{Resource.ApiGroup.APP_KUBERNETES_IO}/instance"
     PART_OF: str = f"{Resource.ApiGroup.APP_KUBERNETES_IO}/part-of"
     CREATED_BY: str = f"{Resource.ApiGroup.APP_KUBERNETES_IO}/created-by"
+    DEPLOYMENT_MODE: str = "serving.kserve.io/deploymentMode"
 
 
 class StorageClassName:
