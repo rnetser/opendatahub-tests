@@ -96,11 +96,6 @@ def serving_runtime_from_template(
 
 
 @pytest.fixture(scope="class")
-def ci_s3_storage_uri(request: FixtureRequest, ci_s3_bucket_name: str) -> str:
-    return f"s3://{ci_s3_bucket_name}/{request.param['model-dir']}/"
-
-
-@pytest.fixture(scope="class")
 def s3_models_inference_service(
     request: FixtureRequest,
     admin_client: DynamicClient,
