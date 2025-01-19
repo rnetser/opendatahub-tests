@@ -297,4 +297,4 @@ def get_pods_by_isvc_label(client: DynamicClient, isvc: InferenceService) -> Lis
 
 
 def get_openshift_token() -> str:
-    return run_command(command=shlex.split("oc whoami -t"))[1].strip()
+    return run_command(shlex.split("oc whoami -t"))[1].strip()
