@@ -1,5 +1,3 @@
-exclude: "class_generator/schema/*"
-
 default_language_version:
   python: python3
 
@@ -24,7 +22,7 @@ repos:
         args: [--config=.flake8]
         additional_dependencies:
           [
-            "git+https://github.com/RedHatQE/flake8-plugins.git@v0.0.5",
+            "git+https://github.com/RedHatQE/flake8-plugins.git@v0.0.6",
             "flake8-mutable",
           ]
 

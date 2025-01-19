@@ -49,7 +49,7 @@ def create_ns(
                 teardown=teardown,
                 delete_timeout=delete_timeout,
             )
-            project.wait_for_status(project.Status.ACTIVE, timeout=TIMEOUT_2MIN)
+            project.wait_for_status(status=project.Status.ACTIVE, timeout=TIMEOUT_2MIN)
             yield project
 
     else:
@@ -297,4 +297,4 @@ def get_pods_by_isvc_label(client: DynamicClient, isvc: InferenceService) -> Lis
 
 
 def get_openshift_token() -> str:
-    return run_command(shlex.split("oc whoami -t"))[1].strip()
+    return run_command(command=shlex.split("oc whoami -t"))[1].strip()
