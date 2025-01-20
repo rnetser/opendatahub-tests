@@ -9,7 +9,7 @@ from ocp_resources.pod import Pod
 from simple_logger.logger import get_logger
 
 import utilities.infra
-from utilities.constants import KServeDeploymentType, KubernetesAnnotations, MODELMESH_SERVING
+from utilities.constants import Annotations, KServeDeploymentType, MODELMESH_SERVING
 
 LOGGER = get_logger(name=__name__)
 
@@ -111,7 +111,7 @@ def download_model_data(
 
 
 def create_isvc_label_selector_str(isvc: InferenceService) -> str:
-    if isvc.instance.metadata.annotations.get(KubernetesAnnotations.DEPLOYMENT_MODE) in (
+    if isvc.instance.metadata.annotations.get(Annotations.KserveIo.DEPLOYMENT_MODE) in (
         KServeDeploymentType.SERVERLESS,
         KServeDeploymentType.RAW_DEPLOYMENT,
     ):
