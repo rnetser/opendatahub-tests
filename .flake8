@@ -18,6 +18,7 @@ exclude =
 fcn_exclude_functions =
     re,
     logging,
+    LOGGER,
     os,
     json,
     pytest,
