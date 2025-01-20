@@ -20,7 +20,10 @@ class TestModelRegistryCreation:
         cmd = generate_register_model_command(
             endpoint=model_registry_instance_rest_endpoint, token=current_client_token
         )
-        _, out, _ = run_command(command=shlex.split(cmd))
+        res, out, err = run_command(command=shlex.split(cmd))
+
+        assert res, f"Failed to run command, error: {err}"
+
         out_dict = literal_eval(node_or_string=out)
         errors = []
         if not out_dict["name"] == "model-name":
