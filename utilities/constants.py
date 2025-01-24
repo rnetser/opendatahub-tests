@@ -8,6 +8,7 @@ from utilities.manifests.openvino import (
     OPENVINO_INFERENCE_CONFIG,
     OPENVINO_KSERVE_INFERENCE_CONFIG,
 )
+from utilities.manifests.tensorflow import TENSORFLOW_INFERENCE_CONFIG
 from utilities.manifests.tgis_grpc import TGIS_INFERENCE_CONFIG
 from utilities.manifests.vllm import VLLM_INFERENCE_CONFIG
 
@@ -24,6 +25,7 @@ class ModelFormat:
     OPENVINO: str = "openvino"
     OVMS: str = "ovms"
     VLLM: str = "vllm"
+    TENSORFLOW: str = "tensorflow"
 
 
 class ModelName:
@@ -43,6 +45,7 @@ class ModelStoragePath:
     OPENVINO_EXAMPLE_MODEL: str = f"{ModelFormat.OPENVINO}-example-model"
     KSERVE_OPENVINO_EXAMPLE_MODEL: str = f"kserve-openvino-test/{OPENVINO_EXAMPLE_MODEL}"
     EMBEDDING_MODEL: str = "embeddingsmodel"
+    TENSORFLOW_MODEL: str = "inception_resnet_v2.pb"
 
 
 class CurlOutput:
@@ -73,6 +76,7 @@ class ModelInferenceRuntime:
     ONNX_RUNTIME: str = f"{ModelFormat.ONNX}-runtime"
     CAIKIT_STANDALONE_RUNTIME: str = f"{ModelFormat.CAIKIT}-standalone-runtime"
     VLLM_RUNTIME: str = f"{ModelFormat.VLLM}-runtime"
+    TENSORFLOW_RUNTIME: str = f"{ModelFormat.TENSORFLOW}-runtime"
 
     MAPPING: Dict[str, Any] = {
         CAIKIT_TGIS_RUNTIME: CAIKIT_TGIS_INFERENCE_CONFIG,
@@ -82,6 +86,7 @@ class ModelInferenceRuntime:
         ONNX_RUNTIME: ONNX_INFERENCE_CONFIG,
         CAIKIT_STANDALONE_RUNTIME: CAIKIT_STANDALONE_INFERENCE_CONFIG,
         VLLM_RUNTIME: VLLM_INFERENCE_CONFIG,
+        TENSORFLOW_RUNTIME: TENSORFLOW_INFERENCE_CONFIG,
     }
 
 
