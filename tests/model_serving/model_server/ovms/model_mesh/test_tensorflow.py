@@ -32,5 +32,4 @@ class TestTensorflowModelMesh:
             inference_type=Inference.INFER,
             protocol=Protocols.HTTPS,
             use_default_query=True,
-            model_name="vehicle-detection-0202",
         )

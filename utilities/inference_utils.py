@@ -205,7 +205,7 @@ class UserInference(Inference):
         if token:
             cmd += f" {HTTPRequest.AUTH_HEADER.format(token=token)}"
 
-        if insecure:
+        elif insecure:
             cmd += " --insecure"
 
         else:
