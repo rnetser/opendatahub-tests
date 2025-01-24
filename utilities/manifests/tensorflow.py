@@ -1,8 +1,3 @@
-import random
-
-SHAPE={"B": 1, "H": 299, "W": 299, "C": 3}
-DATA = [random.randrange(0, 255) for _ in range(SHAPE["C"] * SHAPE["H"] * SHAPE["W"])]
-
 TENSORFLOW_INFERENCE_CONFIG = {
         "default_query_model": {
             "query_input": "@utilities/manifests/tensorflow/vehicle-detection-inputs.txt",

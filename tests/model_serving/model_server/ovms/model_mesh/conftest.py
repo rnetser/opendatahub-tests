@@ -107,20 +107,18 @@ def http_s3_openvino_model_mesh_inference_service(
     ci_model_mesh_endpoint_s3_secret: Secret,
     model_mesh_model_service_account: ServiceAccount,
 ) -> InferenceService:
-    isvc_kwargs = {
-        "client": admin_client,
-        "name": f"{Protocols.HTTP}-{ModelFormat.OPENVINO}",
-        "namespace": ns_with_modelmesh_enabled.name,
-        "runtime": http_s3_ovms_model_mesh_serving_runtime.name,
-        "model_service_account": model_mesh_model_service_account.name,
-        "storage_key": ci_model_mesh_endpoint_s3_secret.name,
-        "storage_path": request.param.get("model-path"),
-        "model_format": ModelAndFormat.OPENVINO_IR,
-        "deployment_mode": KServeDeploymentType.MODEL_MESH,
-        "model_version": ModelVersion.OPSET1,
-    }
-
-    with create_isvc(**isvc_kwargs) as isvc:
+    with create_isvc(
+        client=admin_client,
+        name=f"{Protocols.HTTP}-{ModelFormat.OPENVINO}",
+        namespace=ns_with_modelmesh_enabled.name,
+        runtime=http_s3_ovms_model_mesh_serving_runtime.name,
+        model_service_account=model_mesh_model_service_account.name,
+        storage_key=ci_model_mesh_endpoint_s3_secret.name,
+        storage_path=request.param["model-path"],
+        model_format=ModelAndFormat.OPENVINO_IR,
+        deployment_mode=KServeDeploymentType.MODEL_MESH,
+        model_version=ModelVersion.OPSET1,
+    ) as isvc:
         yield isvc
 
 
@@ -194,25 +192,16 @@ def http_s3_tensorflow_model_mesh_inference_service(
     ci_model_mesh_endpoint_s3_secret: Secret,
     model_mesh_model_service_account: ServiceAccount,
 ) -> InferenceService:
-    isvc_kwargs = {
-        "client": admin_client,
-        "name": f"{Protocols.HTTP}-{ModelFormat.TENSORFLOW}",
-        "namespace": ns_with_modelmesh_enabled.name,
-        "runtime": http_s3_ovms_model_mesh_serving_runtime.name,
-        "model_service_account": model_mesh_model_service_account.name,
-        "storage_key": ci_model_mesh_endpoint_s3_secret.name,
-        "storage_path": request.param["model-path"],
-        "model_format": "tensorflow",
-        "deployment_mode": KServeDeploymentType.MODEL_MESH,
-        "model_version": "2",
-    }
-
-    enable_auth = False
-
-    if hasattr(request, "param"):
-        enable_auth = request.param.get("enable-auth")
-
-    isvc_kwargs["enable_auth"] = enable_auth
-
-    with create_isvc(**isvc_kwargs) as isvc:
+    with create_isvc(
+        client=admin_client,
+        name=f"{Protocols.HTTP}-{ModelFormat.TENSORFLOW}",
+        namespace=ns_with_modelmesh_enabled.name,
+        runtime=http_s3_ovms_model_mesh_serving_runtime.name,
+        model_service_account=model_mesh_model_service_account.name,
+        storage_key=ci_model_mesh_endpoint_s3_secret.name,
+        storage_path=request.param["model-path"],
+        model_format=ModelFormat.TENSORFLOW,
+        deployment_mode=KServeDeploymentType.MODEL_MESH,
+        model_version="2",
+    ) as isvc:
         yield isvc

@@ -25,7 +25,7 @@ def component_deployment(
     if (
         name in ("modelmesh-controller", "etcd") and modelmesh_management_state == ComponentManagementState.REMOVED
     ) or (name == "kserve-controller-manager" and kserve_management_state == ComponentManagementState.REMOVED):
-        return pytest.skip(f"{name} component is removed")
+        return pytest.skip(f"{name} component state is {ComponentManagementState.REMOVED}")
 
     deployment = Deployment(
         client=admin_client,
