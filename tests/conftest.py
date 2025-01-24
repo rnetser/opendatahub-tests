@@ -8,14 +8,14 @@ from typing import List, Tuple, Any, Generator
 import pytest
 import yaml
 from _pytest.tmpdir import TempPathFactory
-from kubernetes.dynamic.exceptions import ResourceNotFoundError
-from ocp_resources.data_science_cluster import DataScienceCluster
 from ocp_resources.secret import Secret
 from pyhelper_utils.shell import run_command
 from pytest import FixtureRequest, Config
 from kubernetes.dynamic import DynamicClient
+from kubernetes.dynamic.exceptions import ResourceNotFoundError
+from ocp_resources.data_science_cluster import DataScienceCluster
 from ocp_resources.namespace import Namespace
-from ocp_resources.resource import ResourceEditor, get_client
+from ocp_resources.resource import get_client, ResourceEditor
 from pytest_testconfig import config as py_config
 from simple_logger.logger import get_logger
 
@@ -245,11 +245,9 @@ def unprivileged_client(
 @pytest.fixture(scope="session")
 def dsc_resource(admin_client: DynamicClient):
     name = py_config["dsc_name"]
-
     for dsc in DataScienceCluster.get(dyn_client=admin_client, name=name):
         return dsc
-
-    raise ResourceNotFoundError(f"Data Science Cluster {name} not found")
+    raise ResourceNotFoundError(f"DSC resource {name} not found")
 
 
 @pytest.fixture(scope="module")
@@ -259,7 +257,7 @@ def updated_dsc_component_state(
 ) -> Generator[DataScienceCluster, Any, Any]:
     component_name = request.param["component_name"]
     desired_state = request.param["desired_state"]
-    # Condition type for component being successfully reconciled by DSC
+    # Condition type for component being succesfully reconciled by DSC
     condition_type = request.param["condition_type"]
     if dsc_resource.instance.spec.components[component_name].managementState != desired_state:
         with ResourceEditor(
