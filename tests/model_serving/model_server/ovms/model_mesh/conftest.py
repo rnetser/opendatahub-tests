@@ -49,11 +49,14 @@ def http_s3_ovms_model_mesh_serving_runtime(
     }
 
     enable_external_route = False
+    enable_auth = False
 
     if hasattr(request, "param"):
         enable_external_route = request.param.get("enable-external-route")
+        enable_auth = request.param.get("enable-auth")
 
     rt_kwargs["enable_external_route"] = enable_external_route
+    rt_kwargs["enable_auth"] = enable_auth
 
     with ServingRuntimeFromTemplate(**rt_kwargs) as model_runtime:
         yield model_runtime
@@ -116,13 +119,6 @@ def http_s3_openvino_model_mesh_inference_service(
         "deployment_mode": KServeDeploymentType.MODEL_MESH,
         "model_version": ModelVersion.OPSET1,
     }
-
-    enable_auth = False
-
-    if hasattr(request, "param"):
-        enable_auth = request.param.get("enable-auth")
-
-    isvc_kwargs["enable_auth"] = enable_auth
 
     with create_isvc(**isvc_kwargs) as isvc:
         yield isvc

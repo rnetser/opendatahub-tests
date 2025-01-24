@@ -127,6 +127,11 @@ class StorageClassName:
     NFS: str = "nfs"
 
 
+class ComponentManagementState:
+    MANAGED: str = "Managed"
+    REMOVED: str = "Removed"
+
+
 MODELMESH_SERVING: str = "modelmesh-serving"
 ISTIO_CA_BUNDLE_FILENAME: str = "istio_knative.crt"
 OPENSHIFT_CA_BUNDLE_FILENAME: str = "openshift_ca.crt"
