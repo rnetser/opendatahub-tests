@@ -7,7 +7,7 @@ from ocp_resources.deployment import Deployment
 from ocp_resources.exceptions import MissingResourceResError
 from pytest_testconfig import config as py_config
 
-from utilities.constants import DscComponentManagementState
+from utilities.constants import DscComponents
 
 COMPONENTS_EXPECTED_REPLICAS: Dict[str, int] = {
     "odh-model-controller": 1,
@@ -23,9 +23,9 @@ def component_deployment(
 ) -> Deployment:
     name = request.param["name"]
     if (
-        name in ("modelmesh-controller", "etcd") and modelmesh_management_state == DscComponentManagementState.REMOVED
-    ) or (name == "kserve-controller-manager" and kserve_management_state == DscComponentManagementState.REMOVED):
-        return pytest.skip(f"{name} component state is {DscComponentManagementState.REMOVED}")
+        name in ("modelmesh-controller", "etcd") and modelmesh_management_state == DscComponents.ManagementState.REMOVED
+    ) or (name == "kserve-controller-manager" and kserve_management_state == DscComponents.ManagementState.REMOVED):
+        return pytest.skip(f"{name} component state is {DscComponents.ManagementState.REMOVED}")
 
     deployment = Deployment(
         client=admin_client,

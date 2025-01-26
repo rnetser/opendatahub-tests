@@ -205,7 +205,7 @@ class UserInference(Inference):
         if token:
             cmd += f" {HTTPRequest.AUTH_HEADER.format(token=token)}"
 
-        elif insecure:
+        if insecure:
             cmd += " --insecure"
 
         else:
@@ -215,7 +215,7 @@ class UserInference(Inference):
                 cmd += f" --cacert {ca} "
 
             else:
-                LOGGER.warning("No CA bundle found, using insecure aceess")
+                LOGGER.warning("No CA bundle found, using insecure access")
                 cmd += " --insecure"
 
         if cmd_args := self.runtime_config.get("args"):
