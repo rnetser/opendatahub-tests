@@ -11,6 +11,7 @@ from ocp_resources.namespace import Namespace
 from ocp_resources.persistent_volume_claim import PersistentVolumeClaim
 from ocp_resources.secret import Secret
 from ocp_resources.service_account import ServiceAccount
+from ocp_resources.service_mesh_control_plane import ServiceMeshControlPlane
 from ocp_resources.serving_runtime import ServingRuntime
 from ocp_resources.storage_class import StorageClass
 from pytest_testconfig import config as py_config
@@ -24,11 +25,12 @@ from utilities.serving_runtime import ServingRuntimeFromTemplate
 
 @pytest.fixture(scope="package")
 def skip_if_no_deployed_openshift_serverless(admin_client: DynamicClient):
+    name = "openshift-serverless"
     csvs = list(
         ClusterServiceVersion.get(
             client=admin_client,
-            namespace="openshift-serverless",
-            label_selector="operators.coreos.com/serverless-operator.openshift-serverless",
+            namespace=name,
+            label_selector=f"operators.coreos.com/serverless-operator.{name}",
         )
     )
     if not csvs:
@@ -183,7 +185,7 @@ def skip_if_kserve_disabled(kserve_management_state: str) -> None:
 
 
 @pytest.fixture(scope="package")
-def skip_if_no_authorino_operator(admin_client: DynamicClient):
+def skip_if_no_redhat_authorino_operator(admin_client: DynamicClient):
     name = "authorino"
     if not Authorino(
         client=admin_client,
@@ -209,3 +211,12 @@ def enabled_modelmesh_in_dsc(dsc_resource: DataScienceCluster) -> Generator[Data
         components={DscComponents.MODELMESHSERVING: DscComponents.ManagementState.MANAGED},
     ) as dsc:
         yield dsc
+
+
+@pytest.fixture(scope="package")
+def skip_if_no_deployed_openshift_service_mesh(admin_client: DynamicClient):
+    smcp = ServiceMeshControlPlane(client=admin_client, name="data-science-smcp", namespace="istio-system")
+    if not smcp or not smcp.exists:
+        pytest.skip("OpenShift service mesh operator is not deployed")
+
+    smcp.wait_for_condition(condition=smcp.Condition.READY, status="True")
