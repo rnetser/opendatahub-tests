@@ -22,7 +22,7 @@ from utilities.data_science_cluster_utils import update_components_in_dsc
 from utilities.serving_runtime import ServingRuntimeFromTemplate
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="package")
 def skip_if_no_deployed_openshift_serverless(admin_client: DynamicClient):
     csvs = list(
         ClusterServiceVersion.get(
@@ -177,12 +177,12 @@ def skip_if_modelmesh_disabled(modelmesh_management_state: str) -> None:
     )
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="package")
 def skip_if_kserve_disabled(kserve_management_state: str) -> None:
     pytest.mark.skipif(condition=kserve_management_state is False, reason=f"{DscComponents.KSERVE} disabled")
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="package")
 def skip_if_no_authorino_operator(admin_client: DynamicClient):
     name = "authorino"
     if not Authorino(
@@ -193,7 +193,7 @@ def skip_if_no_authorino_operator(admin_client: DynamicClient):
         pytest.skip(f"{name} operator is missing from the cluster")
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="package")
 def enabled_kserve_in_dsc(dsc_resource: DataScienceCluster) -> Generator[DataScienceCluster, Any, Any]:
     with update_components_in_dsc(
         dsc=dsc_resource,
@@ -202,7 +202,7 @@ def enabled_kserve_in_dsc(dsc_resource: DataScienceCluster) -> Generator[DataSci
         yield dsc
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="package")
 def enabled_modelmesh_in_dsc(dsc_resource: DataScienceCluster) -> Generator[DataScienceCluster, Any, Any]:
     with update_components_in_dsc(
         dsc=dsc_resource,
