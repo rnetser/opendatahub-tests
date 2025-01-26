@@ -30,12 +30,14 @@ def update_components_in_dsc(
     """
     dsc_dict: dict[str, dict[str, dict[str, dict[str, str]]]] = {}
     dsc_components = dsc.instance.spec.components
+    component_to_reconcile = {}
 
     for component_name, desired_state in components.items():
-        if dsc_components[component_name].managementState != desired_state:
+        if (orig_state := dsc_components[component_name].managementState) != desired_state:
             dsc_dict.setdefault("spec", {}).setdefault("components", {})[component_name] = {
                 "managementState": desired_state
             }
+            component_to_reconcile[component_name] = orig_state
         else:
             LOGGER.warning(f"Component {component_name} was already set to managementState {desired_state}")
 
@@ -46,7 +48,9 @@ def update_components_in_dsc(
                     dsc.wait_for_condition(condition=DscComponents.COMPONENT_MAPPING[component], status="True")
             yield dsc
 
-        dsc.wait_for_status(status=dsc.Status.READY)
+        for component, state in component_to_reconcile.items():
+            if state == DscComponents.ManagementState.MANAGED:
+                dsc.wait_for_condition(condition=DscComponents.COMPONENT_MAPPING[component], status="True")
 
     else:
         yield dsc
