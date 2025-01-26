@@ -15,9 +15,10 @@ from ocp_resources.serving_runtime import ServingRuntime
 from ocp_resources.storage_class import StorageClass
 from pytest_testconfig import config as py_config
 
-from tests.model_serving.model_server.utils import create_isvc, enable_model_server_components_in_dsc
+from tests.model_serving.model_server.utils import create_isvc
 from utilities.constants import DscComponents, StorageClassName
 from utilities.infra import s3_endpoint_secret
+from utilities.data_science_cluster_utils import update_components_in_dsc
 from utilities.serving_runtime import ServingRuntimeFromTemplate
 
 
@@ -193,18 +194,18 @@ def skip_if_no_authorino_operator(admin_client: DynamicClient):
 
 
 @pytest.fixture(scope="session")
-def enabled_kserve_in_dsc(dsc_resource: DataScienceCluster) -> None:
-    with enable_model_server_components_in_dsc(
+def enabled_kserve_in_dsc(dsc_resource: DataScienceCluster) -> Generator[DataScienceCluster, Any, Any]:
+    with update_components_in_dsc(
         dsc=dsc_resource,
-        components=[DscComponents.KSERVE],
-    ):
-        yield
+        components={DscComponents.KSERVE: DscComponents.ManagementState.MANAGED},
+    ) as dsc:
+        yield dsc
 
 
 @pytest.fixture(scope="session")
-def enabled_modelmesh_in_dsc(dsc_resource: DataScienceCluster) -> None:
-    with enable_model_server_components_in_dsc(
+def enabled_modelmesh_in_dsc(dsc_resource: DataScienceCluster) -> Generator[DataScienceCluster, Any, Any]:
+    with update_components_in_dsc(
         dsc=dsc_resource,
-        components=[DscComponents.MODELMESHSERVING],
-    ):
-        yield
+        components={DscComponents.MODELMESHSERVING: DscComponents.ManagementState.MANAGED},
+    ) as dsc:
+        yield dsc
