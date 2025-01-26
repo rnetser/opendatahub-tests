@@ -127,6 +127,11 @@ class StorageClassName:
     NFS: str = "nfs"
 
 
+class DscComponents:
+    MODELMESHSERVING: str = "modelmeshserving"
+    KSERVE: str = "kserve"
+
+
 class ComponentManagementState:
     MANAGED: str = "Managed"
     REMOVED: str = "Removed"

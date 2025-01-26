@@ -3,7 +3,9 @@ from typing import Any, Generator
 import pytest
 from _pytest.fixtures import FixtureRequest
 from kubernetes.dynamic import DynamicClient
+from ocp_resources.authorino import Authorino
 from ocp_resources.cluster_service_version import ClusterServiceVersion
+from ocp_resources.data_science_cluster import DataScienceCluster
 from ocp_resources.inference_service import InferenceService
 from ocp_resources.namespace import Namespace
 from ocp_resources.persistent_volume_claim import PersistentVolumeClaim
@@ -11,9 +13,10 @@ from ocp_resources.secret import Secret
 from ocp_resources.service_account import ServiceAccount
 from ocp_resources.serving_runtime import ServingRuntime
 from ocp_resources.storage_class import StorageClass
+from pytest_testconfig import config as py_config
 
-from tests.model_serving.model_server.utils import create_isvc
-from utilities.constants import StorageClassName
+from tests.model_serving.model_server.utils import create_isvc, enable_model_server_components_in_dsc
+from utilities.constants import DscComponents, StorageClassName
 from utilities.infra import s3_endpoint_secret
 from utilities.serving_runtime import ServingRuntimeFromTemplate
 
@@ -154,3 +157,54 @@ def model_pvc(
 def skip_if_no_nfs_storage_class(admin_client: DynamicClient) -> None:
     if not StorageClass(client=admin_client, name=StorageClassName.NFS).exists:
         pytest.skip(f"StorageClass {StorageClassName.NFS} is missing from the cluster")
+
+
+@pytest.fixture(scope="class")
+def modelmesh_management_state(dsc_resource: DataScienceCluster) -> str:
+    return dsc_resource.instance.spec.components[DscComponents.MODELMESHSERVING].managementState
+
+
+@pytest.fixture(scope="class")
+def kserve_management_state(dsc_resource: DataScienceCluster) -> str:
+    return dsc_resource.instance.spec.components[DscComponents.KSERVE].managementState
+
+
+@pytest.fixture(scope="session")
+def skip_if_modelmesh_disabled(modelmesh_management_state: str) -> None:
+    pytest.mark.skipif(
+        condition=modelmesh_management_state is False, reason=f"{DscComponents.MODELMESHSERVING} disabled"
+    )
+
+
+@pytest.fixture(scope="session")
+def skip_if_kserve_disabled(kserve_management_state: str) -> None:
+    pytest.mark.skipif(condition=kserve_management_state is False, reason=f"{DscComponents.KSERVE} disabled")
+
+
+@pytest.fixture(scope="session")
+def skip_if_no_authorino_operator(admin_client: DynamicClient):
+    name = "authorino"
+    if not Authorino(
+        client=admin_client,
+        name=name,
+        namespace=f"{py_config['applications_namespace']}-auth-provider",
+    ).exists:
+        pytest.skip(f"{name} operator is missing from the cluster")
+
+
+@pytest.fixture(scope="session")
+def enabled_kserve_in_dsc(dsc_resource: DataScienceCluster) -> None:
+    with enable_model_server_components_in_dsc(
+        dsc=dsc_resource,
+        components=[DscComponents.KSERVE],
+    ):
+        yield
+
+
+@pytest.fixture(scope="session")
+def enabled_modelmesh_in_dsc(dsc_resource: DataScienceCluster) -> None:
+    with enable_model_server_components_in_dsc(
+        dsc=dsc_resource,
+        components=[DscComponents.MODELMESHSERVING],
+    ):
+        yield

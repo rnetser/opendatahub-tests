@@ -5,12 +5,22 @@ from string import Template
 from typing import Any, Dict, Generator, Optional
 
 from kubernetes.dynamic import DynamicClient
+from ocp_resources.data_science_cluster import DataScienceCluster
 from ocp_resources.inference_service import InferenceService
+from ocp_resources.resource import ResourceEditor
 from simple_logger.logger import get_logger
 from timeout_sampler import TimeoutSampler
 
-from utilities.constants import Annotations, KServeDeploymentType
-from utilities.exceptions import FailedPodsError, InferenceResponseError, InvalidStorageArgumentError
+from utilities.constants import (
+    Annotations,
+    ComponentManagementState,
+    KServeDeploymentType,
+)
+from utilities.exceptions import (
+    FailedPodsError,
+    InferenceResponseError,
+    InvalidStorageArgumentError,
+)
 from utilities.inference_utils import UserInference
 from utilities.infra import (
     get_pods_by_isvc_label,
@@ -287,3 +297,28 @@ def verify_inference_response(
 
         else:
             raise InferenceResponseError(f"Inference response output not found in response. Response: {res}")
+
+
+@contextmanager
+def enable_model_server_components_in_dsc(
+    dsc: DataScienceCluster, components: list[str], wait_for_status_ready: bool = True
+) -> Generator[DataScienceCluster, Any, Any]:
+    dsc_dict: dict[str, dict[str, dict[str, dict[str, str]]]] = {}
+    dsc_components = dsc.instance.spec.components
+
+    for component in components:
+        if dsc_components[component].managementState == ComponentManagementState.REMOVED:
+            dsc_dict.setdefault("spec", {}).setdefault("components", {})[component] = {
+                "managementState": ComponentManagementState.MANAGED
+            }
+
+    if dsc_dict:
+        with ResourceEditor(patches={dsc: dsc_dict}):
+            if wait_for_status_ready:
+                dsc.wait_for_status(status=dsc.Status.READY)
+            yield dsc
+
+        dsc.wait_for_status(status=dsc.Status.READY)
+
+    else:
+        yield dsc

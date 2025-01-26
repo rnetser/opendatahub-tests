@@ -9,7 +9,9 @@ from utilities.constants import (
 from utilities.inference_utils import Inference
 
 
-@pytest.mark.model_mesh
+pytestmark = [pytest.mark.modelmesh]
+
+
 @pytest.mark.parametrize(
     "ns_with_modelmesh_enabled, http_s3_ovms_model_mesh_serving_runtime,"
     " http_s3_tensorflow_model_mesh_inference_service",
