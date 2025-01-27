@@ -172,18 +172,6 @@ def kserve_management_state(dsc_resource: DataScienceCluster) -> str:
     return dsc_resource.instance.spec.components[DscComponents.KSERVE].managementState
 
 
-@pytest.fixture(scope="session")
-def skip_if_modelmesh_disabled(modelmesh_management_state: str) -> None:
-    pytest.mark.skipif(
-        condition=modelmesh_management_state is False, reason=f"{DscComponents.MODELMESHSERVING} disabled"
-    )
-
-
-@pytest.fixture(scope="package")
-def skip_if_kserve_disabled(kserve_management_state: str) -> None:
-    pytest.mark.skipif(condition=kserve_management_state is False, reason=f"{DscComponents.KSERVE} disabled")
-
-
 @pytest.fixture(scope="package")
 def skip_if_no_redhat_authorino_operator(admin_client: DynamicClient):
     name = "authorino"
