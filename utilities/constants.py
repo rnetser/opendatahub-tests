@@ -137,14 +137,14 @@ class DscComponents:
         REMOVED: str = "Removed"
 
     class ConditionType:
-        MODEL_REGISTRY_OPERATOR_READY: str = "model-registry-operatorReady"
+        MODEL_REGISTRY_READY: str = "ModelRegistryReady"
         KSERVE_READY: str = "kserveReady"
         MODEL_MESH_SERVING_READY: str = "ModelMeshServingReady"
 
     COMPONENT_MAPPING: dict[str, str] = {
         MODELMESHSERVING: ConditionType.MODEL_MESH_SERVING_READY,
         KSERVE: ConditionType.KSERVE_READY,
-        MODELREGISTRY: ConditionType.MODEL_REGISTRY_OPERATOR_READY,
+        MODELREGISTRY: ConditionType.MODEL_REGISTRY_READY,
     }
 
 
