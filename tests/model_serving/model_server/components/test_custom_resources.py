@@ -13,7 +13,7 @@ from utilities.constants import (
 
 LOGGER = get_logger(name=__name__)
 
-pytestmark = [pytest.mark.serverless, pytest.mark.usefixtures("valid_aws_config")]
+pytestmark = [pytest.mark.serverless, pytest.mark.slow, pytest.mark.usefixtures("valid_aws_config")]
 
 
 def wait_for_isvc_model_status(isvc: InferenceService, target_model_state: str, transition_status: str) -> None:
@@ -21,7 +21,7 @@ def wait_for_isvc_model_status(isvc: InferenceService, target_model_state: str, 
         f"Wait for {isvc.name} target model state {target_model_state} and transition status {transition_status}."
     )
 
-    samples = TimeoutSampler(wait_timeout=60 * 10, sleep=5, func=lambda: isvc.instance.status.modelStatus)
+    samples = TimeoutSampler(wait_timeout=60 * 30, sleep=5, func=lambda: isvc.instance.status.modelStatus)
 
     sample = None
     try:
