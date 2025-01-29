@@ -30,6 +30,7 @@ def managed_modelmesh_kserve_in_dsc(
         yield dsc
 
 
+@pytest.fixture(scope="class")
 def invalid_s3_models_inference_service(
     request: FixtureRequest,
     admin_client: DynamicClient,
