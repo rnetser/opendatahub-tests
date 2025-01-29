@@ -21,7 +21,7 @@ def wait_for_isvc_model_status(isvc: InferenceService, target_model_state: str, 
         f"Wait for {isvc.name} target model state {target_model_state} and transition status {transition_status}."
     )
 
-    samples = TimeoutSampler(wait_timeout=60 * 30, sleep=5, func=lambda: isvc.instance.status.modelStatus)
+    samples = TimeoutSampler(wait_timeout=60 * 25, sleep=5, func=lambda: isvc.instance.status.modelStatus)
 
     sample = None
     try:
@@ -47,7 +47,7 @@ def wait_for_isvc_model_status(isvc: InferenceService, target_model_state: str, 
                 "enable-http": True,
             },
             {
-                "name": "non-existing-models-storage-path",
+                "name": "missing-path",
                 "deployment-mode": KServeDeploymentType.SERVERLESS,
             },
         )
@@ -55,6 +55,7 @@ def wait_for_isvc_model_status(isvc: InferenceService, target_model_state: str, 
     indirect=True,
 )
 class TestInferenceServiceCustomResources:
+    @pytest.mark.dependency(name="test_isvc_with_invalid_models_s3_path")
     def test_isvc_with_invalid_models_s3_path(self, invalid_s3_models_inference_service):
         """Test ISVC status with invalid models storage path"""
         wait_for_isvc_model_status(
@@ -68,6 +69,7 @@ class TestInferenceServiceCustomResources:
         [pytest.param({"model-dir": ModelStoragePath.FLAN_T5_SMALL})],
         indirect=True,
     )
+    @pytest.mark.dependency(depends=["test_isvc_with_invalid_models_s3_path"])
     def test_isvc_with_updated_valid_models_s3_path(self, s3_models_storage_uri, updated_s3_models_inference_service):
         """Test inference status after updating the model storage path"""
         wait_for_isvc_model_status(
