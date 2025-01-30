@@ -15,7 +15,13 @@ from ocp_resources.service_account import ServiceAccount
 from ocp_resources.serving_runtime import ServingRuntime
 from pyhelper_utils.shell import run_command
 
-from utilities.infra import create_isvc_view_role, create_ns, s3_endpoint_secret, create_inference_token
+from utilities.infra import (
+    create_isvc_view_role,
+    create_ns,
+    get_pods_by_isvc_label,
+    s3_endpoint_secret,
+    create_inference_token,
+)
 from tests.model_serving.model_server.utils import create_isvc
 from utilities.constants import (
     KServeDeploymentType,
@@ -170,6 +176,12 @@ def patched_remove_authentication_isvc(
             }
         }
     ):
+        predictor_pod = get_pods_by_isvc_label(
+            client=admin_client,
+            isvc=http_s3_caikit_serverless_inference_service,
+        )[0]
+        predictor_pod.wait_deleted()
+
         yield http_s3_caikit_serverless_inference_service
 
 

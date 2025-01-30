@@ -119,9 +119,9 @@ class DscComponents:
         REMOVED: str = "Removed"
 
     class ConditionType:
-        MODEL_REGISTRY_READY: str = "ModelRegistryReady"
-        KSERVE_READY: str = "KserveReady"
-        MODEL_MESH_SERVING_READY: str = "ModelMeshServingReady"
+        MODEL_REGISTRY_READY: str = "model-registry-operatorReady"
+        KSERVE_READY: str = "kserveReady"
+        MODEL_MESH_SERVING_READY: str = "model-meshReady"
 
     COMPONENT_MAPPING: dict[str, str] = {
         MODELMESHSERVING: ConditionType.MODEL_MESH_SERVING_READY,
