@@ -32,7 +32,6 @@ from utilities.constants import (
 )
 from utilities.serving_runtime import ServingRuntimeFromTemplate
 from utilities.constants import Annotations
-from utilities.constants import Labels
 
 
 # GRPC model serving
@@ -134,31 +133,7 @@ def http_role_binding(
 
 
 @pytest.fixture(scope="class")
-def http_raw_role_binding(
-    admin_client: DynamicClient,
-    http_raw_view_role: Role,
-    model_service_account: ServiceAccount,
-    http_s3_caikit_raw_inference_service: InferenceService,
-) -> RoleBinding:
-    with RoleBinding(
-        client=admin_client,
-        namespace=model_service_account.namespace,
-        name=f"{Protocols.HTTP}-{model_service_account.name}-view",
-        role_ref_name=http_raw_view_role.name,
-        role_ref_kind=http_raw_view_role.kind,
-        subjects_kind=model_service_account.kind,
-        subjects_name=model_service_account.name,
-    ) as rb:
-        yield rb
-
-
-@pytest.fixture(scope="class")
 def http_inference_token(model_service_account: ServiceAccount, http_role_binding: RoleBinding) -> str:
-    return create_inference_token(model_service_account=model_service_account)
-
-
-@pytest.fixture(scope="class")
-def http_raw_inference_token(model_service_account: ServiceAccount, http_raw_role_binding: RoleBinding) -> str:
     return create_inference_token(model_service_account=model_service_account)
 
 
@@ -183,23 +158,6 @@ def patched_remove_authentication_isvc(
         predictor_pod.wait_deleted()
 
         yield http_s3_caikit_serverless_inference_service
-
-
-@pytest.fixture()
-def patched_remove_raw_authentication_isvc(
-    admin_client: DynamicClient,
-    http_s3_caikit_raw_inference_service: InferenceService,
-) -> InferenceService:
-    with ResourceEditor(
-        patches={
-            http_s3_caikit_raw_inference_service: {
-                "metadata": {
-                    "labels": {Labels.KserveAuth.SECURITY: "false"},
-                }
-            }
-        }
-    ):
-        yield http_s3_caikit_raw_inference_service
 
 
 @pytest.fixture(scope="class")
@@ -260,30 +218,6 @@ def http_s3_caikit_serverless_inference_service(
         enable_auth=True,
         storage_key=models_endpoint_s3_secret.name,
         storage_path=urlparse(s3_models_storage_uri).path,
-    ) as isvc:
-        yield isvc
-
-
-@pytest.fixture(scope="class")
-def http_s3_caikit_raw_inference_service(
-    request: FixtureRequest,
-    admin_client: DynamicClient,
-    model_namespace: Namespace,
-    http_s3_caikit_tgis_serving_runtime: ServingRuntime,
-    s3_models_storage_uri: str,
-    model_service_account: ServiceAccount,
-) -> InferenceService:
-    with create_isvc(
-        client=admin_client,
-        name=f"{Protocols.HTTP}-{ModelFormat.CAIKIT}",
-        namespace=model_namespace.name,
-        runtime=http_s3_caikit_tgis_serving_runtime.name,
-        storage_uri=s3_models_storage_uri,
-        model_format=http_s3_caikit_tgis_serving_runtime.instance.spec.supportedModelFormats[0].name,
-        deployment_mode=KServeDeploymentType.RAW_DEPLOYMENT,
-        model_service_account=model_service_account.name,
-        enable_auth=True,
-        external_route=True,
     ) as isvc:
         yield isvc
 
