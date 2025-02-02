@@ -1,4 +1,3 @@
-import shlex
 from typing import Any, Generator
 from urllib.parse import urlparse
 
@@ -13,9 +12,8 @@ from ocp_resources.role import Role
 from ocp_resources.secret import Secret
 from ocp_resources.service_account import ServiceAccount
 from ocp_resources.serving_runtime import ServingRuntime
-from pyhelper_utils.shell import run_command
 
-from utilities.infra import create_isvc_view_role, create_ns, s3_endpoint_secret, create_inference_token
+from utilities.infra import create_resource_view_role, create_ns, s3_endpoint_secret, create_inference_token
 from tests.model_serving.model_server.utils import create_isvc
 from utilities.constants import (
     KServeDeploymentType,
@@ -85,9 +83,9 @@ def http_view_role(
     admin_client: DynamicClient,
     http_s3_caikit_serverless_inference_service: InferenceService,
 ) -> Role:
-    with create_isvc_view_role(
+    with create_resource_view_role(
         client=admin_client,
-        isvc=http_s3_caikit_serverless_inference_service,
+        resource=http_s3_caikit_serverless_inference_service,
         name=f"{http_s3_caikit_serverless_inference_service.name}-view",
         resource_names=[http_s3_caikit_serverless_inference_service.name],
     ) as role:
@@ -99,9 +97,9 @@ def http_raw_view_role(
     admin_client: DynamicClient,
     http_s3_caikit_raw_inference_service: InferenceService,
 ) -> Role:
-    with create_isvc_view_role(
+    with create_resource_view_role(
         client=admin_client,
-        isvc=http_s3_caikit_raw_inference_service,
+        resource=http_s3_caikit_raw_inference_service,
         name=f"{http_s3_caikit_raw_inference_service.name}-view",
         resource_names=[http_s3_caikit_raw_inference_service.name],
     ) as role:
@@ -192,9 +190,9 @@ def patched_remove_raw_authentication_isvc(
 
 @pytest.fixture(scope="class")
 def grpc_view_role(admin_client: DynamicClient, grpc_s3_inference_service: InferenceService) -> Role:
-    with create_isvc_view_role(
+    with create_resource_view_role(
         client=admin_client,
-        isvc=grpc_s3_inference_service,
+        resource=grpc_s3_inference_service,
         name=f"{grpc_s3_inference_service.name}-view",
         resource_names=[grpc_s3_inference_service.name],
     ) as role:
@@ -222,11 +220,7 @@ def grpc_role_binding(
 
 @pytest.fixture(scope="class")
 def grpc_inference_token(grpc_model_service_account: ServiceAccount, grpc_role_binding: RoleBinding) -> str:
-    return run_command(
-        command=shlex.split(
-            f"oc create token -n {grpc_model_service_account.namespace} {grpc_model_service_account.name}"
-        )
-    )[1].strip()
+    return create_inference_token(model_service_account=grpc_model_service_account)
 
 
 @pytest.fixture(scope="class")
@@ -364,3 +358,59 @@ def http_s3_caikit_tgis_serving_runtime(
         enable_grpc=False,
     ) as model_runtime:
         yield model_runtime
+
+
+@pytest.fixture()
+def patched_remove_authentication_model_mesh_isvc(
+    admin_client: DynamicClient,
+    http_s3_openvino_model_mesh_inference_service: InferenceService,
+) -> InferenceService:
+    with ResourceEditor(
+        patches={
+            http_s3_openvino_model_mesh_inference_service: {
+                "metadata": {
+                    "annotations": {Annotations.KserveAuth.SECURITY: "false"},
+                }
+            }
+        }
+    ):
+        yield http_s3_openvino_model_mesh_inference_service
+
+
+@pytest.fixture(scope="class")
+def http_model_mesh_view_role(
+    admin_client: DynamicClient,
+    http_s3_ovms_model_mesh_serving_runtime: ServingRuntime,
+) -> Role:
+    with create_resource_view_role(
+        client=admin_client,
+        resource=http_s3_ovms_model_mesh_serving_runtime,
+        name=f"{http_s3_ovms_model_mesh_serving_runtime.name}-view",
+        resource_names=[http_s3_ovms_model_mesh_serving_runtime.name],
+    ) as role:
+        yield role
+
+
+@pytest.fixture(scope="class")
+def http_model_mesh_role_binding(
+    admin_client: DynamicClient,
+    http_model_mesh_view_role: Role,
+    model_service_account: ServiceAccount,
+) -> RoleBinding:
+    with RoleBinding(
+        client=admin_client,
+        namespace=model_service_account.namespace,
+        name=f"{Protocols.HTTP}-{model_service_account.name}-view",
+        role_ref_name=http_model_mesh_view_role.name,
+        role_ref_kind=http_model_mesh_view_role.kind,
+        subjects_kind=model_service_account.kind,
+        subjects_name=model_service_account.name,
+    ) as rb:
+        yield rb
+
+
+@pytest.fixture(scope="class")
+def http_model_mesh_inference_token(
+    model_service_account: ServiceAccount, http_model_mesh_role_binding: RoleBinding
+) -> str:
+    return create_inference_token(model_service_account=model_service_account)

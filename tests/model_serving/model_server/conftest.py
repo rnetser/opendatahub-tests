@@ -17,15 +17,18 @@ from ocp_resources.storage_class import StorageClass
 from pytest_testconfig import config as py_config
 
 from tests.model_serving.model_server.utils import create_isvc
-from utilities.constants import DscComponents, StorageClassName
 from utilities.constants import (
+    DscComponents,
     KServeDeploymentType,
-    ModelAndFormat,
     ModelFormat,
     ModelInferenceRuntime,
-    ModelVersion,
     Protocols,
     RuntimeTemplates,
+    StorageClassName,
+)
+from utilities.constants import (
+    ModelAndFormat,
+    ModelVersion,
 )
 from utilities.infra import s3_endpoint_secret
 from utilities.data_science_cluster_utils import update_components_in_dsc
@@ -394,5 +397,55 @@ def http_s3_tensorflow_model_mesh_inference_service(
         model_format=ModelFormat.TENSORFLOW,
         deployment_mode=KServeDeploymentType.MODEL_MESH,
         model_version="2",
+    ) as isvc:
+        yield isvc
+
+
+@pytest.fixture(scope="class")
+def http_s3_ovms_external_route_model_mesh_serving_runtime(
+    request: FixtureRequest,
+    admin_client: DynamicClient,
+    model_namespace: Namespace,
+) -> ServingRuntime:
+    with ServingRuntimeFromTemplate(
+        client=admin_client,
+        namespace=model_namespace.name,
+        name=f"{Protocols.HTTP}-{ModelInferenceRuntime.OPENVINO_RUNTIME}-exposed",
+        template_name=RuntimeTemplates.OVMS_MODEL_MESH,
+        multi_model=True,
+        protocol="REST",
+        resources={
+            "ovms": {
+                "requests": {"cpu": "1", "memory": "4Gi"},
+                "limits": {"cpu": "2", "memory": "8Gi"},
+            },
+        },
+        enable_external_route=True,
+        enable_auth=request.param.get("enable-auth"),
+    ) as model_runtime:
+        yield model_runtime
+
+
+@pytest.fixture(scope="class")
+def http_s3_openvino_second_model_mesh_inference_service(
+    request: FixtureRequest,
+    admin_client: DynamicClient,
+    model_namespace: Namespace,
+    ci_model_mesh_endpoint_s3_secret: Secret,
+    model_mesh_model_service_account: ServiceAccount,
+) -> InferenceService:
+    # Dynamically select the used ServingRuntime by passing "runtime-fixture-name" request.param
+    runtime = request.getfixturevalue(argname=request.param["runtime-fixture-name"])
+    with create_isvc(
+        client=admin_client,
+        name=f"{Protocols.HTTP}-{ModelFormat.OPENVINO}-2",
+        namespace=model_namespace.name,
+        runtime=runtime.name,
+        model_service_account=model_mesh_model_service_account.name,
+        storage_key=ci_model_mesh_endpoint_s3_secret.name,
+        storage_path=request.param["model-path"],
+        model_format=request.param["model-format"],
+        deployment_mode=KServeDeploymentType.MODEL_MESH,
+        model_version=request.param["model-version"],
     ) as isvc:
         yield isvc

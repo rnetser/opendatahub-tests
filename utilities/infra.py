@@ -134,16 +134,17 @@ def s3_endpoint_secret(
 
 
 @contextmanager
-def create_isvc_view_role(
+def create_resource_view_role(
     client: DynamicClient,
-    isvc: InferenceService,
+    resource: InferenceService | ServingRuntime,
     name: str,
     resource_names: Optional[List[str]] = None,
 ) -> Role:
+    resources_type = "inferenceservices" if isinstance(resource, InferenceService) else "servingruntimes"
     rules = [
         {
-            "apiGroups": [isvc.api_group],
-            "resources": ["inferenceservices"],
+            "apiGroups": [resource.api_group],
+            "resources": [resources_type],
             "verbs": ["get"],
         },
     ]
@@ -154,7 +155,7 @@ def create_isvc_view_role(
     with Role(
         client=client,
         name=name,
-        namespace=isvc.namespace,
+        namespace=resource.namespace,
         rules=rules,
     ) as role:
         yield role
