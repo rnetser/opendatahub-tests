@@ -100,20 +100,6 @@ def http_view_role(
 
 
 @pytest.fixture(scope="class")
-def http_raw_view_role(
-    admin_client: DynamicClient,
-    http_s3_caikit_raw_inference_service: InferenceService,
-) -> Role:
-    with create_isvc_view_role(
-        client=admin_client,
-        isvc=http_s3_caikit_raw_inference_service,
-        name=f"{http_s3_caikit_raw_inference_service.name}-view",
-        resource_names=[http_s3_caikit_raw_inference_service.name],
-    ) as role:
-        yield role
-
-
-@pytest.fixture(scope="class")
 def http_role_binding(
     admin_client: DynamicClient,
     http_view_role: Role,
