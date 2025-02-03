@@ -63,7 +63,7 @@ def models_endpoint_s3_secret(
     models_s3_bucket_name: str,
     models_s3_bucket_region: str,
     models_s3_bucket_endpoint: str,
-) -> Secret:
+) -> Generator[Secret, Any, Any]:
     with s3_endpoint_secret(
         admin_client=admin_client,
         name="models-bucket-secret",
@@ -79,7 +79,9 @@ def models_endpoint_s3_secret(
 
 # HTTP model serving
 @pytest.fixture(scope="class")
-def model_service_account(admin_client: DynamicClient, models_endpoint_s3_secret: Secret) -> ServiceAccount:
+def model_service_account(
+    admin_client: DynamicClient, models_endpoint_s3_secret: Secret
+) -> Generator[ServiceAccount, Any, Any]:
     with ServiceAccount(
         client=admin_client,
         namespace=models_endpoint_s3_secret.namespace,
@@ -120,7 +122,7 @@ def s3_models_inference_service(
     model_namespace: Namespace,
     serving_runtime_from_template: ServingRuntime,
     models_endpoint_s3_secret: Secret,
-) -> InferenceService:
+) -> Generator[InferenceService, Any, Any]:
     isvc_kwargs = {
         "client": admin_client,
         "name": request.param["name"],
@@ -175,7 +177,7 @@ def skip_if_no_nfs_storage_class(admin_client: DynamicClient) -> None:
 
 
 @pytest.fixture(scope="package")
-def skip_if_no_deployed_redhat_authorino_operator(admin_client: DynamicClient):
+def skip_if_no_deployed_redhat_authorino_operator(admin_client: DynamicClient) -> None:
     name = "authorino"
     namespace = f"{py_config['applications_namespace']}-auth-provider"
 
@@ -197,7 +199,7 @@ def enabled_kserve_in_dsc(dsc_resource: DataScienceCluster) -> Generator[DataSci
 
 
 @pytest.fixture(scope="package")
-def skip_if_no_deployed_openshift_service_mesh(admin_client: DynamicClient):
+def skip_if_no_deployed_openshift_service_mesh(admin_client: DynamicClient) -> None:
     smcp = ServiceMeshControlPlane(client=admin_client, name="data-science-smcp", namespace="istio-system")
     if not smcp or not smcp.exists:
         pytest.skip("OpenShift service mesh operator is not deployed")
@@ -213,7 +215,7 @@ def http_s3_openvino_model_mesh_inference_service(
     http_s3_ovms_model_mesh_serving_runtime: ServingRuntime,
     ci_model_mesh_endpoint_s3_secret: Secret,
     model_mesh_model_service_account: ServiceAccount,
-) -> InferenceService:
+) -> Generator[InferenceService, Any, Any]:
     with create_isvc(
         client=admin_client,
         name=f"{Protocols.HTTP}-{ModelFormat.OPENVINO}",
@@ -234,7 +236,7 @@ def http_s3_ovms_model_mesh_serving_runtime(
     request: FixtureRequest,
     admin_client: DynamicClient,
     model_namespace: Namespace,
-) -> ServingRuntime:
+) -> Generator[ServingRuntime, Any, Any]:
     runtime_kwargs = {
         "client": admin_client,
         "namespace": model_namespace.name,
@@ -273,7 +275,7 @@ def ci_model_mesh_endpoint_s3_secret(
     ci_s3_bucket_name: str,
     ci_s3_bucket_region: str,
     ci_s3_bucket_endpoint: str,
-) -> Secret:
+) -> Generator[Secret, Any, Any]:
     with s3_endpoint_secret(
         admin_client=admin_client,
         name="ci-bucket-secret",
@@ -290,7 +292,7 @@ def ci_model_mesh_endpoint_s3_secret(
 @pytest.fixture(scope="class")
 def model_mesh_model_service_account(
     admin_client: DynamicClient, ci_model_mesh_endpoint_s3_secret: Secret
-) -> ServiceAccount:
+) -> Generator[ServiceAccount, Any, Any]:
     with ServiceAccount(
         client=admin_client,
         namespace=ci_model_mesh_endpoint_s3_secret.namespace,
@@ -305,7 +307,7 @@ def openvino_kserve_serving_runtime(
     request: FixtureRequest,
     admin_client: DynamicClient,
     model_namespace: Namespace,
-) -> ServingRuntime:
+) -> Generator[ServingRuntime, Any, Any]:
     with ServingRuntimeFromTemplate(
         client=admin_client,
         name=request.param["runtime-name"],
@@ -332,7 +334,7 @@ def ci_endpoint_s3_secret(
     ci_s3_bucket_name: str,
     ci_s3_bucket_region: str,
     ci_s3_bucket_endpoint: str,
-) -> Secret:
+) -> Generator[Secret, Any, Any]:
     with s3_endpoint_secret(
         admin_client=admin_client,
         name="ci-bucket-secret",
