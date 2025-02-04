@@ -17,8 +17,8 @@ pytestmark = [pytest.mark.modelmesh, pytest.mark.sanity]
     "model_namespace, http_s3_ovms_model_mesh_serving_runtime, http_s3_openvino_model_mesh_inference_service",
     [
         pytest.param(
-            {"name": "model-mesh-multi-authentication", "modelmesh-enabled": True},
-            {"enable-auth": True},
+            {"name": "model-mesh-authentication", "modelmesh-enabled": True},
+            {"enable-auth": True, "enable-route": True},
             {"model-path": ModelStoragePath.OPENVINO_EXAMPLE_MODEL},
         )
     ],
