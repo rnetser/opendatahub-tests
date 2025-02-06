@@ -19,6 +19,7 @@ from ocp_resources.namespace import Namespace
 from ocp_resources.pod import Pod
 from ocp_resources.project_project_openshift_io import Project
 from ocp_resources.project_request import ProjectRequest
+from ocp_resources.resource import ResourceEditor
 from ocp_resources.role import Role
 from ocp_resources.route import Route
 from ocp_resources.secret import Secret
@@ -442,9 +443,39 @@ def create_inference_token(model_service_account: ServiceAccount) -> str:
     )[1].strip()
 
 
+@contextmanager
+def update_configmap_data(
+    client: DynamicClient, name: str, namespace: str, data: dict[str, Any]
+) -> Generator[ConfigMap, Any, Any]:
+    """
+    Update the data of a configmap.
+
+    Args:
+        client (DynamicClient): DynamicClient client.
+        name (str): Name of the configmap.
+        namespace (str): Namespace of the configmap.
+        data (dict[str, Any]): Data to update the configmap with.
+
+    Yields:
+        ConfigMap: The updated configmap.
+
+    """
+    config_map = ConfigMap(client=client, name=name, namespace=namespace)
+
+    # Some CM resources may already be present as they are usually created when doing exploratory testing
+    if config_map.exists:
+        with ResourceEditor(patches={config_map: {"data": data}}):
+            yield config_map
+
+    else:
+        config_map.data = data
+        with config_map as cm:
+            yield cm
+
+
 def check_pod_status_in_time(pod: Pod, status: Set[str], duration: int = TIMEOUT_2MIN, wait: int = 1) -> None:
     """
-    Checks if a pod has a given status for a given duration.
+    Checks if a pod status is maintained for a given duration. If not, an AssertionError is raised.
 
     Args:
         pod (Pod): The pod to check

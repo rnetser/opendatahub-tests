@@ -2,7 +2,8 @@ from kubernetes.dynamic import DynamicClient
 from ocp_resources.lm_eval_job import LMEvalJob
 from ocp_resources.pod import Pod
 
-from tests.trustyai.constants import TIMEOUT_10MIN
+
+from utilities.constants import Timeout
 from utilities.infra import check_pod_status_in_time
 from simple_logger.logger import get_logger
 
@@ -25,6 +26,6 @@ def verify_lmevaljob_running(client: DynamicClient, lmevaljob: LMEvalJob) -> Non
     """
 
     lmevaljob_pod = Pod(client=client, name=lmevaljob.name, namespace=lmevaljob.namespace, wait_for_resource=True)
-    lmevaljob_pod.wait_for_status(status=lmevaljob_pod.Status.RUNNING, timeout=TIMEOUT_10MIN)
+    lmevaljob_pod.wait_for_status(status=lmevaljob_pod.Status.RUNNING, timeout=Timeout.TIMEOUT_10MIN)
 
     check_pod_status_in_time(pod=lmevaljob_pod, status={lmevaljob_pod.Status.RUNNING, lmevaljob_pod.Status.SUCCEEDED})
