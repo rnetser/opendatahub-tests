@@ -29,6 +29,8 @@ from utilities.constants import (
 )
 import portforward
 
+from utilities.jira import is_jira_open
+
 LOGGER = get_logger(name=__name__)
 
 
@@ -43,11 +45,25 @@ class Inference:
             inference_service: InferenceService object
         """
         self.inference_service = inference_service
-        self.deployment_mode = self.inference_service.instance.metadata.annotations["serving.kserve.io/deploymentMode"]
+        self.deployment_mode = self.get_deployment_type()
         self.runtime = get_inference_serving_runtime(isvc=self.inference_service)
         self.visibility_exposed = self.is_service_exposed()
 
         self.inference_url = self.get_inference_url()
+
+    def get_deployment_type(self) -> str:
+        """
+        Get deployment type
+
+        Returns:
+            deployment type
+        """
+        deployment_type = self.inference_service.instance.metadata.annotations.get("serving.kserve.io/deploymentMode")
+
+        if is_jira_open(jira_id="RHOAIENG-16954", admin_client=get_client()) and not deployment_type:
+            return KServeDeploymentType.SERVERLESS
+
+        return deployment_type
 
     def get_inference_url(self) -> str:
         """

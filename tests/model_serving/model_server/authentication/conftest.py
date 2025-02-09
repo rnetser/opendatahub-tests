@@ -202,7 +202,7 @@ def patched_remove_raw_authentication_isvc(
             }
         }
     ):
-        if is_jira_open(jira_id="RHOAIENG-19275"):
+        if is_jira_open(jira_id="RHOAIENG-19275", admin_client=admin_client):
             predictor_pod.wait_deleted()
 
         yield http_s3_caikit_raw_inference_service

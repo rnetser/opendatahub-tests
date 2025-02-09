@@ -79,7 +79,10 @@ def verify_no_failed_pods(client: DynamicClient, isvc: InferenceService, runtime
 
                         is_terminated_error = (
                             terminate_state := container_status.state.terminated
-                        ) and terminate_state.reason in (pod.Status.ERROR, pod.Status.CRASH_LOOPBACK_OFF)
+                        ) and terminate_state.reason in (
+                            pod.Status.ERROR,
+                            pod.Status.CRASH_LOOPBACK_OFF,
+                        )
 
                         if is_waiting_pull_back_off or is_terminated_error:
                             failed_pods[pod.name] = pod_status
@@ -106,9 +109,9 @@ def create_isvc(
     client: DynamicClient,
     name: str,
     namespace: str,
-    deployment_mode: str,
     model_format: str,
     runtime: str,
+    deployment_mode: Optional[str] = None,
     storage_uri: Optional[str] = None,
     storage_key: Optional[str] = None,
     storage_path: Optional[str] = None,
@@ -190,10 +193,13 @@ def create_isvc(
     if volumes:
         predictor_dict["volumes"] = volumes
 
-    annotations = {Annotations.KserveIo.DEPLOYMENT_MODE: deployment_mode}
+    _annotations: dict[str, str] = {}
+
+    if deployment_mode:
+        _annotations = {Annotations.KserveIo.DEPLOYMENT_MODE: deployment_mode}
 
     if deployment_mode == KServeDeploymentType.SERVERLESS:
-        annotations.update({
+        _annotations.update({
             "serving.knative.openshift.io/enablePassthrough": "true",
             "sidecar.istio.io/inject": "true",
             "sidecar.istio.io/rewriteAppHTTPProbers": "true",
@@ -202,7 +208,7 @@ def create_isvc(
     if enable_auth:
         # model mesh auth is set in servingruntime
         if deployment_mode == KServeDeploymentType.SERVERLESS:
-            annotations[Annotations.KserveAuth.SECURITY] = "true"
+            _annotations[Annotations.KserveAuth.SECURITY] = "true"
         elif deployment_mode == KServeDeploymentType.RAW_DEPLOYMENT:
             labels[Labels.KserveAuth.SECURITY] = "true"
 
@@ -218,7 +224,7 @@ def create_isvc(
         labels["networking.knative.dev/visibility"] = "cluster-local"
 
     if autoscaler_mode:
-        annotations["serving.kserve.io/autoscalerClass"] = autoscaler_mode
+        _annotations["serving.kserve.io/autoscalerClass"] = autoscaler_mode
 
     if multi_node_worker_spec is not None:
         predictor_dict["workerSpec"] = multi_node_worker_spec
@@ -227,7 +233,7 @@ def create_isvc(
         client=client,
         name=name,
         namespace=namespace,
-        annotations=annotations,
+        annotations=_annotations,
         predictor=predictor_dict,
         label=labels,
     ) as inference_service:
@@ -237,7 +243,10 @@ def create_isvc(
 
         if wait:
             # Modelmesh 2nd server in the ns will fail to be Ready; isvc needs to be re-applied
-            if is_jira_open(jira_id="RHOAIENG-13636") and deployment_mode == KServeDeploymentType.MODEL_MESH:
+            if (
+                is_jira_open(jira_id="RHOAIENG-13636", admin_client=client)
+                and deployment_mode == KServeDeploymentType.MODEL_MESH
+            ):
                 for isvc in InferenceService.get(dyn_client=client, namespace=namespace):
                     _runtime = get_inference_serving_runtime(isvc=isvc)
                     isvc_annotations = isvc.instance.metadata.annotations
