@@ -1,6 +1,9 @@
 import json
+from typing import Any, Generator
 
 from ocp_resources.config_map import ConfigMap
+from ocp_resources.data_science_cluster import DataScienceCluster
+from ocp_resources.resource import ResourceEditor
 from simple_logger.logger import get_logger
 from timeout_sampler import TimeoutSampler
 
@@ -33,3 +36,34 @@ def wait_for_default_deployment_mode_in_cm(config_map: ConfigMap, deployment_mod
             cm_default_deployment_mode = json.loads(sample.deploy)["defaultDeploymentMode"]
             if cm_default_deployment_mode == deployment_mode:
                 break
+
+
+def patch_dsc_default_deployment_mode(
+    dsc_resource: DataScienceCluster,
+    inferenceservice_config_cm: ConfigMap,
+    request_default_deployment_mode: str,
+) -> Generator[DataScienceCluster, Any, Any]:
+    """
+    Patch DataScienceCluster object with default deployment mode and wait for it to be set in configmap.
+
+    Args:
+        dsc_resource (DataScienceCluster): DataScienceCluster object
+        inferenceservice_config_cm (ConfigMap): ConfigMap object
+        request_default_deployment_mode (str): Deployment mode
+
+    Yields:
+        DataScienceCluster: DataScienceCluster object
+
+    """
+    with ResourceEditor(
+        patches={
+            dsc_resource: {
+                "spec": {"components": {"kserve": {"defaultDeploymentMode": request_default_deployment_mode}}}
+            }
+        }
+    ):
+        wait_for_default_deployment_mode_in_cm(
+            config_map=inferenceservice_config_cm,
+            deployment_mode=request_default_deployment_mode,
+        )
+        yield dsc_resource

@@ -8,13 +8,12 @@ from ocp_resources.data_science_cluster import DataScienceCluster
 from ocp_resources.inference_service import InferenceService
 from ocp_resources.namespace import Namespace
 from ocp_resources.pod import Pod
-from ocp_resources.resource import ResourceEditor
 from ocp_resources.secret import Secret
 from ocp_resources.serving_runtime import ServingRuntime
 from pytest_testconfig import config as py_config
 
 from tests.model_serving.model_server.components.kserve_dsc_deployment_mode.utils import (
-    wait_for_default_deployment_mode_in_cm,
+    patch_dsc_default_deployment_mode,
 )
 from tests.model_serving.model_server.utils import create_isvc
 from utilities.constants import ModelAndFormat
@@ -37,20 +36,11 @@ def default_deployment_mode_in_dsc(
     dsc_resource: DataScienceCluster,
     inferenceservice_config_cm: ConfigMap,
 ) -> Generator[DataScienceCluster, Any, Any]:
-    request_default_deployment_mode: str = request.param["default-deployment-mode"]
-
-    with ResourceEditor(
-        patches={
-            dsc_resource: {
-                "spec": {"components": {"kserve": {"defaultDeploymentMode": request_default_deployment_mode}}}
-            }
-        }
-    ):
-        wait_for_default_deployment_mode_in_cm(
-            config_map=inferenceservice_config_cm,
-            deployment_mode=request_default_deployment_mode,
-        )
-        yield dsc_resource
+    yield from patch_dsc_default_deployment_mode(
+        dsc_resource=dsc_resource,
+        inferenceservice_config_cm=inferenceservice_config_cm,
+        request_default_deployment_mode=request.param["default-deployment-mode"],
+    )
 
 
 @pytest.fixture(scope="class")
@@ -68,20 +58,11 @@ def patched_default_deployment_mode_in_dsc(
     default_deployment_mode_in_dsc: DataScienceCluster,
     inferenceservice_config_cm: ConfigMap,
 ) -> Generator[DataScienceCluster, Any, Any]:
-    request_deployment_mode: str = request.param["updated-deployment-mode"]
-
-    with ResourceEditor(
-        patches={
-            default_deployment_mode_in_dsc: {
-                "spec": {"components": {"kserve": {"defaultDeploymentMode": request_deployment_mode}}}
-            }
-        }
-    ):
-        wait_for_default_deployment_mode_in_cm(
-            config_map=inferenceservice_config_cm,
-            deployment_mode=request_deployment_mode,
-        )
-        yield default_deployment_mode_in_dsc
+    yield from patch_dsc_default_deployment_mode(
+        dsc_resource=default_deployment_mode_in_dsc,
+        inferenceservice_config_cm=inferenceservice_config_cm,
+        request_default_deployment_mode=request.param["updated-deployment-mode"],
+    )
 
 
 @pytest.fixture(scope="class")
