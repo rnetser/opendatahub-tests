@@ -44,7 +44,10 @@ INFERENCE_SERVICE_PARAMS = {
 )
 class TestKServeDSCServerlessDefaultDeploymentMode:
     def test_isvc_contains_serverless_deployment_mode(
-        self, skip_if_serverless_annotation_bug_present, default_deployment_mode_in_dsc, ovms_inference_service
+        self,
+        skip_if_serverless_annotation_bug_present,
+        default_deployment_mode_in_dsc,
+        ovms_inference_service,
     ):
         """Verify that default deployment mode is set to serverless in inference service."""
         assert (
@@ -74,13 +77,36 @@ class TestKServeDSCServerlessDefaultDeploymentMode:
         indirect=True,
     )
     def test_isvc_on_dsc_default_deployment_mode_change_to_raw(
-        self, skip_if_serverless_annotation_bug_present, patched_default_deployment_mode_in_dsc, ovms_inference_service
+        self,
+        skip_if_serverless_annotation_bug_present,
+        patched_default_deployment_mode_in_dsc,
+        ovms_inference_service,
     ):
         """Verify that Serverless isvc not changed after dsc default deployment mode is changed to raw"""
         assert (
             ovms_inference_service.instance.metadata.annotations[Annotations.KserveIo.DEPLOYMENT_MODE]
             == KServeDeploymentType.SERVERLESS
         )
+
+    @pytest.mark.parametrize(
+        "patched_default_deployment_mode_in_dsc",
+        [
+            pytest.param(
+                {"updated-deployment-mode": KServeDeploymentType.RAW_DEPLOYMENT},
+            )
+        ],
+        indirect=True,
+    )
+    def test_restarted_pod_is_serverless(
+        self,
+        skip_if_serverless_annotation_bug_present,
+        patched_default_deployment_mode_in_dsc,
+        restarted_inference_pod,
+    ):
+        """Verify that serverless pod is not changed after dsc default deployment mode is changed to raw"""
+        pod_containers = {container.name for container in restarted_inference_pod.instance.spec.containers}
+
+        assert pod_containers == {"kserve-container", "queue-proxy", "istio-proxy"}
 
 
 @pytest.mark.rawdeployment
@@ -134,3 +160,22 @@ class TestKServeDSCRawDefaultDeploymentMode:
             ovms_inference_service.instance.metadata.annotations[Annotations.KserveIo.DEPLOYMENT_MODE]
             == KServeDeploymentType.RAW_DEPLOYMENT
         )
+
+    @pytest.mark.parametrize(
+        "patched_default_deployment_mode_in_dsc",
+        [
+            pytest.param(
+                {"updated-deployment-mode": KServeDeploymentType.SERVERLESS},
+            )
+        ],
+        indirect=True,
+    )
+    def test_restarted_pod_is_serverless(
+        self,
+        patched_default_deployment_mode_in_dsc,
+        restarted_inference_pod,
+    ):
+        """Verify that raw pod is not changed after dsc default deployment mode is changed to serverless"""
+        pod_containers = {container.name for container in restarted_inference_pod.instance.spec.containers}
+
+        assert pod_containers == {"kserve-container"}

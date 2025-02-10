@@ -7,6 +7,7 @@ from ocp_resources.config_map import ConfigMap
 from ocp_resources.data_science_cluster import DataScienceCluster
 from ocp_resources.inference_service import InferenceService
 from ocp_resources.namespace import Namespace
+from ocp_resources.pod import Pod
 from ocp_resources.resource import ResourceEditor
 from ocp_resources.secret import Secret
 from ocp_resources.serving_runtime import ServingRuntime
@@ -24,7 +25,7 @@ from utilities.jira import is_jira_open
 def skip_if_serverless_annotation_bug_present(
     admin_client: DynamicClient,
 ) -> None:
-    jira_id = "RHOAIENG-16954"
+    jira_id = "RHOAIENG-19654"
 
     if is_jira_open(jira_id=jira_id, admin_client=admin_client):
         pytest.skip(reason=f"Bug {jira_id} is not fixed")
@@ -46,7 +47,8 @@ def default_deployment_mode_in_dsc(
         }
     ):
         wait_for_default_deployment_mode_in_cm(
-            config_map=inferenceservice_config_cm, deployment_mode=request_default_deployment_mode
+            config_map=inferenceservice_config_cm,
+            deployment_mode=request_default_deployment_mode,
         )
         yield dsc_resource
 
@@ -76,7 +78,8 @@ def patched_default_deployment_mode_in_dsc(
         }
     ):
         wait_for_default_deployment_mode_in_cm(
-            config_map=inferenceservice_config_cm, deployment_mode=request_deployment_mode
+            config_map=inferenceservice_config_cm,
+            deployment_mode=request_deployment_mode,
         )
         yield default_deployment_mode_in_dsc
 
@@ -101,3 +104,34 @@ def ovms_inference_service(
         wait_for_predictor_pods=False,
     ) as isvc:
         yield isvc
+
+
+@pytest.fixture(scope="class")
+def restarted_inference_pod(ovms_inference_service: InferenceService) -> Pod:
+    label_selector = (
+        f"{ovms_inference_service.ApiGroup.SERVING_KSERVE_IO}/inferenceservice={ovms_inference_service.name}"
+    )
+    original_pod = [
+        pod
+        for pod in Pod.get(
+            dyn_client=ovms_inference_service.client,
+            namespace=ovms_inference_service.namespace,
+            label_selector=label_selector,
+        )
+    ][0]
+
+    original_pod.delete(wait=True)
+
+    pods = [
+        pod
+        for pod in Pod.get(
+            dyn_client=ovms_inference_service.client,
+            namespace=ovms_inference_service.namespace,
+            label_selector=label_selector,
+        )
+    ]
+
+    if len(pods) != 1:
+        raise ValueError(f"Expected 1 pod, got {len(pods)}")
+
+    return pods[0]
