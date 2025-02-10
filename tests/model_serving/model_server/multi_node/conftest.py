@@ -10,9 +10,9 @@ from ocp_resources.persistent_volume_claim import PersistentVolumeClaim
 from ocp_resources.pod import Pod
 from ocp_resources.serving_runtime import ServingRuntime
 
-from tests.model_serving.model_server.utils import create_isvc
 from utilities.constants import KServeDeploymentType
 from utilities.general import download_model_data
+from utilities.inference_utils import create_isvc
 from utilities.infra import (
     get_pods_by_isvc_label,
     wait_for_inference_deployment_replicas,
@@ -30,7 +30,7 @@ def nvidia_gpu_nodes(nodes: list[Node]) -> list[Node]:
 
 
 @pytest.fixture(scope="session")
-def skip_if_no_gpu_nodes(nvidia_gpu_nodes):
+def skip_if_no_gpu_nodes(nvidia_gpu_nodes: list[Node]) -> None:
     if len(nvidia_gpu_nodes) < 2:
         pytest.skip("Multi-node tests can only run on a Cluster with at least 2 GPU Worker nodes")
 

@@ -1,10 +1,12 @@
 from typing import Any, Generator
 
 import pytest
+import yaml
 from _pytest.fixtures import FixtureRequest
 from kubernetes.dynamic import DynamicClient
 from ocp_resources.authorino import Authorino
 from ocp_resources.cluster_service_version import ClusterServiceVersion
+from ocp_resources.config_map import ConfigMap
 from ocp_resources.data_science_cluster import DataScienceCluster
 from ocp_resources.inference_service import InferenceService
 from ocp_resources.namespace import Namespace
@@ -14,29 +16,33 @@ from ocp_resources.service_account import ServiceAccount
 from ocp_resources.service_mesh_control_plane import ServiceMeshControlPlane
 from ocp_resources.serving_runtime import ServingRuntime
 from ocp_resources.storage_class import StorageClass
+from ocp_utilities.monitoring import Prometheus
 from pytest_testconfig import config as py_config
 
-from tests.model_serving.model_server.utils import create_isvc
+from utilities.constants import DscComponents, StorageClassName
 from utilities.constants import (
-    DscComponents,
     KServeDeploymentType,
     ModelFormat,
     ModelInferenceRuntime,
     Protocols,
     RuntimeTemplates,
-    StorageClassName,
 )
 from utilities.constants import (
     ModelAndFormat,
     ModelVersion,
 )
-from utilities.infra import s3_endpoint_secret
+from utilities.inference_utils import create_isvc
+from utilities.infra import (
+    get_openshift_token,
+    s3_endpoint_secret,
+    update_configmap_data,
+)
 from utilities.data_science_cluster_utils import update_components_in_dsc
 from utilities.serving_runtime import ServingRuntimeFromTemplate
 
 
 @pytest.fixture(scope="package")
-def skip_if_no_deployed_openshift_serverless(admin_client: DynamicClient):
+def skip_if_no_deployed_openshift_serverless(admin_client: DynamicClient) -> None:
     name = "openshift-serverless"
     csvs = list(
         ClusterServiceVersion.get(
@@ -190,7 +196,9 @@ def skip_if_no_deployed_redhat_authorino_operator(admin_client: DynamicClient) -
 
 
 @pytest.fixture(scope="package")
-def enabled_kserve_in_dsc(dsc_resource: DataScienceCluster) -> Generator[DataScienceCluster, Any, Any]:
+def enabled_kserve_in_dsc(
+    dsc_resource: DataScienceCluster,
+) -> Generator[DataScienceCluster, Any, Any]:
     with update_components_in_dsc(
         dsc=dsc_resource,
         components={DscComponents.KSERVE: DscComponents.ManagementState.MANAGED},
@@ -296,7 +304,7 @@ def model_mesh_model_service_account(
     with ServiceAccount(
         client=admin_client,
         namespace=ci_model_mesh_endpoint_s3_secret.namespace,
-        name=f"{Protocols.HTTP}-models-bucket-sa",
+        name="models-bucket-sa",
         secrets=[{"name": ci_model_mesh_endpoint_s3_secret.name}],
     ) as sa:
         yield sa
@@ -355,7 +363,7 @@ def ovms_serverless_inference_service(
     model_namespace: Namespace,
     openvino_kserve_serving_runtime: ServingRuntime,
     ci_endpoint_s3_secret: Secret,
-) -> InferenceService:
+) -> Generator[InferenceService, Any, Any]:
     with create_isvc(
         client=admin_client,
         name=f"{request.param['name']}-serverless",
@@ -378,7 +386,7 @@ def http_s3_tensorflow_model_mesh_inference_service(
     http_s3_ovms_model_mesh_serving_runtime: ServingRuntime,
     ci_model_mesh_endpoint_s3_secret: Secret,
     model_mesh_model_service_account: ServiceAccount,
-) -> InferenceService:
+) -> Generator[InferenceService, Any, Any]:
     with create_isvc(
         client=admin_client,
         name=f"{Protocols.HTTP}-{ModelFormat.TENSORFLOW}",
@@ -394,12 +402,45 @@ def http_s3_tensorflow_model_mesh_inference_service(
         yield isvc
 
 
+@pytest.fixture(scope="session")
+def prometheus(admin_client: DynamicClient) -> Prometheus:
+    return Prometheus(
+        client=admin_client,
+        resource_name="thanos-querier",
+        verify_ssl=False,
+        bearer_token=get_openshift_token(),
+    )
+
+
+@pytest.fixture(scope="class")
+def user_workload_monitoring_config_map(
+    admin_client: DynamicClient, cluster_monitoring_config: ConfigMap
+) -> Generator[ConfigMap, None, None]:
+    data = {
+        "config.yaml": yaml.dump({
+            "prometheus": {
+                "logLevel": "debug",
+                "retention": "15d",
+                "volumeClaimTemplate": {"spec": {"resources": {"requests": {"storage": "40Gi"}}}},
+            }
+        })
+    }
+
+    with update_configmap_data(
+        client=admin_client,
+        name="user-workload-monitoring-config",
+        namespace="openshift-user-workload-monitoring",
+        data=data,
+    ) as cm:
+        yield cm
+
+
 @pytest.fixture(scope="class")
 def http_s3_ovms_external_route_model_mesh_serving_runtime(
     request: FixtureRequest,
     admin_client: DynamicClient,
     model_namespace: Namespace,
-) -> ServingRuntime:
+) -> Generator[ServingRuntime, Any, Any]:
     with ServingRuntimeFromTemplate(
         client=admin_client,
         namespace=model_namespace.name,
@@ -426,7 +467,7 @@ def http_s3_openvino_second_model_mesh_inference_service(
     model_namespace: Namespace,
     ci_model_mesh_endpoint_s3_secret: Secret,
     model_mesh_model_service_account: ServiceAccount,
-) -> InferenceService:
+) -> Generator[InferenceService, Any, Any]:
     # Dynamically select the used ServingRuntime by passing "runtime-fixture-name" request.param
     runtime = request.getfixturevalue(argname=request.param["runtime-fixture-name"])
     with create_isvc(

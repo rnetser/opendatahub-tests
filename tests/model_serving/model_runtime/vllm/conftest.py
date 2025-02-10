@@ -7,15 +7,19 @@ from ocp_resources.inference_service import InferenceService
 from ocp_resources.pod import Pod
 from ocp_resources.secret import Secret
 from ocp_resources.service_account import ServiceAccount
-from tests.model_serving.model_runtime.vllm.utils import kserve_s3_endpoint_secret
+from tests.model_serving.model_runtime.vllm.utils import (
+    kserve_s3_endpoint_secret,
+    validate_supported_quantization_schema,
+)
 from utilities.constants import KServeDeploymentType
 from pytest import FixtureRequest
 from syrupy.extensions.json import JSONSnapshotExtension
-from tests.model_serving.model_runtime.vllm.utils import get_runtime_manifest
-from tests.model_serving.model_server.utils import create_isvc
 from tests.model_serving.model_runtime.vllm.constant import TEMPLATE_MAP, ACCELERATOR_IDENTIFIER, PREDICT_RESOURCES
 from simple_logger.logger import get_logger
+
+from utilities.inference_utils import create_isvc
 from utilities.infra import get_pods_by_isvc_label
+from utilities.serving_runtime import ServingRuntimeFromTemplate
 
 LOGGER = get_logger(name=__name__)
 
@@ -27,23 +31,22 @@ def serving_runtime(
     model_namespace: Namespace,
     supported_accelerator_type: str,
     vllm_runtime_image: str,
-):
+) -> Generator[ServingRuntime, None, None]:
     accelerator_type = supported_accelerator_type.lower()
     template_name = TEMPLATE_MAP.get(accelerator_type, "vllm-runtime-template")
-    manifest = get_runtime_manifest(
+    with ServingRuntimeFromTemplate(
         client=admin_client,
+        name="vllm-runtime",
+        namespace=model_namespace.name,
         template_name=template_name,
         deployment_type=request.param["deployment_type"],
         runtime_image=vllm_runtime_image,
-    )
-    manifest["metadata"]["name"] = "vllm-runtime"
-    manifest["metadata"]["namespace"] = model_namespace.name
-    with ServingRuntime(client=admin_client, kind_dict=manifest) as model_runtime:
+    ) as model_runtime:
         yield model_runtime
 
 
 @pytest.fixture(scope="session")
-def skip_if_no_supported_accelerator_type(supported_accelerator_type: str):
+def skip_if_no_supported_accelerator_type(supported_accelerator_type: str) -> None:
     if not supported_accelerator_type:
         pytest.skip("Accelartor type is not provide,vLLM test can not be run on CPU")
 
@@ -71,7 +74,7 @@ def vllm_inference_service(
     accelerator_type = supported_accelerator_type.lower()
     gpu_count = request.param.get("gpu_count")
     identifier = ACCELERATOR_IDENTIFIER.get(accelerator_type, "nvidia.com/gpu")
-    resources = PREDICT_RESOURCES["resources"]
+    resources: Any = PREDICT_RESOURCES["resources"]
     resources["requests"][identifier] = gpu_count
     resources["limits"][identifier] = gpu_count
     isvc_kwargs["resources"] = resources
@@ -80,8 +83,15 @@ def vllm_inference_service(
         isvc_kwargs["volumes"] = PREDICT_RESOURCES["volumes"]
         isvc_kwargs["volumes_mounts"] = PREDICT_RESOURCES["volume_mounts"]
     if arguments := request.param.get("runtime_argument"):
-        arguments = [arg for arg in arguments if not arg.startswith("--tensor-parallel-size")]
+        arguments = [
+            arg
+            for arg in arguments
+            if not (arg.startswith("--tensor-parallel-size") or arg.startswith("--quantization"))
+        ]
         arguments.append(f"--tensor-parallel-size={gpu_count}")
+        if quantization := request.param.get("quantization"):
+            validate_supported_quantization_schema(q_type=quantization)
+            arguments.append(f"--quantization={quantization}")
         isvc_kwargs["argument"] = arguments
 
     if min_replicas := request.param.get("min-replicas"):
@@ -92,7 +102,7 @@ def vllm_inference_service(
 
 
 @pytest.fixture(scope="class")
-def vllm_model_service_account(admin_client: DynamicClient, kserve_endpoint_s3_secret: Secret):
+def vllm_model_service_account(admin_client: DynamicClient, kserve_endpoint_s3_secret: Secret) -> ServiceAccount:
     with ServiceAccount(
         client=admin_client,
         namespace=kserve_endpoint_s3_secret.namespace,
@@ -124,7 +134,7 @@ def kserve_endpoint_s3_secret(
 
 
 @pytest.fixture
-def response_snapshot(snapshot):
+def response_snapshot(snapshot: Any) -> Any:
     return snapshot.use_extension(extension_class=JSONSnapshotExtension)
 
 

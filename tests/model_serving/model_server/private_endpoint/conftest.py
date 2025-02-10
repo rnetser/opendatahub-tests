@@ -10,8 +10,8 @@ from ocp_resources.serving_runtime import ServingRuntime
 from simple_logger.logger import get_logger
 
 from tests.model_serving.model_server.private_endpoint.utils import create_sidecar_pod
-from tests.model_serving.model_server.utils import create_isvc
 from utilities.constants import KServeDeploymentType, ModelFormat, ModelStoragePath
+from utilities.inference_utils import create_isvc
 from utilities.infra import create_ns
 
 LOGGER = get_logger(name=__name__)
@@ -35,7 +35,7 @@ def endpoint_isvc(
         namespace=serving_runtime_from_template.namespace,
         deployment_mode=KServeDeploymentType.SERVERLESS,
         storage_key=models_endpoint_s3_secret.name,
-        storage_path=ModelStoragePath.FLAN_T5_SMALL,
+        storage_path=ModelStoragePath.FLAN_T5_SMALL_CAIKIT,
         model_format=ModelFormat.CAIKIT,
         runtime=serving_runtime_from_template.name,
         wait_for_predictor_pods=True,

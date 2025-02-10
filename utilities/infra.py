@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import json
-import os
 import shlex
 from contextlib import contextmanager
 from functools import cache
-from typing import Any, Generator, Optional
+from typing import Any, Generator, Optional, Set
 
 import kubernetes
 from kubernetes.dynamic import DynamicClient
@@ -19,6 +18,7 @@ from ocp_resources.namespace import Namespace
 from ocp_resources.pod import Pod
 from ocp_resources.project_project_openshift_io import Project
 from ocp_resources.project_request import ProjectRequest
+from ocp_resources.resource import ResourceEditor
 from ocp_resources.role import Role
 from ocp_resources.route import Route
 from ocp_resources.secret import Secret
@@ -29,8 +29,10 @@ from pyhelper_utils.shell import run_command
 from pytest_testconfig import config as py_config
 from simple_logger.logger import get_logger
 
-import utilities.general
-from utilities.general import create_isvc_label_selector_str
+from utilities.constants import Timeout
+from utilities.exceptions import FailedPodsError
+from timeout_sampler import TimeoutExpiredError, TimeoutSampler
+from utilities.general import create_isvc_label_selector_str, get_s3_secret_dict
 
 LOGGER = get_logger(name=__name__)
 TIMEOUT_2MIN = 2 * 60
@@ -156,26 +158,29 @@ def s3_endpoint_secret(
         Secret: Secret object
 
     """
-    # DO not create secret if exists in the namespace
-    os.environ["REUSE_IF_RESOURCE_EXISTS"] = f"{{Secret: {{{name}: {namespace}}}}}"
+    secret_kwargs = {"client": admin_client, "name": name, "namespace": namespace}
+    secret = Secret(**secret_kwargs)
 
-    with Secret(
-        client=admin_client,
-        name=name,
-        namespace=namespace,
-        annotations={"opendatahub.io/connection-type": "s3"},
-        # the labels are needed to set the secret as data connection by odh-model-controller
-        label={"opendatahub.io/managed": "true", "opendatahub.io/dashboard": "true"},
-        data_dict=utilities.general.get_s3_secret_dict(
-            aws_access_key=aws_access_key,
-            aws_secret_access_key=aws_secret_access_key,
-            aws_s3_bucket=aws_s3_bucket,
-            aws_s3_endpoint=aws_s3_endpoint,
-            aws_s3_region=aws_s3_region,
-        ),
-        wait_for_resource=True,
-    ) as secret:
+    if secret.exists:
+        LOGGER.info(f"Secret {name} already exists in namespace {namespace}")
         yield secret
+
+    else:
+        with Secret(
+            annotations={"opendatahub.io/connection-type": "s3"},
+            # the labels are needed to set the secret as data connection by odh-model-controller
+            label={"opendatahub.io/managed": "true", "opendatahub.io/dashboard": "true"},
+            data_dict=get_s3_secret_dict(
+                aws_access_key=aws_access_key,
+                aws_secret_access_key=aws_secret_access_key,
+                aws_s3_bucket=aws_s3_bucket,
+                aws_s3_endpoint=aws_s3_endpoint,
+                aws_s3_region=aws_s3_region,
+            ),
+            wait_for_resource=True,
+            **secret_kwargs,
+        ) as secret:
+            yield secret
 
 
 @contextmanager
@@ -440,3 +445,131 @@ def create_inference_token(model_service_account: ServiceAccount) -> str:
     return run_command(
         shlex.split(f"oc create token -n {model_service_account.namespace} {model_service_account.name}")
     )[1].strip()
+
+
+@contextmanager
+def update_configmap_data(
+    client: DynamicClient, name: str, namespace: str, data: dict[str, Any]
+) -> Generator[ConfigMap, Any, Any]:
+    """
+    Update the data of a configmap.
+
+    Args:
+        client (DynamicClient): DynamicClient client.
+        name (str): Name of the configmap.
+        namespace (str): Namespace of the configmap.
+        data (dict[str, Any]): Data to update the configmap with.
+
+    Yields:
+        ConfigMap: The updated configmap.
+
+    """
+    config_map = ConfigMap(client=client, name=name, namespace=namespace)
+
+    # Some CM resources may already be present as they are usually created when doing exploratory testing
+    if config_map.exists:
+        with ResourceEditor(patches={config_map: {"data": data}}):
+            yield config_map
+
+    else:
+        config_map.data = data
+        with config_map as cm:
+            yield cm
+
+
+def verify_no_failed_pods(client: DynamicClient, isvc: InferenceService, runtime_name: str | None) -> None:
+    """
+    Verify no failed pods.
+
+    Args:
+        client (DynamicClient): DynamicClient object
+        isvc (InferenceService): InferenceService object
+        runtime_name (str): ServingRuntime name
+
+    Raises:
+            FailedPodsError: If any pod is in failed state
+
+    """
+    LOGGER.info("Verifying no failed pods")
+    for pods in TimeoutSampler(
+        wait_timeout=Timeout.TIMEOUT_5MIN,
+        sleep=10,
+        func=get_pods_by_isvc_label,
+        client=client,
+        isvc=isvc,
+        runtime_name=runtime_name,
+    ):
+        ready_pods = 0
+        failed_pods: dict[str, Any] = {}
+
+        if pods:
+            for pod in pods:
+                for condition in pod.instance.status.conditions:
+                    if condition.type == pod.Status.READY and condition.status == pod.Condition.Status.TRUE:
+                        ready_pods += 1
+
+            if ready_pods == len(pods):
+                return
+
+            for pod in pods:
+                pod_status = pod.instance.status
+
+                if pod_status.containerStatuses:
+                    for container_status in pod_status.containerStatuses:
+                        is_waiting_pull_back_off = (
+                            wait_state := container_status.state.waiting
+                        ) and wait_state.reason == pod.Status.IMAGE_PULL_BACK_OFF
+
+                        is_terminated_error = (
+                            terminate_state := container_status.state.terminated
+                        ) and terminate_state.reason in (pod.Status.ERROR, pod.Status.CRASH_LOOPBACK_OFF)
+
+                        if is_waiting_pull_back_off or is_terminated_error:
+                            failed_pods[pod.name] = pod_status
+
+                        if init_container_status := pod_status.initContainerStatuses:
+                            if container_terminated := init_container_status[0].lastState.terminated:
+                                if container_terminated.reason == "Error":
+                                    failed_pods[pod.name] = pod_status
+
+                elif pod_status.phase in (
+                    pod.Status.CRASH_LOOPBACK_OFF,
+                    pod.Status.FAILED,
+                    pod.Status.IMAGE_PULL_BACK_OFF,
+                    pod.Status.ERR_IMAGE_PULL,
+                ):
+                    failed_pods[pod.name] = pod_status
+
+            if failed_pods:
+                raise FailedPodsError(pods=failed_pods)
+
+
+def check_pod_status_in_time(pod: Pod, status: Set[str], duration: int = TIMEOUT_2MIN, wait: int = 1) -> None:
+    """
+    Checks if a pod status is maintained for a given duration. If not, an AssertionError is raised.
+
+    Args:
+        pod (Pod): The pod to check
+        status (Set[Pod.Status]): Expected pod status(es)
+        duration (int): Maximum time to check for in seconds
+        wait (int): Time to wait between checks in seconds
+
+    Raises:
+        AssertionError: If pod status is not in the expected set
+    """
+    LOGGER.info(f"Checking pod status for {pod.name} to be {status} for {duration} seconds")
+
+    sampler = TimeoutSampler(
+        wait_timeout=duration,
+        sleep=wait,
+        func=lambda: pod.instance,
+    )
+
+    try:
+        for sample in sampler:
+            if sample:
+                if sample.status.phase not in status:
+                    raise AssertionError(f"Pod status is not the expected: {pod.status}")
+
+    except TimeoutExpiredError:
+        LOGGER.info(f"Pod status is {pod.status} as expected")
