@@ -15,8 +15,8 @@ from pytest_testconfig import config as py_config
 from tests.model_serving.model_server.components.kserve_dsc_deployment_mode.utils import (
     patch_dsc_default_deployment_mode,
 )
-from tests.model_serving.model_server.utils import create_isvc
 from utilities.constants import ModelAndFormat
+from utilities.inference_utils import create_isvc
 from utilities.jira import is_jira_open
 
 
