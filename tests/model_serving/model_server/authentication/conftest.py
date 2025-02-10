@@ -403,7 +403,7 @@ def unprivileged_s3_caikit_raw_inference_service(
 def patched_remove_authentication_model_mesh_isvc(
     admin_client: DynamicClient,
     http_s3_openvino_model_mesh_inference_service: InferenceService,
-) -> InferenceService:
+) -> Generator[InferenceService, Any, Any]:
     with ResourceEditor(
         patches={
             http_s3_openvino_model_mesh_inference_service: {
@@ -420,7 +420,7 @@ def patched_remove_authentication_model_mesh_isvc(
 def http_model_mesh_view_role(
     admin_client: DynamicClient,
     http_s3_ovms_model_mesh_serving_runtime: ServingRuntime,
-) -> Role:
+) -> Generator[Role, Any, Any]:
     with create_resource_view_role(
         client=admin_client,
         resource=http_s3_ovms_model_mesh_serving_runtime,
@@ -434,22 +434,22 @@ def http_model_mesh_view_role(
 def http_model_mesh_role_binding(
     admin_client: DynamicClient,
     http_model_mesh_view_role: Role,
-    model_service_account: ServiceAccount,
-) -> RoleBinding:
+    ci_service_account: ServiceAccount,
+) -> Generator[RoleBinding, Any, Any]:
     with RoleBinding(
         client=admin_client,
-        namespace=model_service_account.namespace,
-        name=f"{Protocols.HTTP}-{model_service_account.name}-view",
+        namespace=ci_service_account.namespace,
+        name=f"{Protocols.HTTP}-{ci_service_account.name}-view",
         role_ref_name=http_model_mesh_view_role.name,
         role_ref_kind=http_model_mesh_view_role.kind,
-        subjects_kind=model_service_account.kind,
-        subjects_name=model_service_account.name,
+        subjects_kind=ci_service_account.kind,
+        subjects_name=ci_service_account.name,
     ) as rb:
         yield rb
 
 
 @pytest.fixture(scope="class")
 def http_model_mesh_inference_token(
-    model_service_account: ServiceAccount, http_model_mesh_role_binding: RoleBinding
+    ci_service_account: ServiceAccount, http_model_mesh_role_binding: RoleBinding
 ) -> str:
-    return create_inference_token(model_service_account=model_service_account)
+    return create_inference_token(model_service_account=ci_service_account)

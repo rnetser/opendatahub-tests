@@ -18,7 +18,7 @@ pytestmark = [pytest.mark.modelmesh, pytest.mark.sanity]
     [
         pytest.param(
             {"name": "model-mesh-authentication", "modelmesh-enabled": True},
-            {"enable-auth": True, "enable-route": True},
+            {"enable-auth": True, "enable-external-route": True},
             {"model-path": ModelStoragePath.OPENVINO_EXAMPLE_MODEL},
         )
     ],

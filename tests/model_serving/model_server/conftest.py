@@ -221,16 +221,16 @@ def http_s3_openvino_model_mesh_inference_service(
     admin_client: DynamicClient,
     model_namespace: Namespace,
     http_s3_ovms_model_mesh_serving_runtime: ServingRuntime,
-    ci_model_mesh_endpoint_s3_secret: Secret,
-    model_mesh_model_service_account: ServiceAccount,
+    ci_endpoint_s3_secret: Secret,
+    ci_service_account: ServiceAccount,
 ) -> Generator[InferenceService, Any, Any]:
     with create_isvc(
         client=admin_client,
         name=f"{Protocols.HTTP}-{ModelFormat.OPENVINO}",
         namespace=model_namespace.name,
         runtime=http_s3_ovms_model_mesh_serving_runtime.name,
-        model_service_account=model_mesh_model_service_account.name,
-        storage_key=ci_model_mesh_endpoint_s3_secret.name,
+        model_service_account=ci_service_account.name,
+        storage_key=ci_endpoint_s3_secret.name,
         storage_path=request.param["model-path"],
         model_format=ModelAndFormat.OPENVINO_IR,
         deployment_mode=KServeDeploymentType.MODEL_MESH,
@@ -272,42 +272,6 @@ def http_s3_ovms_model_mesh_serving_runtime(
 
     with ServingRuntimeFromTemplate(**runtime_kwargs) as model_runtime:
         yield model_runtime
-
-
-@pytest.fixture(scope="class")
-def ci_model_mesh_endpoint_s3_secret(
-    admin_client: DynamicClient,
-    model_namespace: Namespace,
-    aws_access_key_id: str,
-    aws_secret_access_key: str,
-    ci_s3_bucket_name: str,
-    ci_s3_bucket_region: str,
-    ci_s3_bucket_endpoint: str,
-) -> Generator[Secret, Any, Any]:
-    with s3_endpoint_secret(
-        admin_client=admin_client,
-        name="ci-bucket-secret",
-        namespace=model_namespace.name,
-        aws_access_key=aws_access_key_id,
-        aws_secret_access_key=aws_secret_access_key,
-        aws_s3_region=ci_s3_bucket_region,
-        aws_s3_bucket=ci_s3_bucket_name,
-        aws_s3_endpoint=ci_s3_bucket_endpoint,
-    ) as secret:
-        yield secret
-
-
-@pytest.fixture(scope="class")
-def model_mesh_model_service_account(
-    admin_client: DynamicClient, ci_model_mesh_endpoint_s3_secret: Secret
-) -> Generator[ServiceAccount, Any, Any]:
-    with ServiceAccount(
-        client=admin_client,
-        namespace=ci_model_mesh_endpoint_s3_secret.namespace,
-        name="models-bucket-sa",
-        secrets=[{"name": ci_model_mesh_endpoint_s3_secret.name}],
-    ) as sa:
-        yield sa
 
 
 @pytest.fixture(scope="class")
@@ -357,6 +321,19 @@ def ci_endpoint_s3_secret(
 
 
 @pytest.fixture(scope="class")
+def ci_service_account(
+    admin_client: DynamicClient, ci_endpoint_s3_secret: Secret
+) -> Generator[ServiceAccount, Any, Any]:
+    with ServiceAccount(
+        client=admin_client,
+        namespace=ci_endpoint_s3_secret.namespace,
+        name="ci-models-bucket-sa",
+        secrets=[{"name": ci_endpoint_s3_secret.name}],
+    ) as sa:
+        yield sa
+
+
+@pytest.fixture(scope="class")
 def ovms_serverless_inference_service(
     request: FixtureRequest,
     admin_client: DynamicClient,
@@ -384,16 +361,16 @@ def http_s3_tensorflow_model_mesh_inference_service(
     admin_client: DynamicClient,
     model_namespace: Namespace,
     http_s3_ovms_model_mesh_serving_runtime: ServingRuntime,
-    ci_model_mesh_endpoint_s3_secret: Secret,
-    model_mesh_model_service_account: ServiceAccount,
+    ci_endpoint_s3_secret: Secret,
+    ci_service_account: ServiceAccount,
 ) -> Generator[InferenceService, Any, Any]:
     with create_isvc(
         client=admin_client,
         name=f"{Protocols.HTTP}-{ModelFormat.TENSORFLOW}",
         namespace=model_namespace.name,
         runtime=http_s3_ovms_model_mesh_serving_runtime.name,
-        model_service_account=model_mesh_model_service_account.name,
-        storage_key=ci_model_mesh_endpoint_s3_secret.name,
+        model_service_account=ci_service_account.name,
+        storage_key=ci_endpoint_s3_secret.name,
         storage_path=request.param["model-path"],
         model_format=ModelFormat.TENSORFLOW,
         deployment_mode=KServeDeploymentType.MODEL_MESH,
@@ -465,8 +442,8 @@ def http_s3_openvino_second_model_mesh_inference_service(
     request: FixtureRequest,
     admin_client: DynamicClient,
     model_namespace: Namespace,
-    ci_model_mesh_endpoint_s3_secret: Secret,
-    model_mesh_model_service_account: ServiceAccount,
+    ci_endpoint_s3_secret: Secret,
+    ci_service_account: ServiceAccount,
 ) -> Generator[InferenceService, Any, Any]:
     # Dynamically select the used ServingRuntime by passing "runtime-fixture-name" request.param
     runtime = request.getfixturevalue(argname=request.param["runtime-fixture-name"])
@@ -475,8 +452,8 @@ def http_s3_openvino_second_model_mesh_inference_service(
         name=f"{Protocols.HTTP}-{ModelFormat.OPENVINO}-2",
         namespace=model_namespace.name,
         runtime=runtime.name,
-        model_service_account=model_mesh_model_service_account.name,
-        storage_key=ci_model_mesh_endpoint_s3_secret.name,
+        model_service_account=ci_service_account.name,
+        storage_key=ci_endpoint_s3_secret.name,
         storage_path=request.param["model-path"],
         model_format=request.param["model-format"],
         deployment_mode=KServeDeploymentType.MODEL_MESH,
