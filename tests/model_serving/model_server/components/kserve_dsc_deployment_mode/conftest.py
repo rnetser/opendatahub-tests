@@ -89,30 +89,34 @@ def ovms_inference_service(
 
 @pytest.fixture(scope="class")
 def restarted_inference_pod(ovms_inference_service: InferenceService) -> Pod:
-    label_selector = (
-        f"{ovms_inference_service.ApiGroup.SERVING_KSERVE_IO}/inferenceservice={ovms_inference_service.name}"
-    )
-    original_pod = [
-        pod
-        for pod in Pod.get(
-            dyn_client=ovms_inference_service.client,
-            namespace=ovms_inference_service.namespace,
-            label_selector=label_selector,
-        )
-    ][0]
+    def _get_pod(isvc: InferenceService) -> Pod:
+        """
+        Get the pod of the inference service.
 
-    original_pod.delete(wait=True)
+        Args:
+            isvc (InferenceService): Inference service object.
 
-    pods = [
-        pod
-        for pod in Pod.get(
-            dyn_client=ovms_inference_service.client,
-            namespace=ovms_inference_service.namespace,
-            label_selector=label_selector,
-        )
-    ]
+        Returns:
+            Pod: The pod of the inference service.
 
-    if len(pods) != 1:
-        raise ValueError(f"Expected 1 pod, got {len(pods)}")
+        """
+        pod_kwargs = {
+            "dyn_client": ovms_inference_service.client,
+            "namespace": ovms_inference_service.namespace,
+            "label_selector": f"{ovms_inference_service.ApiGroup.SERVING_KSERVE_IO}/"
+            f"inferenceservice={ovms_inference_service.name}",
+        }
 
-    return pods[0]
+        if orig_pods := list(Pod.get(**pod_kwargs)):
+            if len(orig_pods) != 1:
+                raise ValueError(f"Expected 1 pod, got {len(orig_pods)}")
+
+            return orig_pods[0]
+
+        else:
+            raise ValueError("Expected at least 1 pod")
+
+    orig_pod = _get_pod(isvc=ovms_inference_service)
+    orig_pod.delete(wait=True)
+
+    return _get_pod(isvc=ovms_inference_service)
