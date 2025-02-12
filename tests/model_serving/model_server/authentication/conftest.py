@@ -419,13 +419,13 @@ def patched_remove_authentication_model_mesh_isvc(
 @pytest.fixture(scope="class")
 def http_model_mesh_view_role(
     admin_client: DynamicClient,
-    http_s3_ovms_model_mesh_serving_runtime: ServingRuntime,
+    http_s3_openvino_model_mesh_inference_service: InferenceService,
 ) -> Generator[Role, Any, Any]:
     with create_resource_view_role(
         client=admin_client,
-        resource=http_s3_ovms_model_mesh_serving_runtime,
-        name=f"{http_s3_ovms_model_mesh_serving_runtime.name}-view",
-        resource_names=[http_s3_ovms_model_mesh_serving_runtime.name],
+        resource=http_s3_openvino_model_mesh_inference_service,
+        name=f"{http_s3_openvino_model_mesh_inference_service.name}-view",
+        resource_names=[http_s3_openvino_model_mesh_inference_service.name],
     ) as role:
         yield role
 
