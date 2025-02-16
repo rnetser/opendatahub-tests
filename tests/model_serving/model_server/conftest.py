@@ -418,22 +418,26 @@ def http_s3_ovms_external_route_model_mesh_serving_runtime(
     admin_client: DynamicClient,
     model_namespace: Namespace,
 ) -> Generator[ServingRuntime, Any, Any]:
-    with ServingRuntimeFromTemplate(
-        client=admin_client,
-        namespace=model_namespace.name,
-        name=f"{Protocols.HTTP}-{ModelInferenceRuntime.OPENVINO_RUNTIME}-exposed",
-        template_name=RuntimeTemplates.OVMS_MODEL_MESH,
-        multi_model=True,
-        protocol="REST",
-        resources={
+    runtime_kwargs = {
+        "client": admin_client,
+        "namespace": model_namespace.name,
+        "name": f"{Protocols.HTTP}-{ModelInferenceRuntime.OPENVINO_RUNTIME}-exposed",
+        "template_name": RuntimeTemplates.OVMS_MODEL_MESH,
+        "multi_model": True,
+        "protocol": "REST",
+        "resources": {
             "ovms": {
                 "requests": {"cpu": "1", "memory": "4Gi"},
                 "limits": {"cpu": "2", "memory": "8Gi"},
             },
         },
-        enable_external_route=True,
-        enable_auth=request.param.get("enable-auth"),
-    ) as model_runtime:
+        "enable_external_route": True,
+    }
+
+    if hasattr(request, "param"):
+        runtime_kwargs["enable_auth"] = request.param.get("enable-auth")
+
+    with ServingRuntimeFromTemplate(**runtime_kwargs) as model_runtime:
         yield model_runtime
 
 

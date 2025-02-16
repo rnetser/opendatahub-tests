@@ -204,8 +204,8 @@ def create_resource_view_role(
         Role: Role object.
 
     """
-
     resources_type = "inferenceservices" if isinstance(resource, InferenceService) else "servingruntimes"
+
     rules = [
         {
             "apiGroups": [resource.api_group],
