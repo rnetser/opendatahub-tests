@@ -14,6 +14,11 @@ from utilities.manifests.caikit_standalone import CAIKIT_STANDALONE_INFERENCE_CO
 
 pytestmark = [pytest.mark.serverless, pytest.mark.rawdeployment, pytest.mark.sanity]
 
+RUNTIME_BASE_PARAMS = {
+    "template-name": RuntimeTemplates.CAIKIT_STANDALONE_SERVING,
+    "multi-model": False,
+    "enable-http": True,
+}
 SERVERLESS_ISVC_PARAMS = {
     "deployment-mode": KServeDeploymentType.SERVERLESS,
     "model-dir": ModelStoragePath.EMBEDDING_MODEL,
@@ -26,11 +31,11 @@ SERVERLESS_ISVC_PARAMS = {
         pytest.param(
             {"name": "serverless-model-priority"},
             {
-                "name": f"{Protocols.HTTP}-{ModelInferenceRuntime.CAIKIT_STANDALONE_RUNTIME}".lower(),
-                "template-name": RuntimeTemplates.CAIKIT_STANDALONE_SERVING,
-                "multi-model": False,
-                "enable-http": True,
-                "models-priorities": {ModelFormat.CAIKIT: 2},
+                **{
+                    "name": f"{Protocols.HTTP}-{ModelInferenceRuntime.CAIKIT_STANDALONE_RUNTIME}".lower(),
+                    "models-priorities": {ModelFormat.CAIKIT: 2},
+                },
+                **RUNTIME_BASE_PARAMS,
             },
             {
                 **{"name": f"{ModelFormat.CAIKIT}-{KServeDeploymentType.SERVERLESS.lower()}-1"},
@@ -82,24 +87,24 @@ class TestServerlessModelPriority:
         pytest.param(
             {"name": "serverless-multi-priorities"},
             {
-                "name": f"{Protocols.HTTP}-{ModelInferenceRuntime.CAIKIT_STANDALONE_RUNTIME}".lower(),
-                "template-name": RuntimeTemplates.CAIKIT_STANDALONE_SERVING,
-                "multi-model": False,
-                "enable-http": True,
-                "supported-model-formats": [
-                    {
-                        "name": ModelFormat.CAIKIT,
-                        "autoSelect": True,
-                        "priority": 2,
-                        "version": "1",
-                    },
-                    {
-                        "name": ModelFormat.CAIKIT,
-                        "autoSelect": True,
-                        "priority": 3,
-                        "version": "2",
-                    },
-                ],
+                **{
+                    "name": f"{Protocols.HTTP}-{ModelInferenceRuntime.CAIKIT_STANDALONE_RUNTIME}".lower(),
+                    "supported-model-formats": [
+                        {
+                            "name": ModelFormat.CAIKIT,
+                            "autoSelect": True,
+                            "priority": 2,
+                            "version": "1",
+                        },
+                        {
+                            "name": ModelFormat.CAIKIT,
+                            "autoSelect": True,
+                            "priority": 3,
+                            "version": "2",
+                        },
+                    ],
+                },
+                **RUNTIME_BASE_PARAMS,
             },
             {
                 **{"name": f"{ModelFormat.CAIKIT}-{KServeDeploymentType.SERVERLESS.lower()}-1"},
