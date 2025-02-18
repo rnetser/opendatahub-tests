@@ -19,8 +19,7 @@ pytestmark = [
     "serving_runtime_from_template, multi_node_inference_service",
     [
         pytest.param(
-            # TODO: rename servingruntime when RHOAIENG-16147 is resolved
-            {"name": "vllm-multinode-runtime"},
+            {"name": "gpu-multi-node"},
             {"model-dir": "granite-8b-code-base"},
             {
                 "access-modes": "ReadWriteMany",
@@ -28,7 +27,8 @@ pytestmark = [
                 "pvc-size": "40Gi",
             },
             {
-                "name": "granite-runtime",
+                # TODO: rename servingruntime when RHOAIENG-16147 is resolved
+                "name": "vllm-multinode-runtime",
                 "template-name": "vllm-multinode-runtime-template",
                 "multi-model": False,
             },
