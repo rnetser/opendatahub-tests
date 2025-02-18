@@ -16,8 +16,9 @@ from ocp_resources.serving_runtime import ServingRuntime
 from utilities.inference_utils import create_isvc
 from utilities.infra import (
     create_ns,
-    create_resource_view_role,
+    create_isvc_view_role,
     get_pods_by_isvc_label,
+    get_services_by_isvc_label,
     s3_endpoint_secret,
     create_inference_token,
 )
@@ -93,9 +94,9 @@ def http_view_role(
     admin_client: DynamicClient,
     http_s3_caikit_serverless_inference_service: InferenceService,
 ) -> Generator[Role, Any, Any]:
-    with create_resource_view_role(
+    with create_isvc_view_role(
         client=admin_client,
-        resource=http_s3_caikit_serverless_inference_service,
+        isvc=http_s3_caikit_serverless_inference_service,
         name=f"{http_s3_caikit_serverless_inference_service.name}-view",
         resource_names=[http_s3_caikit_serverless_inference_service.name],
     ) as role:
@@ -107,9 +108,9 @@ def http_raw_view_role(
     admin_client: DynamicClient,
     http_s3_caikit_raw_inference_service: InferenceService,
 ) -> Generator[Role, Any, Any]:
-    with create_resource_view_role(
+    with create_isvc_view_role(
         client=admin_client,
-        resource=http_s3_caikit_raw_inference_service,
+        isvc=http_s3_caikit_raw_inference_service,
         name=f"{http_s3_caikit_raw_inference_service.name}-view",
         resource_names=[http_s3_caikit_raw_inference_service.name],
     ) as role:
@@ -207,10 +208,12 @@ def patched_remove_raw_authentication_isvc(
 
 
 @pytest.fixture(scope="class")
-def grpc_view_role(admin_client: DynamicClient, grpc_s3_inference_service: InferenceService) -> Role:
-    with create_resource_view_role(
+def grpc_view_role(
+    admin_client: DynamicClient, grpc_s3_inference_service: InferenceService
+) -> Generator[Role, Any, Any]:
+    with create_isvc_view_role(
         client=admin_client,
-        resource=grpc_s3_inference_service,
+        isvc=grpc_s3_inference_service,
         name=f"{grpc_s3_inference_service.name}-view",
         resource_names=[grpc_s3_inference_service.name],
     ) as role:
@@ -422,12 +425,21 @@ def patched_remove_authentication_model_mesh_isvc(
 def http_model_mesh_view_role(
     admin_client: DynamicClient,
     http_s3_openvino_model_mesh_inference_service: InferenceService,
+    http_s3_ovms_model_mesh_serving_runtime: ServingRuntime,
 ) -> Generator[Role, Any, Any]:
-    with create_resource_view_role(
+    svc = get_services_by_isvc_label(
         client=admin_client,
-        resource=http_s3_openvino_model_mesh_inference_service,
+        isvc=http_s3_openvino_model_mesh_inference_service,
+        runtime_name=http_s3_ovms_model_mesh_serving_runtime.name,
+    )[0]
+
+    with Role(
+        client=admin_client,
         name=f"{http_s3_openvino_model_mesh_inference_service.name}-view",
-        resource_names=[http_s3_openvino_model_mesh_inference_service.name],
+        namespace=http_s3_openvino_model_mesh_inference_service.namespace,
+        rules=[
+            {"apiGroups": [svc.api_group], "resources": ["services"], "verbs": ["get"], "resourceNames": [svc.name]},
+        ],
     ) as role:
         yield role
 

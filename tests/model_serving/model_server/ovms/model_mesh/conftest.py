@@ -11,7 +11,7 @@ from ocp_resources.serving_runtime import ServingRuntime
 from utilities.constants import (
     Protocols,
 )
-from utilities.infra import create_inference_token, create_resource_view_role
+from utilities.infra import create_inference_token, create_isvc_view_role
 
 
 @pytest.fixture(scope="class")
@@ -19,9 +19,9 @@ def model_mesh_view_role(
     admin_client: DynamicClient,
     http_s3_openvino_model_mesh_inference_service: ServingRuntime,
 ) -> Generator[Role, Any, Any]:
-    with create_resource_view_role(
+    with create_isvc_view_role(
         client=admin_client,
-        resource=http_s3_openvino_model_mesh_inference_service,
+        isvc=http_s3_openvino_model_mesh_inference_service,
         name=f"{http_s3_openvino_model_mesh_inference_service.name}-view",
         resource_names=[http_s3_openvino_model_mesh_inference_service.name],
     ) as role:
