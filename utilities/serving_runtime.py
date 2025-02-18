@@ -122,20 +122,23 @@ class ServingRuntimeFromTemplate(ServingRuntime):
 
         """
         _model_dict = self.get_model_dict_from_template()
+        _model_metadata = _model_dict.get("metadata", {})
+        _model_spec = _model_dict.get("spec", {})
+        _model_spec_supported_formats = _model_spec.get("supportedModelFormats", [])
 
         if self.multi_model is not None:
-            _model_dict["spec"]["multiModel"] = self.multi_model
+            _model_spec["multiModel"] = self.multi_model
 
         if self.enable_external_route:
-            _model_dict["metadata"].setdefault("annotations", {})["enable-route"] = "true"
+            _model_metadata.setdefault("annotations", {})["enable-route"] = "true"
 
         if self.enable_auth:
-            _model_dict["metadata"].setdefault("annotations", {})["enable-route"] = "true"
+            _model_metadata.setdefault("annotations", {})["enable-route"] = "true"
 
         if self.protocol is not None:
-            _model_dict["metadata"].setdefault("annotations", {})["opendatahub.io/apiProtocol"] = self.protocol
+            _model_metadata.setdefault("annotations", {})["opendatahub.io/apiProtocol"] = self.protocol
 
-        for container in _model_dict["spec"]["containers"]:
+        for container in _model_spec["containers"]:
             for env in container.get("env", []):
                 if env["name"] == "RUNTIME_HTTP_ENABLED" and self.enable_http is not None:
                     env["value"] = str(self.enable_http).lower()
@@ -167,16 +170,16 @@ class ServingRuntimeFromTemplate(ServingRuntime):
                     container["ports"] = vLLM_CONFIG["port_configurations"]["raw"]
 
         if self.supported_model_formats:
-            _model_dict["spec"]["supportedModelFormats"] = self.supported_model_formats
+            _model_spec_supported_formats = self.supported_model_formats
 
         else:
             if self.model_format_name is not None:
-                for model in _model_dict["spec"]["supportedModelFormats"]:
+                for model in _model_spec_supported_formats:
                     if model["name"] in self.model_format_name:
                         model["version"] = self.model_format_name[model["name"]]
 
             if self.models_priorities:
-                for _model in _model_dict["spec"]["supportedModelFormats"]:
+                for _model in _model_spec_supported_formats:
                     _model_name = _model["name"]
                     if _model_name in self.models_priorities:
                         _model["priority"] = self.models_priorities[_model_name]
