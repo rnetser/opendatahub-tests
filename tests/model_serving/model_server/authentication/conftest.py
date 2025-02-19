@@ -18,7 +18,6 @@ from utilities.infra import (
     create_ns,
     create_isvc_view_role,
     get_pods_by_isvc_label,
-    get_services_by_isvc_label,
     s3_endpoint_secret,
     create_inference_token,
 )
@@ -405,20 +404,20 @@ def unprivileged_s3_caikit_raw_inference_service(
 
 
 @pytest.fixture()
-def patched_remove_authentication_model_mesh_isvc(
+def patched_remove_authentication_model_mesh_runtime(
     admin_client: DynamicClient,
-    http_s3_openvino_model_mesh_inference_service: InferenceService,
-) -> Generator[InferenceService, Any, Any]:
+    http_s3_ovms_model_mesh_serving_runtime: ServingRuntime,
+) -> Generator[ServingRuntime, Any, Any]:
     with ResourceEditor(
         patches={
-            http_s3_openvino_model_mesh_inference_service: {
+            http_s3_ovms_model_mesh_serving_runtime: {
                 "metadata": {
-                    "annotations": {Annotations.KserveAuth.SECURITY: "false"},
+                    "annotations": {"enable-auth": "false"},
                 }
             }
         }
     ):
-        yield http_s3_openvino_model_mesh_inference_service
+        yield http_s3_ovms_model_mesh_serving_runtime
 
 
 @pytest.fixture(scope="class")
@@ -427,18 +426,12 @@ def http_model_mesh_view_role(
     http_s3_openvino_model_mesh_inference_service: InferenceService,
     http_s3_ovms_model_mesh_serving_runtime: ServingRuntime,
 ) -> Generator[Role, Any, Any]:
-    svc = get_services_by_isvc_label(
-        client=admin_client,
-        isvc=http_s3_openvino_model_mesh_inference_service,
-        runtime_name=http_s3_ovms_model_mesh_serving_runtime.name,
-    )[0]
-
     with Role(
         client=admin_client,
         name=f"{http_s3_openvino_model_mesh_inference_service.name}-view",
         namespace=http_s3_openvino_model_mesh_inference_service.namespace,
         rules=[
-            {"apiGroups": [svc.api_group], "resources": ["services"], "verbs": ["get"], "resourceNames": [svc.name]},
+            {"apiGroups": [""], "resources": ["services"], "verbs": ["get"]},
         ],
     ) as role:
         yield role

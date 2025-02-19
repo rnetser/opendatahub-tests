@@ -27,7 +27,9 @@ class TestModelMeshAuthentication:
 
     @pytest.mark.dependency(name="test_model_mesh_model_authentication_openvino_inference_with_tensorflow")
     def test_model_mesh_model_authentication_openvino_inference_with_tensorflow(
-        self, http_s3_openvino_model_mesh_inference_service, http_model_mesh_inference_token
+        self,
+        http_s3_openvino_model_mesh_inference_service,
+        http_model_mesh_inference_token,
     ):
         """Verify model query with token using REST"""
         verify_inference_response(
@@ -40,10 +42,14 @@ class TestModelMeshAuthentication:
         )
 
     @pytest.mark.dependency(name="test_model_mesh_disabled_model_authentication")
-    def test_model_mesh_disabled_model_authentication(self, patched_remove_authentication_model_mesh_isvc):
+    def test_model_mesh_disabled_model_authentication(
+        self,
+        patched_remove_authentication_model_mesh_runtime,
+        http_s3_openvino_model_mesh_inference_service,
+    ):
         """Verify model query after authentication is disabled"""
         verify_inference_response(
-            inference_service=patched_remove_authentication_model_mesh_isvc,
+            inference_service=http_s3_openvino_model_mesh_inference_service,
             inference_config=OPENVINO_INFERENCE_CONFIG,
             inference_type=Inference.INFER,
             protocol=Protocols.HTTPS,
@@ -52,7 +58,9 @@ class TestModelMeshAuthentication:
 
     @pytest.mark.dependency(depends=["test_model_mesh_disabled_model_authentication"])
     def test_model_mesh_re_enabled_model_authentication(
-        self, http_s3_openvino_model_mesh_inference_service, http_model_mesh_inference_token
+        self,
+        http_s3_openvino_model_mesh_inference_service,
+        http_model_mesh_inference_token,
     ):
         """Verify model query after authentication is re-enabled"""
         verify_inference_response(
