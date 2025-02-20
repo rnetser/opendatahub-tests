@@ -82,7 +82,8 @@ def verify_inference_response(
                 assert "credential not found" in reason
 
         elif inference.deployment_mode == KServeDeploymentType.MODEL_MESH:
-            assert "Forbidden" in res["output"]
+            reason = "Forbidden"
+            assert reason in res["output"], f"{reason} not found in output:\n{res['output']}"
 
         else:
             raise ValueError(f"Auth header {auth_header} not found in response. Response: {res['output']}")

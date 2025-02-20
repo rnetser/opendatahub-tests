@@ -438,7 +438,7 @@ class UserInference(Inference):
         if not res:
             raise ValueError(f"Inference failed with error: {err}\nOutput: {out}\nCommand: {cmd}")
 
-        LOGGER.info(f"Inference output: {out}")
+        LOGGER.info(f"Inference output:\n{out}")
 
         return out
 
