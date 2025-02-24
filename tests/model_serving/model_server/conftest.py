@@ -253,9 +253,9 @@ def http_s3_ovms_model_mesh_serving_runtime(
         "name": f"{Protocols.HTTP}-{ModelInferenceRuntime.OPENVINO_RUNTIME}",
         "template_name": RuntimeTemplates.OVMS_MODEL_MESH,
         "multi_model": True,
-        "protocol": "REST",
+        "protocol": Protocols.REST.upper(),
         "resources": {
-            "ovms": {
+            ModelFormat.OVMS: {
                 "requests": {"cpu": "1", "memory": "4Gi"},
                 "limits": {"cpu": "2", "memory": "8Gi"},
             }
@@ -289,7 +289,7 @@ def openvino_kserve_serving_runtime(
         template_name=RuntimeTemplates.OVMS_KSERVE,
         multi_model=False,
         resources={
-            "ovms": {
+            ModelFormat.OVMS: {
                 "requests": {"cpu": "1", "memory": "4Gi"},
                 "limits": {"cpu": "2", "memory": "8Gi"},
             }
@@ -426,9 +426,9 @@ def http_s3_ovms_external_route_model_mesh_serving_runtime(
         "name": f"{Protocols.HTTP}-{ModelInferenceRuntime.OPENVINO_RUNTIME}-exposed",
         "template_name": RuntimeTemplates.OVMS_MODEL_MESH,
         "multi_model": True,
-        "protocol": "REST",
+        "protocol": Protocols.REST.upper(),
         "resources": {
-            "ovms": {
+            ModelFormat.OVMS: {
                 "requests": {"cpu": "1", "memory": "4Gi"},
                 "limits": {"cpu": "2", "memory": "8Gi"},
             },
