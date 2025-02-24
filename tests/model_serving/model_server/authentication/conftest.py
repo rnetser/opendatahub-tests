@@ -103,20 +103,6 @@ def http_view_role(
 
 
 @pytest.fixture(scope="class")
-def http_raw_view_role(
-    admin_client: DynamicClient,
-    http_s3_caikit_raw_inference_service: InferenceService,
-) -> Generator[Role, Any, Any]:
-    with create_isvc_view_role(
-        client=admin_client,
-        isvc=http_s3_caikit_raw_inference_service,
-        name=f"{http_s3_caikit_raw_inference_service.name}-view",
-        resource_names=[http_s3_caikit_raw_inference_service.name],
-    ) as role:
-        yield role
-
-
-@pytest.fixture(scope="class")
 def http_role_binding(
     admin_client: DynamicClient,
     http_view_role: Role,
@@ -136,31 +122,7 @@ def http_role_binding(
 
 
 @pytest.fixture(scope="class")
-def http_raw_role_binding(
-    admin_client: DynamicClient,
-    http_raw_view_role: Role,
-    model_service_account: ServiceAccount,
-    http_s3_caikit_raw_inference_service: InferenceService,
-) -> Generator[RoleBinding, Any, Any]:
-    with RoleBinding(
-        client=admin_client,
-        namespace=model_service_account.namespace,
-        name=f"{Protocols.HTTP}-{model_service_account.name}-view",
-        role_ref_name=http_raw_view_role.name,
-        role_ref_kind=http_raw_view_role.kind,
-        subjects_kind=model_service_account.kind,
-        subjects_name=model_service_account.name,
-    ) as rb:
-        yield rb
-
-
-@pytest.fixture(scope="class")
 def http_inference_token(model_service_account: ServiceAccount, http_role_binding: RoleBinding) -> str:
-    return create_inference_token(model_service_account=model_service_account)
-
-
-@pytest.fixture(scope="class")
-def http_raw_inference_token(model_service_account: ServiceAccount, http_raw_role_binding: RoleBinding) -> str:
     return create_inference_token(model_service_account=model_service_account)
 
 
