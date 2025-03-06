@@ -82,6 +82,7 @@ and the [examples](https://github.com/RedHatQE/openshift-python-wrapper/tree/mai
 For example:  
   - If a test needs a storage secret, the fixture should be called 'storage_secret' and not 'create_secret'.
   - If a test needs a directory to store user data, the fixture should be called 'user_data_dir' and not 'create_directory'.
+  - If a vllm test needs a serving runtime, the fixture should be called 'vllm_serving_runtime' and not 'create_serving_runtime'.
 - Note fixture scope, test execution times can be reduced by selecting the right scope.  
 Pytest default fixture invocation is "function", meaning the code in the fixture will be executed every time the fixture is called.  
 Broader scopes (class, module etc) will invoke the code only once within the given scope and all tests within the scope will use the same instance.

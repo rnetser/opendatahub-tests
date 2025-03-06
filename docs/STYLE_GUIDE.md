@@ -6,6 +6,7 @@
 
 ## Naming
 - Use descriptive names for tests, variables, functions, classes, etc.
+- Meaningful names are better than short names.
 - Do not use single-letter names.
 
 ## Documentation
