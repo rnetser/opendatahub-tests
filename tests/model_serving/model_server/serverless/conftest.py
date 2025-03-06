@@ -13,12 +13,11 @@ from utilities.inference_utils import create_isvc
 
 
 @pytest.fixture(scope="class")
-def s3_flan_small_caikit_serverless_inference_service(
+def s3_flan_small_hf_caikit_serverless_inference_service(
     request: FixtureRequest,
     admin_client: DynamicClient,
     model_namespace: Namespace,
     serving_runtime_from_template: ServingRuntime,
-    s3_models_storage_uri: str,
     models_endpoint_s3_secret: Secret,
 ) -> Generator[InferenceService, Any, Any]:
     with create_isvc(
@@ -27,7 +26,7 @@ def s3_flan_small_caikit_serverless_inference_service(
         namespace=model_namespace.name,
         runtime=serving_runtime_from_template.name,
         storage_key=models_endpoint_s3_secret.name,
-        storage_path=ModelStoragePath.FLAN_T5_SMALL_CAIKIT,
+        storage_path=ModelStoragePath.FLAN_T5_SMALL_HF,
         model_format=serving_runtime_from_template.instance.spec.supportedModelFormats[0].name,
         deployment_mode=KServeDeploymentType.SERVERLESS,
         external_route=True,

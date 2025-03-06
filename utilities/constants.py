@@ -39,7 +39,7 @@ class ModelStoragePath:
     TENSORFLOW_MODEL: str = "inception_resnet_v2.pb"
     OPENVINO_VEHICLE_DETECTION: str = "vehicle-detection"
     FLAN_T5_SMALL_HF: str = f"{ModelName.FLAN_T5_SMALL}/{ModelName.FLAN_T5_SMALL_HF}"
-    BLOOM_560M_CAIKIT: str = "bloom-560m/bloom-560m-caikit"
+    BLOOM_560M_CAIKIT: str = f"{ModelName.BLOOM_560M}/{ModelAndFormat.BLOOM_560M_CAIKIT}/artifacts"
 
 
 class CurlOutput:
