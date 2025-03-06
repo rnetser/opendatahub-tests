@@ -6,12 +6,13 @@
 
 ## Naming
 - Use descriptive names for tests, variables, functions, classes, etc.
+- Do not use single-letter names.
 
 ## Documentation
 - Use [Google-format](https://google.github.io/styleguide/pyguide.html#381-docstrings) for docstrings.
 - Add docstrings to document functions, classes, and modules.
-- Avoid inline comments; the code should be self-explanatory.  
-Add comments only when necessary. For example, when using complex regex.
+- Avoid inline comments; Write self-explanatory code that can be easily understood.  
+Only add comments when necessary. For example, when using complex regex.
 
 ## Typing
 - Add typing to new code; typing is enforced using [mypy](https://mypy-lang.org/)

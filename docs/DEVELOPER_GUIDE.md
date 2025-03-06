@@ -31,7 +31,9 @@ To contribute code to the project:
 - When a refactor is needed as part of the current PR, the refactor should be done in another PR and the current PR should be rebased on it.
 - Please address each comment in code review
   - If a comment was addressed and accepted, please comment as done and resolve.
-  - If a comment was addressed and rejected or additional discussion is needed, add your input and do not resolve the comment.
+  - If a comment was addressed and rejected or additional discussion is needed, add your input and do not resolve the comment.  
+  - To
+  minimize the number of comments, please try to address all comments in one PR.
 - Before a PR can be merged:
   - PRs must be verified and marked with "verified" label.
   - PRs must be reviewed by at least two reviewers other than the committer.
@@ -59,6 +61,12 @@ If needed, once your PR is merged to `main`, cherry-pick your PR to the relevant
 Error logs should be detailed with what failed, status and so on.
 
 
+## Interacting with Kubernetes/OpenShift APIs
+The project utilizes [openshift-python-wrapper](https://github.com/RedHatQE/openshift-python-wrapper).
+Please refer to the [documentation](https://github.com/RedHatQE/openshift-python-wrapper/blob/main/README.md)  
+and the [examples](https://github.com/RedHatQE/openshift-python-wrapper/tree/main/examples) for more information.
+
+
 ## Conftest
 - Top level [conftest.py](../conftest.py) contains pytest native fixtures.
 - General tests [conftest.py](../tests/conftest.py) contains fixtures that are used in multiple tests by multiple teams.
@@ -67,11 +75,13 @@ Error logs should be detailed with what failed, status and so on.
 
 ## Fixtures
 - Ordering: Always call pytest native fixtures first, then session-scoped fixtures and then any other fixtures.
-- Fixtures should handle the setup and the teardown.
-- Pytest reports failures in fixtures as ERROR
-- A fixture name should be a noun that describes what the fixture produces, rather than a verb.  
-For example: If a test needs a storage secret, the fixture should be called 'storage_secret' and not 'create_secret'.
+- Fixtures should handle setup (and the teardown, if needed) needed for the test(s), including the creation of resources for example.
 - Fixtures should do one thing only.
+- Pytest reports failures in fixtures as ERROR
+- A fixture name should be a noun that describes what the fixture provides (i.e. returns or yields), rather than a verb.  
+For example:  
+  - If a test needs a storage secret, the fixture should be called 'storage_secret' and not 'create_secret'.
+  - If a test needs a directory to store user data, the fixture should be called 'user_data_dir' and not 'create_directory'.
 - Note fixture scope, test execution times can be reduced by selecting the right scope.  
 Pytest default fixture invocation is "function", meaning the code in the fixture will be executed every time the fixture is called.  
 Broader scopes (class, module etc) will invoke the code only once within the given scope and all tests within the scope will use the same instance.
