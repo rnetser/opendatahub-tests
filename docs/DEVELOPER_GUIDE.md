@@ -76,7 +76,32 @@ and the [examples](https://github.com/RedHatQE/openshift-python-wrapper/tree/mai
 ## Fixtures
 - Ordering: Always call pytest native fixtures first, then session-scoped fixtures and then any other fixtures.
 - Fixtures should handle setup (and the teardown, if needed) needed for the test(s), including the creation of resources for example.
-- Fixtures should do one thing only.
+- Fixtures should do one thing only.  
+For example, instead of:
+
+```python
+@pytest.fixture()
+def model_inference_service():
+    with ServingRuntime(name=...) as serving_runtime:
+      with InferenceService(name=..) as inference_service:
+        yield inference_service
+```
+
+Do:
+
+```python
+@pytest.fixture()
+def model_runtime():
+    with ServingRuntime(name=...) as serving_runtime:
+      yield serving_runtime
+
+@pytest.fixture(model_runtime)
+def model_inference_service(model_runtime):
+    with InferenceService(name=..) as inference_service:
+        yield inference_service
+
+```
+
 - Pytest reports failures in fixtures as ERROR
 - A fixture name should be a noun that describes what the fixture provides (i.e. returns or yields), rather than a verb.  
 For example:  
