@@ -22,7 +22,7 @@ def s3_flan_small_hf_caikit_serverless_inference_service(
 ) -> Generator[InferenceService, Any, Any]:
     with create_isvc(
         client=admin_client,
-        name=f"{ModelName.FLAN_T5_SMALL}",
+        name=f"{ModelName.FLAN_T5_SMALL}-model",
         namespace=model_namespace.name,
         runtime=serving_runtime_from_template.name,
         storage_key=models_endpoint_s3_secret.name,
