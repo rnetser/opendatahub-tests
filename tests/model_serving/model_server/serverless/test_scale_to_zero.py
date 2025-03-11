@@ -88,7 +88,7 @@ class TestServerlessScaleToZero:
             namespace=inference_service_patched_replicas.namespace,
         ):
             if deployment.labels["serving.knative.dev/configurationGeneration"] == "3":
-                deployment.wait_for_replicas(replicas=1)
+                deployment.wait_for_replicas()
                 return
 
         raise DeploymentValidationError(
