@@ -1,7 +1,12 @@
 import re
 import shlex
 
+from kubernetes.dynamic import DynamicClient
+from ocp_resources.inference_service import InferenceService
 from ocp_resources.pod import Pod
+
+from tests.model_serving.model_server.multi_node.constants import WORKER_POD_ROLE
+from utilities.infra import get_pods_by_isvc_label
 
 
 def verify_ray_status(pods: list[Pod]) -> None:
@@ -57,3 +62,23 @@ def verify_nvidia_gpu_status(pod: Pod) -> None:
 
     elif mem_regex and int(mem_regex.group(1)) == 0:
         raise ValueError(f"GPU memory is not used, {res}")
+
+
+def delete_multi_node_pod_by_role(client: DynamicClient, isvc: InferenceService, role: str) -> None:
+    """
+    Delete multi node pod by role
+
+    Args:
+        client (DynamicClient): Dynamic client
+        isvc (InferenceService): InferenceService object
+        role (str): pod role
+
+    """
+    pods = get_pods_by_isvc_label(client=client, isvc=isvc)
+
+    for pod in pods:
+        if role == WORKER_POD_ROLE and WORKER_POD_ROLE in pod.name:
+            pod.delete()
+
+        else:
+            pod.delete()

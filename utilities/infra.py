@@ -481,7 +481,7 @@ def update_configmap_data(
 
 
 def verify_no_failed_pods(
-    client: DynamicClient, isvc: InferenceService, runtime_name: str | None, timeout: int = Timeout.TIMEOUT_5MIN
+    client: DynamicClient, isvc: InferenceService, runtime_name: str | None = None, timeout: int = Timeout.TIMEOUT_5MIN
 ) -> None:
     """
     Verify no failed pods.
