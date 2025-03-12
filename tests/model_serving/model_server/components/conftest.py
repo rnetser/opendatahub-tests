@@ -12,7 +12,7 @@ from ocp_resources.serving_runtime import ServingRuntime
 
 from utilities.data_science_cluster_utils import update_components_in_dsc
 from utilities.constants import DscComponents
-from tests.model_serving.model_server.utils import create_isvc
+from utilities.inference_utils import create_isvc
 
 
 @pytest.fixture(scope="class")
@@ -38,7 +38,7 @@ def invalid_s3_models_inference_service(
     serving_runtime_from_template: ServingRuntime,
     models_s3_bucket_name: str,
     model_service_account: ServiceAccount,
-) -> InferenceService:
+) -> Generator[InferenceService, Any, Any]:
     with create_isvc(
         client=admin_client,
         name=request.param["name"],
@@ -57,7 +57,7 @@ def invalid_s3_models_inference_service(
 @pytest.fixture
 def updated_s3_models_inference_service(
     invalid_s3_models_inference_service: InferenceService, s3_models_storage_uri: str
-) -> InferenceService:
+) -> Generator[InferenceService, Any, Any]:
     with ResourceEditor(
         patches={
             invalid_s3_models_inference_service: {
