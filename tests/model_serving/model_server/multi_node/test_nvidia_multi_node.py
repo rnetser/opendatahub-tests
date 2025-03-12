@@ -1,19 +1,15 @@
-import re
-from subprocess import TimeoutExpired
-
 import pytest
 from kubernetes.dynamic.exceptions import ResourceNotFoundError
 from simple_logger.logger import get_logger
-from timeout_sampler import TimeoutSampler
 
-from tests.model_serving.model_server.multi_node.constants import WORKER_POD_ROLE
+from tests.model_serving.model_server.multi_node.constants import HEAD_POD_ROLE, WORKER_POD_ROLE
 from tests.model_serving.model_server.multi_node.utils import (
     verify_nvidia_gpu_status,
     verify_ray_status,
 )
 from tests.model_serving.model_server.utils import verify_inference_response
 from utilities.constants import Protocols, Timeout
-from utilities.infra import get_pods_by_isvc_label, verify_no_failed_pods
+from utilities.infra import verify_no_failed_pods
 from utilities.manifests.vllm import VLLM_INFERENCE_CONFIG
 
 pytestmark = [
@@ -120,7 +116,7 @@ class TestMultiNodeTLS:
 
     @pytest.mark.parametrize(
         "deleted_multi_node_pod",
-        [pytest.param({"pod-role": "head"})],
+        [pytest.param({"pod-role": HEAD_POD_ROLE})],
         indirect=True,
     )
     def test_multi_node_head_pod_deleted(self, admin_client, multi_node_inference_service, deleted_multi_node_pod):
@@ -170,27 +166,23 @@ class TestMultiNodeTLS:
 
     @pytest.mark.parametrize(
         "deleted_multi_node_pod",
-        [pytest.param({"pod-role": "head"})],
+        [pytest.param({"pod-role": HEAD_POD_ROLE})],
         indirect=True,
     )
     @pytest.mark.dependency(depends=["test_ray_tls_secret_reconciliation"])
-    def test_multi_node_head_pod_deleted__after_cert_rotation(
+    def test_multi_node_inference_after_pod_deletion(
         self, admin_client, multi_node_inference_service, deleted_multi_node_pod
     ):
-        """Test multi node when head pod is deleted; tls handshake should fail"""
-        tls_error = "Handshake failed with fatal error SSL_ERROR_SSL"
-        for pod in get_pods_by_isvc_label(client=admin_client, isvc=multi_node_inference_service):
-            if WORKER_POD_ROLE in pod.name:
-                try:
-                    for sample in TimeoutSampler(
-                        wait_timeout=Timeout.TIMEOUT_5MIN,
-                        sleep=10,
-                        func=pod.log,
-                        container=f"{WORKER_POD_ROLE}-container",
-                    ):
-                        if sample and re.search(rf"{tls_error}", sample):
-                            return
-
-                except TimeoutExpired:
-                    LOGGER.error(f"Failed to find {tls_error} in logs of {pod.name}")
-                    raise
+        """Test multi node inference after pod deletion"""
+        verify_no_failed_pods(
+            client=admin_client,
+            isvc=multi_node_inference_service,
+            timeout=Timeout.TIMEOUT_10MIN,
+        )
+        verify_inference_response(
+            inference_service=multi_node_inference_service,
+            inference_config=VLLM_INFERENCE_CONFIG,
+            inference_type="completions",
+            protocol=Protocols.HTTP,
+            use_default_query=True,
+        )
