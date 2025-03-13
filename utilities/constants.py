@@ -156,6 +156,10 @@ class Timeout:
     TIMEOUT_15MIN: int = 15 * TIMEOUT_1MIN
 
 
+class Containers:
+    KSERVE_CONTAINER_NAME: str = "kserve-container"
+
+
 MODEL_REGISTRY: str = "model-registry"
 MODELMESH_SERVING: str = "modelmesh-serving"
 ISTIO_CA_BUNDLE_FILENAME: str = "istio_knative.crt"
