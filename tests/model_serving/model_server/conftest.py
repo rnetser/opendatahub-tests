@@ -342,7 +342,7 @@ def ci_service_account(
 
 
 @pytest.fixture(scope="class")
-def ovms_serverless_inference_service(
+def ovms_kserve_inference_service(
     request: FixtureRequest,
     admin_client: DynamicClient,
     model_namespace: Namespace,
@@ -357,7 +357,7 @@ def ovms_serverless_inference_service(
         storage_path=request.param["model-dir"],
         storage_key=ci_endpoint_s3_secret.name,
         model_format=ModelAndFormat.OPENVINO_IR,
-        deployment_mode=KServeDeploymentType.SERVERLESS,
+        deployment_mode=request.param["deployment-mode"],
         model_version=request.param["model-version"],
     ) as isvc:
         yield isvc
