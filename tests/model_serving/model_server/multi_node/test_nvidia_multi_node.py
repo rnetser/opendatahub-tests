@@ -8,7 +8,7 @@ from tests.model_serving.model_server.multi_node.utils import (
     verify_ray_status,
 )
 from tests.model_serving.model_server.utils import verify_inference_response
-from utilities.constants import Protocols, Timeout
+from utilities.constants import Protocols, StorageClassName, Timeout
 from utilities.infra import verify_no_failed_pods
 from utilities.manifests.vllm import VLLM_INFERENCE_CONFIG
 
@@ -18,23 +18,26 @@ pytestmark = [
 ]
 
 
-MODEL_DIR = "granite-8b-code-base"
-NAMESPACE_NAME = "gpu-multi-node"
 LOGGER = get_logger(name=__name__)
 
 
 @pytest.mark.parametrize(
-    "model_namespace_scope_module, models_bucket_downloaded_model_data_scope_module, multi_node_inference_service",
+    "model_namespace, models_bucket_downloaded_model_data, model_pvc, multi_node_inference_service",
     [
         pytest.param(
-            {"name": NAMESPACE_NAME},
-            {"model-dir": MODEL_DIR},
+            {"name": "gpu-multi-node"},
+            {"model-dir": "granite-8b-code-base"},
+            {
+                "access-modes": "ReadWriteMany",
+                "storage-class-name": StorageClassName.NFS,
+                "pvc-size": "40Gi",
+            },
             {"name": "multi-vllm"},
         )
     ],
     indirect=True,
 )
-class TestBasicMultiNode:
+class TestMultiNode:
     def test_multi_node_ray_status(self, multi_node_predictor_pods_scope_class):
         """Test multi node ray status"""
         verify_ray_status(pods=multi_node_predictor_pods_scope_class)
@@ -69,29 +72,6 @@ class TestBasicMultiNode:
             use_default_query=True,
         )
 
-    def test_multi_node_basic_external_inference(self, patched_multi_node_isvc_external_route):
-        """Test multi node basic external inference"""
-        verify_inference_response(
-            inference_service=patched_multi_node_isvc_external_route,
-            inference_config=VLLM_INFERENCE_CONFIG,
-            inference_type="completions",
-            protocol=Protocols.HTTPS,
-            use_default_query=True,
-        )
-
-
-@pytest.mark.parametrize(
-    "model_namespace_scope_module, models_bucket_downloaded_model_data_scope_module, multi_node_inference_service",
-    [
-        pytest.param(
-            {"name": NAMESPACE_NAME},
-            {"model-dir": MODEL_DIR},
-            {"name": "multi-vllm-tls"},
-        )
-    ],
-    indirect=True,
-)
-class TestMultiNodeTLS:
     def test_tls_secret_exists_in_control_ns(self, multi_node_inference_service, ray_ca_tls_secret):
         """Test multi node ray ca tls secret exists in control (applications) namespace"""
         if not ray_ca_tls_secret.exists:
@@ -184,5 +164,15 @@ class TestMultiNodeTLS:
             inference_config=VLLM_INFERENCE_CONFIG,
             inference_type="completions",
             protocol=Protocols.HTTP,
+            use_default_query=True,
+        )
+
+    def test_multi_node_basic_external_inference(self, patched_multi_node_isvc_external_route):
+        """Test multi node basic external inference"""
+        verify_inference_response(
+            inference_service=patched_multi_node_isvc_external_route,
+            inference_config=VLLM_INFERENCE_CONFIG,
+            inference_type="completions",
+            protocol=Protocols.HTTPS,
             use_default_query=True,
         )

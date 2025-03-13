@@ -16,11 +16,10 @@ from pytest_testconfig import config as py_config
 from tests.model_serving.model_server.multi_node.utils import (
     delete_multi_node_pod_by_role,
 )
-from utilities.constants import KServeDeploymentType, StorageClassName
+from utilities.constants import KServeDeploymentType
 from utilities.general import download_model_data
 from utilities.inference_utils import create_isvc
 from utilities.infra import (
-    create_ns,
     get_pods_by_isvc_label,
     wait_for_inference_deployment_replicas,
 )
@@ -43,39 +42,13 @@ def skip_if_no_gpu_nodes(nvidia_gpu_nodes: list[Node]) -> None:
         pytest.skip("Multi-node tests can only run on a Cluster with at least 2 GPU Worker nodes")
 
 
-@pytest.fixture(scope="module")
-def model_namespace_scope_module(
-    request: FixtureRequest, admin_client: DynamicClient
-) -> Generator[Namespace, Any, Any]:
-    with create_ns(admin_client=admin_client, name=request.param["name"]) as ns:
-        yield ns
-
-
-@pytest.fixture(scope="module")
-def model_pvc_scope_module(
+@pytest.fixture(scope="class")
+def models_bucket_downloaded_model_data(
     request: FixtureRequest,
     admin_client: DynamicClient,
-    model_namespace_scope_module: Namespace,
-) -> Generator[PersistentVolumeClaim, Any, Any]:
-    with PersistentVolumeClaim(
-        client=admin_client,
-        name="model-pvc",
-        namespace=model_namespace_scope_module.name,
-        size="40Gi",
-        accessmodes="ReadWriteMany",
-        storage_class=StorageClassName.NFS,
-    ) as pvc:
-        pvc.wait_for_status(status=pvc.Status.BOUND, timeout=120)
-        yield pvc
-
-
-@pytest.fixture(scope="module")
-def models_bucket_downloaded_model_data_scope_module(
-    request: FixtureRequest,
-    admin_client: DynamicClient,
-    model_namespace_scope_module: Namespace,
+    model_namespace: Namespace,
     models_s3_bucket_name: str,
-    model_pvc_scope_module: PersistentVolumeClaim,
+    model_pvc: PersistentVolumeClaim,
     aws_secret_access_key: str,
     aws_access_key_id: str,
     models_s3_bucket_endpoint: str,
@@ -85,8 +58,8 @@ def models_bucket_downloaded_model_data_scope_module(
         admin_client=admin_client,
         aws_access_key_id=aws_access_key_id,
         aws_secret_access_key=aws_secret_access_key,
-        model_namespace=model_namespace_scope_module.name,
-        model_pvc_name=model_pvc_scope_module.name,
+        model_namespace=model_namespace.name,
+        model_pvc_name=model_pvc.name,
         bucket_name=models_s3_bucket_name,
         aws_endpoint_url=models_s3_bucket_endpoint,
         aws_default_region=models_s3_bucket_region,
@@ -98,12 +71,12 @@ def models_bucket_downloaded_model_data_scope_module(
 def multi_node_serving_runtime(
     request: FixtureRequest,
     admin_client: DynamicClient,
-    model_namespace_scope_module: Namespace,
+    model_namespace: Namespace,
 ) -> Generator[ServingRuntime, Any, Any]:
     with ServingRuntimeFromTemplate(
         client=admin_client,
         name="vllm-multinode-runtime",  # TODO: rename servingruntime when RHOAIENG-16147 is resolved
-        namespace=model_namespace_scope_module.name,
+        namespace=model_namespace.name,
         template_name="vllm-multinode-runtime-template",
         multi_model=False,
         enable_http=True,
@@ -115,17 +88,16 @@ def multi_node_serving_runtime(
 def multi_node_inference_service(
     request: FixtureRequest,
     admin_client: DynamicClient,
-    model_namespace_scope_module: Namespace,
     multi_node_serving_runtime: ServingRuntime,
-    model_pvc_scope_module: PersistentVolumeClaim,
-    models_bucket_downloaded_model_data_scope_module: str,
+    model_pvc: PersistentVolumeClaim,
+    models_bucket_downloaded_model_data: str,
 ) -> Generator[InferenceService, Any, Any]:
     with create_isvc(
         client=admin_client,
         name=request.param["name"],
-        namespace=model_namespace_scope_module.name,
+        namespace=multi_node_serving_runtime.namespace,
         runtime=multi_node_serving_runtime.name,
-        storage_uri=f"pvc://{model_pvc_scope_module.name}/{models_bucket_downloaded_model_data_scope_module}",
+        storage_uri=f"pvc://{model_pvc.name}/{models_bucket_downloaded_model_data}",
         model_format=multi_node_serving_runtime.instance.spec.supportedModelFormats[0].name,
         deployment_mode=KServeDeploymentType.RAW_DEPLOYMENT,
         autoscaler_mode="external",
