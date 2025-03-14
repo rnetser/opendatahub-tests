@@ -524,6 +524,7 @@ def create_isvc(
     timeout: int = Timeout.TIMEOUT_15MIN,
     scale_metric: str | None = None,
     scale_target: int | None = None,
+    model_env_variables: list[dict[str, str]] | None = None,
 ) -> Generator[InferenceService, Any, Any]:
     """
     Create InferenceService object.
@@ -555,6 +556,7 @@ def create_isvc(
         timeout (int): Time to wait for the model inference,deployment to be ready
         scale_metric (str): Scale metric
         scale_target (int): Scale target
+        model_env_variables (list[dict[str, str]]): Model environment variables
 
     Yields:
         InferenceService: InferenceService object
@@ -591,6 +593,8 @@ def create_isvc(
         predictor_dict["model"]["volumeMounts"] = volumes_mounts
     if volumes:
         predictor_dict["volumes"] = volumes
+    if model_env_variables:
+        predictor_dict["model"]["env"] = model_env_variables
 
     _annotations: dict[str, str] = {}
 
