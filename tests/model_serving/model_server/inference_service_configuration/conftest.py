@@ -22,7 +22,7 @@ def removed_isvc_env_vars(
 ) -> Generator[InferenceService, Any, Any]:
     isvc_predictor_spec_model_env = ovms_kserve_inference_service.instance.spec.predictor.model.get("env", [])
     isvc_predictor_spec_model_env = [
-        env_var for env_var in isvc_predictor_spec_model_env if env_var not in ISVC_ENV_VARS
+        env_var for env_var in isvc_predictor_spec_model_env if env_var.to_dict() not in ISVC_ENV_VARS
     ]
 
     deployment = Deployment(
@@ -65,7 +65,7 @@ def patched_isvc_replicas(
             ovms_kserve_inference_service: {
                 "spec": {
                     "predictor": {
-                        "maxReplicas": request.param["min-replicas"],
+                        "maxReplicas": request.param["max-replicas"],
                         "minReplicas": request.param["min-replicas"],
                     }
                 }

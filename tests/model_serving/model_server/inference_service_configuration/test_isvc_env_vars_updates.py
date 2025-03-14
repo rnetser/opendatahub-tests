@@ -23,7 +23,7 @@ BASE_ISVC_CONFIG = {
     "name": "isvc-update",
     "model-version": ModelVersion.OPSET13,
     "model-dir": "test-dir",
-    "model_env_variables": ISVC_ENV_VARS,
+    "env-vars": ISVC_ENV_VARS,
 }
 
 

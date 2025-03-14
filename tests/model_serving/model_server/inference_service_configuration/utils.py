@@ -23,18 +23,21 @@ def verify_env_vars_in_isvc_pods(isvc: InferenceService, env_vars: list[dict[str
     Raises:
         ValueError: If the environment variables do not match the expected values.
     """
+    unset_pods = []
+    checked_env_vars_names = [env_var["name"] for env_var in env_vars]
+
     pods = get_pods_by_isvc_label(client=isvc.client, isvc=isvc)
 
-    unset_pods = []
     for pod in pods:
-        pod_env_vars = [env_var.name for env_var in pod.instance.spec.containers[0].env]
-        expected_env_vars = [env_var["name"] for env_var in env_vars]
+        pod_env_vars_names = [env_var.name for env_var in pod.instance.spec.containers[0].get("env", [])]
+        envs_in_pod = [env_var in pod_env_vars_names for env_var in checked_env_vars_names]
 
         if vars_exist:
-            if not all([env_var in pod_env_vars for env_var in expected_env_vars]):
+            if not all(envs_in_pod):
                 unset_pods.append(pod.name)
+
         else:
-            if all([env_var not in pod_env_vars for env_var in expected_env_vars]):
+            if all(envs_in_pod):
                 unset_pods.append(pod.name)
 
     if unset_pods:
