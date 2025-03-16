@@ -53,7 +53,14 @@ RAW_ISVC_PARAMS = {
             SERVERLESS_ISVC_PARAMS,
             RAW_RUNTIME_PARAMS,
             RAW_ISVC_PARAMS,
-        )
+        ),
+        pytest.param(
+            {"name": "serverless-raw-ext-deployment"},
+            SERVERLESS_RUNTIME_PARAMS,
+            SERVERLESS_ISVC_PARAMS,
+            RAW_RUNTIME_PARAMS,
+            {**RAW_ISVC_PARAMS, "external-route": True},
+        ),
     ],
     indirect=True,
 )
@@ -98,7 +105,14 @@ class TestServerlessRawDeploymentInferenceCoExist:
             RAW_ISVC_PARAMS,
             SERVERLESS_RUNTIME_PARAMS,
             SERVERLESS_ISVC_PARAMS,
-        )
+        ),
+        pytest.param(
+            {"name": "raw-etx-deployment-serverless"},
+            RAW_RUNTIME_PARAMS,
+            {**RAW_ISVC_PARAMS, "external-route": True},
+            SERVERLESS_RUNTIME_PARAMS,
+            SERVERLESS_ISVC_PARAMS,
+        ),
     ],
     indirect=True,
 )
