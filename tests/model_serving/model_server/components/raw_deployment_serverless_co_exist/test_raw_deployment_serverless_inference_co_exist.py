@@ -154,7 +154,7 @@ class TestRawInternalDeploymentServerlessInferenceCoExist:
             inference_service=s3_models_inference_service,
             inference_config=CAIKIT_STANDALONE_INFERENCE_CONFIG,
             inference_type="embedding",
-            protocol=Protocols.HTTPS,
+            protocol=Protocols.HTTP,
             model_name=ModelName.CAIKIT_BGE_LARGE_EN,
             use_default_query=True,
         )
