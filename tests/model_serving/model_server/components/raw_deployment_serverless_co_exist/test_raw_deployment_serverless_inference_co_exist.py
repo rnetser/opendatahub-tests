@@ -64,11 +64,17 @@ RAW_ISVC_PARAMS = {
             Protocols.HTTPS,
         ),
     ],
-    indirect=True,
+    indirect=[
+        "model_namespace",
+        "openvino_kserve_serving_runtime",
+        "ovms_serverless_inference_service",
+        "serving_runtime_from_template",
+        "s3_models_inference_service",
+    ],
 )
 class TestServerlessRawDeploymentInferenceCoExist:
     def test_serverless_openvino_created_before_raw_deployment_caikit_inference(
-        self, ovms_serverless_inference_service, s3_models_inference_service, protocol
+        self, ovms_serverless_inference_service, s3_models_inference_service
     ):
         """Verify that Serverless model can be queried when running with raw deployment inference service"""
         verify_inference_response(
@@ -117,7 +123,13 @@ class TestServerlessRawDeploymentInferenceCoExist:
             Protocols.HTTPS,
         ),
     ],
-    indirect=True,
+    indirect=[
+        "model_namespace",
+        "openvino_kserve_serving_runtime",
+        "ovms_serverless_inference_service",
+        "serving_runtime_from_template",
+        "s3_models_inference_service",
+    ],
 )
 class TestRawDeploymentServerlessInferenceCoExist:
     def test_raw_deployment_caikit_created_before_serverless_openvino_in_namespace_rest_inference(
@@ -134,7 +146,7 @@ class TestRawDeploymentServerlessInferenceCoExist:
         )
 
     def test_serverless_openvino_created_after_raw_deployment_caikit_ns_rest_inference(
-        self, s3_models_inference_service, ovms_serverless_inference_service, protocol
+        self, s3_models_inference_service, ovms_serverless_inference_service
     ):
         """Verify that Serverless model can be queried when running with raw deployment exists"""
         verify_inference_response(
