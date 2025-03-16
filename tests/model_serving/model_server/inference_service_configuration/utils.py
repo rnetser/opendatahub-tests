@@ -1,14 +1,56 @@
+from contextlib import contextmanager
+from typing import Any, Generator
+
+from kubernetes.dynamic import DynamicClient
 from ocp_resources.deployment import Deployment
 from ocp_resources.inference_service import InferenceService
 from ocp_resources.pod import Pod
+from ocp_resources.resource import ResourceEditor
 from simple_logger.logger import get_logger
 from timeout_sampler import TimeoutSampler
 
 from utilities.constants import Timeout
-from utilities.infra import get_pods_by_isvc_label
-
+from utilities.infra import get_pods_by_isvc_label, wait_for_inference_deployment_replicas
 
 LOGGER = get_logger(name=__name__)
+
+
+@contextmanager
+def update_inference_service(
+    client: DynamicClient, isvc: InferenceService, isvc_updated_dict: dict[str, Any]
+) -> Generator[InferenceService, Any, None]:
+    """
+    Update InferenceService object.
+
+    Args:
+        client (DynamicClient): DynamicClient object.
+        isvc (InferenceService): InferenceService object.
+        isvc_updated_dict (dict[str, Any]): InferenceService object.
+
+    """
+    deployment = Deployment(
+        client=client,
+        name=f"{isvc.name}-predictor",
+        namespace=isvc.namespace,
+    )
+    start_generation = deployment.instance.status.observedGeneration
+    wait_for_inference_deployment_replicas(
+        client=client,
+        isvc=isvc,
+    )
+
+    orig_pods = get_pods_by_isvc_label(client=client, isvc=isvc)
+
+    with ResourceEditor(patches={isvc: isvc_updated_dict}):
+        # Wait for new deployment generation and new pod to be created after ISVC update
+        wait_for_new_deployment_generation(deployment=deployment, start_generation=start_generation)
+        wait_for_inference_deployment_replicas(
+            client=client,
+            isvc=isvc,
+        )
+        wait_for_new_running_inference_pods(isvc=isvc, orig_pods=orig_pods)
+
+        yield isvc
 
 
 def verify_env_vars_in_isvc_pods(isvc: InferenceService, env_vars: list[dict[str, str]], vars_exist: bool) -> None:
@@ -73,19 +115,21 @@ def wait_for_new_deployment_generation(deployment: Deployment, start_generation:
         raise
 
 
-def wait_for_new_running_inference_pod(isvc: InferenceService, orig_pod: Pod) -> None:
+def wait_for_new_running_inference_pods(isvc: InferenceService, orig_pods: list[Pod]) -> None:
     """
     Wait for the inference pod to be replaced.
 
     Args:
         isvc (InferenceService): InferenceService object.
-        orig_pod (Pod): Pod object.
+        orig_pods (list): List of Pod objects.
 
     Raises:
-        TimeoutError: If the pod is not replaced.
+        TimeoutError: If the pods are not replaced.
 
     """
-    LOGGER.info(f"Waiting for pod {orig_pod.name} to be replaced")
+    LOGGER.info("Waiting for pods to be replaced")
+    oring_pods_names = [pod.name for pod in orig_pods]
+
     try:
         for pods in TimeoutSampler(
             wait_timeout=Timeout.TIMEOUT_2MIN,
@@ -94,11 +138,11 @@ def wait_for_new_running_inference_pod(isvc: InferenceService, orig_pod: Pod) ->
             client=isvc.client,
             isvc=isvc,
         ):
-            if pods:
+            if pods and len(pods) == len(orig_pods):
                 for pod in pods:
-                    if pod.name != orig_pod.name and pod.status == pod.Status.RUNNING:
+                    if pod.name not in oring_pods_names and pod.status == pod.Status.RUNNING:
                         return
 
     except TimeoutError:
-        LOGGER.error(f"Timeout waiting for pod {orig_pod.name} to be replaced")
+        LOGGER.error(f"Timeout waiting for pods {oring_pods_names} to be replaced")
         raise

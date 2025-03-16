@@ -368,6 +368,9 @@ def ovms_kserve_inference_service(
     if min_replicas := request.param.get("min-replicas"):
         isvc_kwargs["min_replicas"] = min_replicas
 
+    if max_replicas := request.param.get("max-replicas"):
+        isvc_kwargs["max_replicas"] = max_replicas
+
     with create_isvc(**isvc_kwargs) as isvc:
         yield isvc
 
