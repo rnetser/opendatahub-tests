@@ -7,12 +7,11 @@ from typing import Any, Generator
 
 import pytest
 import yaml
-from _pytest.fixtures import FixtureRequest
 from _pytest.tmpdir import TempPathFactory
 from ocp_resources.config_map import ConfigMap
 from ocp_resources.secret import Secret
 from pyhelper_utils.shell import run_command
-from pytest import Config
+from pytest import FixtureRequest, Config
 from kubernetes.dynamic import DynamicClient
 from kubernetes.dynamic.exceptions import ResourceNotFoundError
 from ocp_resources.data_science_cluster import DataScienceCluster
