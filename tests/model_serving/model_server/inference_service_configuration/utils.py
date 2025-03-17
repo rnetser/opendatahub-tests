@@ -87,16 +87,15 @@ def wait_for_new_running_inference_pods(isvc: InferenceService, orig_pods: list[
 
     try:
         for pods in TimeoutSampler(
-            wait_timeout=Timeout.TIMEOUT_2MIN,
+            wait_timeout=Timeout.TIMEOUT_4MIN,
             sleep=5,
             func=get_pods_by_isvc_label,
             client=isvc.client,
             isvc=isvc,
         ):
             if pods and len(pods) == len(orig_pods):
-                for pod in pods:
-                    if pod.name not in oring_pods_names and pod.status == pod.Status.RUNNING:
-                        return
+                if all(pod.name not in oring_pods_names and pod.status == pod.Status.RUNNING for pod in pods):
+                    return
 
     except TimeoutError:
         LOGGER.error(f"Timeout waiting for pods {oring_pods_names} to be replaced")
