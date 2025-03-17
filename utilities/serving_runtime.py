@@ -5,7 +5,7 @@ from kubernetes.dynamic import DynamicClient
 from kubernetes.dynamic.exceptions import ResourceNotFoundError
 from ocp_resources.serving_runtime import ServingRuntime
 from ocp_resources.template import Template
-from utilities.constants import vLLM_CONFIG
+from utilities.constants import PortNames, Protocols, vLLM_CONFIG
 from pytest_testconfig import config as py_config
 
 
@@ -78,7 +78,10 @@ class ServingRuntimeFromTemplate(ServingRuntime):
 
         self.model_dict = self.update_model_dict()
 
-        super().__init__(client=self.unprivileged_client or self.admin_client, kind_dict=self.model_dict)
+        super().__init__(
+            client=self.unprivileged_client or self.admin_client,
+            kind_dict=self.model_dict,
+        )
 
     def get_model_template(self) -> Template:
         """
@@ -151,7 +154,11 @@ class ServingRuntimeFromTemplate(ServingRuntime):
                     env["value"] = str(self.enable_grpc).lower()
 
                     if self.enable_grpc is True:
-                        container["ports"][0] = {"containerPort": 8085, "name": "h2c", "protocol": "TCP"}
+                        container["ports"][0] = {
+                            "containerPort": 8085,
+                            "name": PortNames.GRPC_PORT_NAME,
+                            "protocol": Protocols.TCP,
+                        }
 
             if self.resources is not None and (resource_dict := self.resources.get(container["name"])):
                 container["resources"] = resource_dict

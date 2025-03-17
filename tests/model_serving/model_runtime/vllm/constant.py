@@ -1,11 +1,6 @@
 from typing import Any, Union
 from utilities.constants import AcceleratorType, KServeDeploymentType
 
-GRPC_PORT: int = 8033
-REST_PORT: int = 8080
-REST_PORT_NAME: str = "http1"
-GRPC_PORT_NAME: str = "h2c"
-TCP_PROTOCOL_NAME: str = "TCP"
 OPENAI_ENDPOINT_NAME: str = "openai"
 TGIS_ENDPOINT_NAME: str = "tgis"
 # Quantization

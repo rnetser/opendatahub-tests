@@ -1,13 +1,6 @@
 from typing import Any
 
 from ocp_resources.resource import Resource
-from tests.model_serving.model_runtime.vllm.constant import (
-    GRPC_PORT,
-    GRPC_PORT_NAME,
-    REST_PORT,
-    REST_PORT_NAME,
-    TCP_PROTOCOL_NAME,
-)
 
 
 class KServeDeploymentType:
@@ -91,6 +84,17 @@ class Protocols:
     REST: str = "rest"
     TCP_PROTOCOLS: set[str] = {HTTP, HTTPS}
     ALL_SUPPORTED_PROTOCOLS: set[str] = TCP_PROTOCOLS.union({GRPC})
+    TCP: str = "TCP"
+
+
+class Ports:
+    GRPC_PORT: int = 8033
+    REST_PORT: int = 8080
+
+
+class PortNames:
+    REST_PORT_NAME: str = "http1"
+    GRPC_PORT_NAME: str = "h2c"
 
 
 class HTTPRequest:
@@ -172,10 +176,10 @@ OPENSHIFT_CA_BUNDLE_FILENAME: str = "openshift_ca.crt"
 
 vLLM_CONFIG: dict[str, dict[str, Any]] = {
     "port_configurations": {
-        "grpc": [{"containerPort": GRPC_PORT, "name": GRPC_PORT_NAME, "protocol": TCP_PROTOCOL_NAME}],
+        "grpc": [{"containerPort": Ports.GRPC_PORT, "name": PortNames.GRPC_PORT_NAME, "protocol": Protocols.TCP}],
         "raw": [
-            {"containerPort": REST_PORT, "name": REST_PORT_NAME, "protocol": TCP_PROTOCOL_NAME},
-            {"containerPort": GRPC_PORT, "name": GRPC_PORT_NAME, "protocol": TCP_PROTOCOL_NAME},
+            {"containerPort": Ports.REST_PORT, "name": PortNames.REST_PORT_NAME, "protocol": Protocols.TCP},
+            {"containerPort": Ports.GRPC_PORT, "name": PortNames.GRPC_PORT_NAME, "protocol": Protocols.TCP},
         ],
     },
     "commands": {"GRPC": "vllm_tgis_adapter"},
