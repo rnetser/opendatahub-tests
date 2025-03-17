@@ -10,6 +10,7 @@ from simple_logger.logger import get_logger
 from timeout_sampler import TimeoutSampler
 
 from utilities.constants import Timeout
+from utilities.general import create_isvc_label_selector_str
 from utilities.infra import get_pods_by_isvc_label, wait_for_inference_deployment_replicas
 
 LOGGER = get_logger(name=__name__)
@@ -28,17 +29,14 @@ def update_inference_service(
         isvc_updated_dict (dict[str, Any]): InferenceService object.
 
     """
-    deployment = Deployment(
-        client=client,
-        name=f"{isvc.name}-predictor",
-        namespace=isvc.namespace,
-    )
+    deployment = list(
+        Deployment.get(
+            label_selector=create_isvc_label_selector_str(isvc=isvc, resource_type="deployment"),
+            client=client,
+            namespace=isvc.namespace,
+        )
+    )[0]
     start_generation = deployment.instance.status.observedGeneration
-    wait_for_inference_deployment_replicas(
-        client=client,
-        isvc=isvc,
-    )
-
     orig_pods = get_pods_by_isvc_label(client=client, isvc=isvc)
 
     with ResourceEditor(patches={isvc: isvc_updated_dict}):
