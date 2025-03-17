@@ -58,7 +58,7 @@ def model_namespace_scope_session(
     with create_ns(
         admin_client=admin_client,
         name=UPGRADE_NAMESPACE,
-        labels={"modelmesh-enabled": "true"},
+        model_mesh_enabled=True,
     ) as ns:
         yield ns
 
