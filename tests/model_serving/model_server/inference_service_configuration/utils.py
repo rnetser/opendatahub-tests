@@ -2,7 +2,6 @@ from contextlib import contextmanager
 from typing import Any, Generator
 
 from kubernetes.dynamic import DynamicClient
-from ocp_resources.deployment import Deployment
 from ocp_resources.inference_service import InferenceService
 from ocp_resources.pod import Pod
 from ocp_resources.resource import ResourceEditor
@@ -10,8 +9,7 @@ from simple_logger.logger import get_logger
 from timeout_sampler import TimeoutSampler
 
 from utilities.constants import Timeout
-from utilities.general import create_isvc_label_selector_str
-from utilities.infra import get_pods_by_isvc_label, wait_for_inference_deployment_replicas
+from utilities.infra import get_pods_by_isvc_label
 
 LOGGER = get_logger(name=__name__)
 
@@ -29,23 +27,9 @@ def update_inference_service(
         isvc_updated_dict (dict[str, Any]): InferenceService object.
 
     """
-    deployment = list(
-        Deployment.get(
-            label_selector=create_isvc_label_selector_str(isvc=isvc, resource_type="deployment"),
-            client=client,
-            namespace=isvc.namespace,
-        )
-    )[0]
-    start_generation = deployment.instance.status.observedGeneration
     orig_pods = get_pods_by_isvc_label(client=client, isvc=isvc)
 
     with ResourceEditor(patches={isvc: isvc_updated_dict}):
-        # Wait for new deployment generation and new pod to be created after ISVC update
-        wait_for_new_deployment_generation(deployment=deployment, start_generation=start_generation)
-        wait_for_inference_deployment_replicas(
-            client=client,
-            isvc=isvc,
-        )
         wait_for_new_running_inference_pods(isvc=isvc, orig_pods=orig_pods)
 
         yield isvc
@@ -84,33 +68,6 @@ def verify_env_vars_in_isvc_pods(isvc: InferenceService, env_vars: list[dict[str
         raise ValueError(
             f"The environment variables are {'not' if vars_exist else ''} set in the following pods: {unset_pods}"
         )
-
-
-def wait_for_new_deployment_generation(deployment: Deployment, start_generation: int) -> None:
-    """
-    Wait for the deployment generation to be updated.
-
-    Args:
-        deployment (Deployment): Dynamic client.
-        start_generation (int): The start generation of the deployment.
-
-    Raises:
-        TimeoutError: If the deployment generation is not updated.
-
-    """
-    LOGGER.info(f"Waiting for deployment generation to be updated, original generation: {start_generation}")
-    try:
-        for generation in TimeoutSampler(
-            wait_timeout=Timeout.TIMEOUT_2MIN,
-            sleep=5,
-            func=lambda: deployment.instance.status.observedGeneration,
-        ):
-            if generation and generation > start_generation:
-                return
-
-    except TimeoutError:
-        LOGGER.error(f"Timeout waiting for deployment generation, original generation: {start_generation}")
-        raise
 
 
 def wait_for_new_running_inference_pods(isvc: InferenceService, orig_pods: list[Pod]) -> None:
