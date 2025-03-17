@@ -1,4 +1,13 @@
+from typing import Any
+
 from ocp_resources.resource import Resource
+from tests.model_serving.model_runtime.vllm.constant import (
+    GRPC_PORT,
+    GRPC_PORT_NAME,
+    REST_PORT,
+    REST_PORT_NAME,
+    TCP_PROTOCOL_NAME,
+)
 
 
 class KServeDeploymentType:
@@ -160,3 +169,14 @@ MODEL_REGISTRY: str = "model-registry"
 MODELMESH_SERVING: str = "modelmesh-serving"
 ISTIO_CA_BUNDLE_FILENAME: str = "istio_knative.crt"
 OPENSHIFT_CA_BUNDLE_FILENAME: str = "openshift_ca.crt"
+
+vLLM_CONFIG: dict[str, dict[str, Any]] = {
+    "port_configurations": {
+        "grpc": [{"containerPort": GRPC_PORT, "name": GRPC_PORT_NAME, "protocol": TCP_PROTOCOL_NAME}],
+        "raw": [
+            {"containerPort": REST_PORT, "name": REST_PORT_NAME, "protocol": TCP_PROTOCOL_NAME},
+            {"containerPort": GRPC_PORT, "name": GRPC_PORT_NAME, "protocol": TCP_PROTOCOL_NAME},
+        ],
+    },
+    "commands": {"GRPC": "vllm_tgis_adapter"},
+}
