@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from contextlib import contextmanager
 from typing import Any, Generator
 
@@ -70,13 +72,17 @@ def verify_env_vars_in_isvc_pods(isvc: InferenceService, env_vars: list[dict[str
         )
 
 
-def wait_for_new_running_inference_pods(isvc: InferenceService, orig_pods: list[Pod]) -> None:
+def wait_for_new_running_inference_pods(
+    isvc: InferenceService, orig_pods: list[Pod], expected_num_pods: int | None = None
+) -> None:
     """
     Wait for the inference pod to be replaced.
 
     Args:
         isvc (InferenceService): InferenceService object.
         orig_pods (list): List of Pod objects.
+        expected_num_pods (int): Number of pods expected to be running. I
+            f not provided, the number of pods is expected to be len(orig_pods)
 
     Raises:
         TimeoutError: If the pods are not replaced.
@@ -85,15 +91,17 @@ def wait_for_new_running_inference_pods(isvc: InferenceService, orig_pods: list[
     LOGGER.info("Waiting for pods to be replaced")
     oring_pods_names = [pod.name for pod in orig_pods]
 
+    expected_num_pods = expected_num_pods or len(orig_pods)
+
     try:
         for pods in TimeoutSampler(
-            wait_timeout=Timeout.TIMEOUT_4MIN,
+            wait_timeout=Timeout.TIMEOUT_10MIN,
             sleep=5,
             func=get_pods_by_isvc_label,
             client=isvc.client,
             isvc=isvc,
         ):
-            if pods and len(pods) == len(orig_pods):
+            if pods and len(pods) == expected_num_pods:
                 if all(pod.name not in oring_pods_names and pod.status == pod.Status.RUNNING for pod in pods):
                     return
 

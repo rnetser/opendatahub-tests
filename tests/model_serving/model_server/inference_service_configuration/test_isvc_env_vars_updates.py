@@ -83,6 +83,7 @@ class TestServerlessISVCEnvVarsUpdates:
         """Test adding environment variables to the inference service"""
         verify_env_vars_in_isvc_pods(isvc=ovms_kserve_inference_service, env_vars=ISVC_ENV_VARS, vars_exist=True)
 
+    @pytest.mark.slow
     def test_serverless_remove_isvc_env_vars(self, removed_isvc_env_vars):
         """Test removing environment variables from the inference service"""
         verify_env_vars_in_isvc_pods(isvc=removed_isvc_env_vars, env_vars=ISVC_ENV_VARS, vars_exist=False)
