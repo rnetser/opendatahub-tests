@@ -18,7 +18,7 @@ LOGGER = get_logger(name=__name__)
 
 @contextmanager
 def update_inference_service(
-    client: DynamicClient, isvc: InferenceService, isvc_updated_dict: dict[str, Any]
+    client: DynamicClient, isvc: InferenceService, isvc_updated_dict: dict[str, Any], wait_for_new_pods: bool = True
 ) -> Generator[InferenceService, Any, None]:
     """
     Update InferenceService object.
@@ -27,12 +27,14 @@ def update_inference_service(
         client (DynamicClient): DynamicClient object.
         isvc (InferenceService): InferenceService object.
         isvc_updated_dict (dict[str, Any]): InferenceService object.
+        wait_for_new_pods (bool): Whether to wait for new pods to be created.
 
     """
     orig_pods = get_pods_by_isvc_label(client=client, isvc=isvc)
 
     with ResourceEditor(patches={isvc: isvc_updated_dict}):
-        wait_for_new_running_inference_pods(isvc=isvc, orig_pods=orig_pods)
+        if wait_for_new_pods:
+            wait_for_new_running_inference_pods(isvc=isvc, orig_pods=orig_pods)
 
         yield isvc
 

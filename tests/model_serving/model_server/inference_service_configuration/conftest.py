@@ -57,5 +57,6 @@ def patched_isvc_replicas(
                 }
             }
         },
+        wait_for_new_pods=request.param["wait-for-new-pods"],
     ):
         yield ovms_kserve_inference_service
