@@ -1,16 +1,12 @@
-from utilities.constants import ModelFormat, ModelInferenceRuntime, ModelVersion
+from utilities.constants import ModelVersion
 
-RUNTIME_CONFIG = {
-    "runtime-name": ModelInferenceRuntime.ONNX_RUNTIME,
-    "model-format": {ModelFormat.ONNX: ModelVersion.OPSET13},
-}
-BASE_ISVC_CONFIG = {
+BASE_ISVC_CONFIG: dict[str, str] = {
     "name": "isvc-replicas",
     "model-version": ModelVersion.OPSET13,
     "model-dir": "test-dir",
 }
 
-ISVC_ENV_VARS = [
+ISVC_ENV_VARS: list[dict[str, str]] = [
     {"name": "TEST_ENV_VAR1", "value": "test_value1"},
     {"name": "TEST_ENV_VAR2", "value": "test_value2"},
 ]

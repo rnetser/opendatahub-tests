@@ -173,6 +173,13 @@ class Containers:
     KSERVE_CONTAINER_NAME: str = "kserve-container"
 
 
+class RunTimeConfigs:
+    ONNX_OPSET13_RUNTIME_CONFIG: dict[str, Any] = {
+        "runtime-name": ModelInferenceRuntime.ONNX_RUNTIME,
+        "model-format": {ModelFormat.ONNX: ModelVersion.OPSET13},
+    }
+
+
 MODEL_REGISTRY: str = "model-registry"
 MODELMESH_SERVING: str = "modelmesh-serving"
 ISTIO_CA_BUNDLE_FILENAME: str = "istio_knative.crt"

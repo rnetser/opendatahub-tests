@@ -4,12 +4,12 @@ from timeout_sampler import TimeoutSampler
 
 from tests.model_serving.model_server.inference_service_configuration.constants import (
     BASE_ISVC_CONFIG,
-    RUNTIME_CONFIG,
 )
 from tests.model_serving.model_server.utils import verify_inference_response
 from utilities.constants import (
     KServeDeploymentType,
     Protocols,
+    RunTimeConfigs,
     Timeout,
 )
 from utilities.inference_utils import Inference
@@ -28,7 +28,7 @@ pytestmark = [pytest.mark.sanity, pytest.mark.usefixtures("valid_aws_config")]
     [
         pytest.param(
             {"name": "raw-isvc-replicas"},
-            RUNTIME_CONFIG,
+            RunTimeConfigs.ONNX_OPSET13_RUNTIME_CONFIG,
             {
                 **BASE_ISVC_CONFIG,
                 "min-replicas": 2,

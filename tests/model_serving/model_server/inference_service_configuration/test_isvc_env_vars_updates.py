@@ -3,12 +3,11 @@ import pytest
 from tests.model_serving.model_server.inference_service_configuration.constants import (
     BASE_ISVC_CONFIG,
     ISVC_ENV_VARS,
-    RUNTIME_CONFIG,
 )
 from tests.model_serving.model_server.inference_service_configuration.utils import (
     verify_env_vars_in_isvc_pods,
 )
-from utilities.constants import KServeDeploymentType
+from utilities.constants import KServeDeploymentType, RunTimeConfigs
 
 pytestmark = [pytest.mark.sanity, pytest.mark.usefixtures("valid_aws_config")]
 
@@ -34,12 +33,12 @@ SERVERLESS_DEPLOYMENT_ISVC_CONFIG = {
     [
         pytest.param(
             {"name": "raw-env-update"},
-            RUNTIME_CONFIG,
+            RunTimeConfigs.ONNX_OPSET13_RUNTIME_CONFIG,
             RAW_DEPLOYMENT_ISVC_CONFIG,
         ),
         pytest.param(
             {"name": "raw-multi-env-update"},
-            RUNTIME_CONFIG,
+            RunTimeConfigs.ONNX_OPSET13_RUNTIME_CONFIG,
             {
                 **RAW_DEPLOYMENT_ISVC_CONFIG,
                 "min-replicas": 4,
@@ -64,12 +63,12 @@ class TestRawISVCEnvVarsUpdates:
     [
         pytest.param(
             {"name": "serverless-env-update"},
-            RUNTIME_CONFIG,
+            RunTimeConfigs.ONNX_OPSET13_RUNTIME_CONFIG,
             SERVERLESS_DEPLOYMENT_ISVC_CONFIG,
         ),
         pytest.param(
             {"name": "serverless-multi-env-update"},
-            RUNTIME_CONFIG,
+            RunTimeConfigs.ONNX_OPSET13_RUNTIME_CONFIG,
             {
                 **SERVERLESS_DEPLOYMENT_ISVC_CONFIG,
                 "min-replicas": 4,

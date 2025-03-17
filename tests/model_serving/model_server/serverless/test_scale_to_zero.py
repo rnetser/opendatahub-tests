@@ -6,9 +6,9 @@ from tests.model_serving.model_server.utils import verify_inference_response
 from utilities.constants import (
     KServeDeploymentType,
     ModelFormat,
-    ModelInferenceRuntime,
     ModelVersion,
     Protocols,
+    RunTimeConfigs,
 )
 from utilities.exceptions import DeploymentValidationError
 from utilities.inference_utils import Inference
@@ -27,10 +27,7 @@ pytestmark = [
     [
         pytest.param(
             {"name": "serverless-scale-zero"},
-            {
-                "runtime-name": ModelInferenceRuntime.ONNX_RUNTIME,
-                "model-format": {ModelFormat.ONNX: ModelVersion.OPSET13},
-            },
+            RunTimeConfigs.ONNX_OPSET13_RUNTIME_CONFIG,
             {
                 "name": ModelFormat.ONNX,
                 "model-version": ModelVersion.OPSET13,

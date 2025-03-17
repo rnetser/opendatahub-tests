@@ -6,7 +6,7 @@ from utilities.constants import (
     ModelFormat,
     ModelVersion,
     Protocols,
-    ModelInferenceRuntime,
+    RunTimeConfigs,
 )
 from utilities.inference_utils import Inference
 from utilities.manifests.onnx import ONNX_INFERENCE_CONFIG
@@ -20,10 +20,7 @@ pytestmark = [pytest.mark.serverless, pytest.mark.usefixtures("valid_aws_config"
     [
         pytest.param(
             {"name": "kserve-serverless-onnx"},
-            {
-                "runtime-name": ModelInferenceRuntime.ONNX_RUNTIME,
-                "model-format": {ModelFormat.ONNX: ModelVersion.OPSET13},
-            },
+            RunTimeConfigs.ONNX_OPSET13_RUNTIME_CONFIG,
             {
                 "name": ModelFormat.ONNX,
                 "model-version": ModelVersion.OPSET13,
