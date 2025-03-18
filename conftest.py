@@ -6,7 +6,6 @@ import pathlib
 import shutil
 
 import shortuuid
-from ocp_resources.resource import get_client
 from pytest import (
     Parser,
     Session,
@@ -21,7 +20,6 @@ from typing import Optional, Any
 from pytest_testconfig import config as py_config
 
 from utilities.constants import KServeDeploymentType
-from utilities.infra import get_dsci_applications_namespace, get_operator_distribution
 from utilities.logger import separator, setup_logging
 
 
@@ -204,20 +202,6 @@ def pytest_sessionstart(session: Session) -> None:
         log_file=tests_log_file,
         log_level=session.config.getoption("log_cli_level") or logging.INFO,
     )
-
-    client = get_client()
-
-    if get_operator_distribution(client=client) == "Open Data Hub":
-        py_config["distribution"] = "upstream"
-
-    else:
-        py_config["distribution"] = "downstream"
-
-    if applications_namespace := session.config.getoption("applications_namespace"):
-        py_config["applications_namespace"] = applications_namespace
-
-    else:
-        py_config["applications_namespace"] = get_dsci_applications_namespace(client=client)
 
 
 def pytest_fixture_setup(fixturedef: FixtureDef[Any], request: FixtureRequest) -> None:
