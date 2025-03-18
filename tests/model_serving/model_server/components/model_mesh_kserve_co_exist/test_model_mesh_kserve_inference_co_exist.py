@@ -1,13 +1,9 @@
 import pytest
 
+from tests.model_serving.model_server.components.constants import KSERVE_RUNTIME_PARAMS, SERVERLESS_ISVC_PARAMS
 from tests.model_serving.model_server.utils import verify_inference_response
 from utilities.constants import (
-    KServeDeploymentType,
-    ModelAndFormat,
-    ModelFormat,
-    ModelInferenceRuntime,
     ModelStoragePath,
-    ModelVersion,
     Protocols,
 )
 from utilities.inference_utils import Inference
@@ -15,16 +11,6 @@ from utilities.manifests.openvino import OPENVINO_INFERENCE_CONFIG, OPENVINO_KSE
 
 pytestmark = [pytest.mark.serverless, pytest.mark.modelmesh, pytest.mark.sanity]
 
-KSERVE_RUNTIME_PARAMS = {
-    "runtime-name": ModelInferenceRuntime.OPENVINO_KSERVE_RUNTIME,
-    "model-format": {ModelAndFormat.OPENVINO_IR: ModelVersion.OPSET1},
-}
-KSERVE_ISVC_PARAMS = {
-    "name": ModelFormat.OPENVINO,
-    "model-version": ModelVersion.OPSET1,
-    "model-dir": ModelStoragePath.KSERVE_OPENVINO_EXAMPLE_MODEL,
-    "deployment-mode": KServeDeploymentType.SERVERLESS,
-}
 MODELMESH_ISVC_PARAMS = {
     "model-path": ModelStoragePath.OPENVINO_EXAMPLE_MODEL,
     "modelmesh-enabled": True,
@@ -38,7 +24,7 @@ MODELMESH_ISVC_PARAMS = {
         pytest.param(
             {"name": "serverless-model-mesh-openvino", "modelmesh-enabled": True},
             KSERVE_RUNTIME_PARAMS,
-            KSERVE_ISVC_PARAMS,
+            SERVERLESS_ISVC_PARAMS,
             MODELMESH_ISVC_PARAMS,
         )
     ],
@@ -78,7 +64,7 @@ class TestOpenVINOServerlessModelMesh:
             {"name": "model-mesh-serverless-openvino", "modelmesh-enabled": True},
             MODELMESH_ISVC_PARAMS,
             KSERVE_RUNTIME_PARAMS,
-            KSERVE_ISVC_PARAMS,
+            SERVERLESS_ISVC_PARAMS,
         )
     ],
     indirect=True,
