@@ -14,6 +14,7 @@ from ocp_resources.catalog_source import CatalogSource
 from ocp_resources.cluster_service_version import ClusterServiceVersion
 from ocp_resources.config_map import ConfigMap
 from ocp_resources.deployment import Deployment
+from ocp_resources.dsc_initialization import DSCInitialization
 from ocp_resources.exceptions import MissingResourceError
 from ocp_resources.inference_service import InferenceService
 from ocp_resources.infrastructure import Infrastructure
@@ -21,7 +22,7 @@ from ocp_resources.namespace import Namespace
 from ocp_resources.pod import Pod
 from ocp_resources.project_project_openshift_io import Project
 from ocp_resources.project_request import ProjectRequest
-from ocp_resources.resource import ResourceEditor
+from ocp_resources.resource import ResourceEditor, get_client
 from ocp_resources.role import Role
 from ocp_resources.route import Route
 from ocp_resources.secret import Secret
@@ -604,3 +605,34 @@ def get_product_version(admin_client: DynamicClient) -> Version:
         raise MissingResourceError("Operator ClusterServiceVersion not found")
 
     return Version.parse(operator_version)
+
+
+def get_dsci_applications_namespace(client: DynamicClient | None = None, dsci_name: str = "default-dsci") -> str:
+    """
+    Get the namespace where DSCI applications are deployed.
+
+    Args:
+        client (DynamicClient): DynamicClient object
+        dsci_name (str): DSCI name
+
+    Returns:
+        str: Namespace where DSCI applications are deployed.
+
+    Raises:
+            ValueError: If DSCI applications namespace not found
+            MissingResourceError: If DSCI not found
+
+    """
+    # Application namespace is set in conftest.py so client may not be passed
+    client = client or get_client()
+
+    dsci = DSCInitialization(client=client, name=dsci_name)
+
+    if dsci.exists:
+        if app_namespace := dsci.instance.spec.get("applicationsNamespace"):
+            return app_namespace
+
+        else:
+            raise ValueError("DSCI applications namespace not found in {dsci_name}")
+
+    raise MissingResourceError(f"DSCI {dsci_name} not found")

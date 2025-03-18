@@ -76,3 +76,7 @@ class DeploymentValidationError(Exception):
 
 class InferenceCanaryTrafficError(Exception):
     pass
+
+
+class ResourceMismatch(Exception):
+    pass
