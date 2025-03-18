@@ -80,7 +80,7 @@ def create_ns(
     }
 
     if ns_annotations:
-        namespace_kwargs["annotation"] = ns_annotations
+        namespace_kwargs["annotations"] = ns_annotations
 
     if model_mesh_enabled:
         namespace_kwargs["label"]["modelmesh-enabled"] = "true"  # type: ignore
