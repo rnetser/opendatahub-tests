@@ -20,17 +20,17 @@ def removed_isvc_env_vars(
     admin_client: DynamicClient,
     ovms_kserve_inference_service: InferenceService,
 ) -> Generator[InferenceService, Any, Any]:
-    isvc_predictor_spec_model_env = ovms_kserve_inference_service.instance.spec.predictor.model.get("env", [])
-    isvc_predictor_spec_model_env = [
-        env_var for env_var in isvc_predictor_spec_model_env if env_var.to_dict() not in ISVC_ENV_VARS
-    ]
+    if isvc_predictor_spec_model_env := ovms_kserve_inference_service.instance.spec.predictor.model.get("env"):
+        isvc_predictor_spec_model_env = [
+            env_var for env_var in isvc_predictor_spec_model_env if env_var.to_dict() not in ISVC_ENV_VARS
+        ]
 
-    with update_inference_service(
-        client=admin_client,
-        isvc=ovms_kserve_inference_service,
-        isvc_updated_dict={"spec": {"predictor": {"model": {"env": isvc_predictor_spec_model_env}}}},
-    ):
-        yield ovms_kserve_inference_service
+        with update_inference_service(
+            client=admin_client,
+            isvc=ovms_kserve_inference_service,
+            isvc_updated_dict={"spec": {"predictor": {"model": {"env": isvc_predictor_spec_model_env}}}},
+        ):
+            yield ovms_kserve_inference_service
 
 
 @pytest.fixture
