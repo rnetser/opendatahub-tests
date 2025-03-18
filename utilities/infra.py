@@ -13,6 +13,7 @@ from kubernetes.dynamic.exceptions import ResourceNotFoundError, ResourceNotUniq
 from ocp_resources.catalog_source import CatalogSource
 from ocp_resources.cluster_service_version import ClusterServiceVersion
 from ocp_resources.config_map import ConfigMap
+from ocp_resources.data_science_cluster import DataScienceCluster
 from ocp_resources.deployment import Deployment
 from ocp_resources.dsc_initialization import DSCInitialization
 from ocp_resources.exceptions import MissingResourceError
@@ -22,7 +23,7 @@ from ocp_resources.namespace import Namespace
 from ocp_resources.pod import Pod
 from ocp_resources.project_project_openshift_io import Project
 from ocp_resources.project_request import ProjectRequest
-from ocp_resources.resource import ResourceEditor, get_client
+from ocp_resources.resource import ResourceEditor
 from ocp_resources.role import Role
 from ocp_resources.route import Route
 from ocp_resources.secret import Secret
@@ -607,7 +608,7 @@ def get_product_version(admin_client: DynamicClient) -> Version:
     return Version.parse(operator_version)
 
 
-def get_dsci_applications_namespace(client: DynamicClient | None = None, dsci_name: str = "default-dsci") -> str:
+def get_dsci_applications_namespace(client: DynamicClient, dsci_name: str = "default-dsci") -> str:
     """
     Get the namespace where DSCI applications are deployed.
 
@@ -623,9 +624,6 @@ def get_dsci_applications_namespace(client: DynamicClient | None = None, dsci_na
             MissingResourceError: If DSCI not found
 
     """
-    # Application namespace is set in conftest.py so client may not be passed
-    client = client or get_client()
-
     dsci = DSCInitialization(client=client, name=dsci_name)
 
     if dsci.exists:
@@ -636,3 +634,31 @@ def get_dsci_applications_namespace(client: DynamicClient | None = None, dsci_na
             raise ValueError("DSCI applications namespace not found in {dsci_name}")
 
     raise MissingResourceError(f"DSCI {dsci_name} not found")
+
+
+def get_operator_distribution(client: DynamicClient, dsc_name: str = "default-dsc") -> str:
+    """
+    Get the operator distribution.
+
+    Args:
+        client (DynamicClient): DynamicClient object
+        dsc_name (str): DSC name
+
+    Returns:
+        str: Operator distribution.
+
+    Raises:
+            ValueError: If DSC release name not found
+            MissingResourceError: If DSC not found
+
+    """
+    dsc = DataScienceCluster(client=client, name=dsc_name)
+
+    if dsc.exists:
+        if dsc_release_name := dsc.instance.status.get("release", {}).get("name"):
+            return dsc_release_name
+
+        else:
+            raise ValueError("DSC release name not found in {dsc_name}")
+
+    raise MissingResourceError(f"DSC {dsc_name} not found")
