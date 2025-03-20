@@ -110,6 +110,10 @@ class AcceleratorType:
     SUPPORTED_LISTS: list[str] = [NVIDIA, AMD, GAUDI]
 
 
+class ApiGroups:
+    OPENDATAHUB_IO: str = "opendatahub.io"
+
+
 class Annotations:
     class KubernetesIo:
         NAME: str = f"{Resource.ApiGroup.APP_KUBERNETES_IO}/name"
@@ -121,10 +125,10 @@ class Annotations:
         DEPLOYMENT_MODE: str = "serving.kserve.io/deploymentMode"
 
     class KserveAuth:
-        SECURITY: str = "security.opendatahub.io/enable-auth"
+        SECURITY: str = f"security.{ApiGroups.OPENDATAHUB_IO}/enable-auth"
 
     class OpenDataHubIo:
-        MANAGED: str = "opendatahub.io/managed"
+        MANAGED: str = f"{ApiGroups.OPENDATAHUB_IO}/managed"
 
 
 class StorageClassName:
@@ -154,10 +158,13 @@ class DscComponents:
 
 class Labels:
     class OpenDataHub:
-        DASHBOARD: str = "opendatahub.io/dashboard"
+        DASHBOARD: str = "ApiGroups.OPENDATAHUB_IO/dashboard"
 
     class KserveAuth:
-        SECURITY: str = "security.opendatahub.io/enable-auth"
+        SECURITY: str = f"security.{ApiGroups.OPENDATAHUB_IO}/enable-auth"
+
+    class OpenDataHubIo:
+        MANAGED: str = Annotations.OpenDataHubIo.MANAGED
 
 
 class Timeout:

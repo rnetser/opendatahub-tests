@@ -35,7 +35,7 @@ from pytest_testconfig import config as py_config
 from semver import Version
 from simple_logger.logger import get_logger
 
-from utilities.constants import Labels, Timeout
+from utilities.constants import ApiGroups, Labels, Timeout
 from utilities.constants import KServeDeploymentType
 from utilities.exceptions import FailedPodsError
 from timeout_sampler import TimeoutExpiredError, TimeoutSampler
@@ -219,11 +219,11 @@ def s3_endpoint_secret(
 
     else:
         with Secret(
-            annotations={"opendatahub.io/connection-type": "s3"},
+            annotations={f"{ApiGroups.OPENDATAHUB_IO}/connection-type": "s3"},
             # the labels are needed to set the secret as data connection by odh-model-controller
             label={
-                "opendatahub.io/managed": "true",
-                "opendatahub.io/dashboard": "true",
+                Labels.OpenDataHubIo.MANAGED: "true",
+                Labels.OpenDataHub.DASHBOARD: "true",
             },
             data_dict=get_s3_secret_dict(
                 aws_access_key=aws_access_key,
