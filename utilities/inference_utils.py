@@ -15,7 +15,7 @@ from ocp_resources.resource import get_client
 from ocp_resources.service import Service
 from pyhelper_utils.shell import run_command
 from simple_logger.logger import get_logger
-from timeout_sampler import retry
+from timeout_sampler import TimeoutWatch, retry
 
 from utilities.exceptions import InvalidStorageArgumentError
 from utilities.infra import (
@@ -651,18 +651,20 @@ def create_isvc(
         predictor=predictor_dict,
         label=labels,
     ) as inference_service:
+        timeout_watch = TimeoutWatch(timeout=timeout)
+
         if wait_for_predictor_pods:
             verify_no_failed_pods(
                 client=client,
                 isvc=inference_service,
                 runtime_name=runtime,
-                timeout=timeout,
+                timeout=timeout_watch.remaining_time(),
             )
             wait_for_inference_deployment_replicas(
                 client=client,
                 isvc=inference_service,
                 runtime_name=runtime,
-                timeout=timeout,
+                timeout=timeout_watch.remaining_time(),
             )
 
         if wait:
@@ -688,7 +690,7 @@ def create_isvc(
             inference_service.wait_for_condition(
                 condition=inference_service.Condition.READY,
                 status=inference_service.Condition.Status.TRUE,
-                timeout=timeout,
+                timeout=timeout_watch.remaining_time(),
             )
 
         yield inference_service
