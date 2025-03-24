@@ -159,7 +159,7 @@ class DscComponents:
 
 class Labels:
     class OpenDataHub:
-        DASHBOARD: str = "ApiGroups.OPENDATAHUB_IO/dashboard"
+        DASHBOARD: str = f"{ApiGroups.OPENDATAHUB_IO}/dashboard"
 
     class KserveAuth:
         SECURITY: str = f"security.{ApiGroups.OPENDATAHUB_IO}/enable-auth"
