@@ -90,5 +90,5 @@ def s3_flan_small_hf_caikit_serverless_inference_service(
 
 
 @pytest.fixture(scope="class")
-def deleted_isvc(ovms_serverless_inference_service: InferenceService) -> None:
-    ovms_serverless_inference_service.clean_up()
+def deleted_isvc(ovms_kserve_inference_service: InferenceService) -> None:
+    ovms_kserve_inference_service.clean_up()
