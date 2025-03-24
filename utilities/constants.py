@@ -129,6 +129,7 @@ class Annotations:
 
     class OpenDataHubIo:
         MANAGED: str = f"{ApiGroups.OPENDATAHUB_IO}/managed"
+        SERVICE_MESH: str = f"{ApiGroups.OPENDATAHUB_IO}/service-mesh"
 
 
 class StorageClassName:
@@ -163,6 +164,9 @@ class Labels:
     class KserveAuth:
         SECURITY: str = f"security.{ApiGroups.OPENDATAHUB_IO}/enable-auth"
 
+    class Notebook:
+        INJECT_OAUTH: str = f"notebooks.{ApiGroups.OPENDATAHUB_IO}/inject-oauth"
+
     class OpenDataHubIo:
         MANAGED: str = Annotations.OpenDataHubIo.MANAGED
 
@@ -191,6 +195,7 @@ MODEL_REGISTRY: str = "model-registry"
 MODELMESH_SERVING: str = "modelmesh-serving"
 ISTIO_CA_BUNDLE_FILENAME: str = "istio_knative.crt"
 OPENSHIFT_CA_BUNDLE_FILENAME: str = "openshift_ca.crt"
+INTERNAL_IMAGE_REGISTRY_PATH: str = "image-registry.openshift-image-registry.svc:5000"
 
 vLLM_CONFIG: dict[str, dict[str, Any]] = {
     "port_configurations": {
