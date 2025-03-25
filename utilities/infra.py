@@ -8,6 +8,7 @@ from functools import cache
 from typing import Any, Generator, Optional, Set
 
 import kubernetes
+from _pytest.fixtures import FixtureRequest
 from kubernetes.dynamic import DynamicClient
 from kubernetes.dynamic.exceptions import ResourceNotFoundError, ResourceNotUniqueError
 from ocp_resources.catalog_source import CatalogSource
@@ -45,7 +46,7 @@ LOGGER = get_logger(name=__name__)
 
 @contextmanager
 def create_ns(
-    name: str,
+    name: str | None = None,
     admin_client: DynamicClient | None = None,
     unprivileged_client: DynamicClient | None = None,
     teardown: bool = True,
@@ -54,25 +55,37 @@ def create_ns(
     ns_annotations: dict[str, str] | None = None,
     model_mesh_enabled: bool = False,
     add_dashboard_label: bool = False,
+    pytest_request: FixtureRequest | None = None,
 ) -> Generator[Namespace | Project, Any, Any]:
     """
     Create namespace with admin or unprivileged client.
 
     Args:
         name (str): namespace name.
+            Can be overwritten by `request.param["name"]`
         admin_client (DynamicClient): admin client.
         unprivileged_client (UnprivilegedClient): unprivileged client.
         teardown (bool): should run resource teardown
         delete_timeout (int): delete timeout.
         labels (dict[str, str]): labels dict to set for namespace
         ns_annotations (dict[str, str]): annotations dict to set for namespace
-        model_mesh_enabled (bool): if True, model mesh will be enabled in namespace
+            Can be overwritten by `request.param["annotations"]`
+        model_mesh_enabled (bool): if True, model mesh will be enabled in namespace.
+            Can be overwritten by `request.param["modelmesh-enabled"]`
         add_dashboard_label (bool): if True, dashboard label will be added to namespace
+            Can be overwritten by `request.param["add-dashboard-label"]`
+        pytest_request (FixtureRequest): pytest request
 
     Yields:
         Namespace | Project: namespace or project
 
     """
+    if pytest_request:
+        name = pytest_request.param.get("name", name)
+        ns_annotations = pytest_request.param.get("annotations", ns_annotations)
+        model_mesh_enabled = pytest_request.param.get("modelmesh-enabled", model_mesh_enabled)
+        add_dashboard_label = pytest_request.param.get("add-dashboard-label", add_dashboard_label)
+
     namespace_kwargs = {
         "name": name,
         "client": admin_client,
@@ -96,10 +109,14 @@ def create_ns(
             project.wait_for_status(status=project.Status.ACTIVE, timeout=Timeout.TIMEOUT_2MIN)
             yield project
 
+            project.clean_up(wait=project.wait_deletion_)
+
     else:
         with Namespace(**namespace_kwargs) as ns:
             ns.wait_for_status(status=Namespace.Status.ACTIVE, timeout=Timeout.TIMEOUT_2MIN)
             yield ns
+
+            ns.clean_up(wait=ns.wait_deletion_)
 
 
 def wait_for_inference_deployment_replicas(
@@ -188,7 +205,10 @@ def s3_endpoint_secret(
         with Secret(
             annotations={"opendatahub.io/connection-type": "s3"},
             # the labels are needed to set the secret as data connection by odh-model-controller
-            label={"opendatahub.io/managed": "true", "opendatahub.io/dashboard": "true"},
+            label={
+                "opendatahub.io/managed": "true",
+                "opendatahub.io/dashboard": "true",
+            },
             data_dict=get_s3_secret_dict(
                 aws_access_key=aws_access_key,
                 aws_secret_access_key=aws_secret_access_key,
@@ -495,7 +515,10 @@ def update_configmap_data(
 
 
 def verify_no_failed_pods(
-    client: DynamicClient, isvc: InferenceService, runtime_name: str | None, timeout: int = Timeout.TIMEOUT_5MIN
+    client: DynamicClient,
+    isvc: InferenceService,
+    runtime_name: str | None,
+    timeout: int = Timeout.TIMEOUT_5MIN,
 ) -> None:
     """
     Verify no failed pods.
@@ -541,7 +564,10 @@ def verify_no_failed_pods(
 
                         is_terminated_error = (
                             terminate_state := container_status.state.terminated
-                        ) and terminate_state.reason in (pod.Status.ERROR, pod.Status.CRASH_LOOPBACK_OFF)
+                        ) and terminate_state.reason in (
+                            pod.Status.ERROR,
+                            pod.Status.CRASH_LOOPBACK_OFF,
+                        )
 
                         if is_waiting_pull_back_off or is_terminated_error:
                             failed_pods[pod.name] = pod_status

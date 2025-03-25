@@ -36,6 +36,7 @@ from utilities.constants import (
 )
 import portforward
 
+
 LOGGER = get_logger(name=__name__)
 
 
@@ -604,14 +605,14 @@ def create_isvc(
             "sidecar.istio.io/rewriteAppHTTPProbers": "true",
         })
     if enable_auth:
-        # model mesh auth is set in servingruntime
+        # model mesh auth is set in ServingRuntime
         if deployment_mode == KServeDeploymentType.SERVERLESS:
             _annotations[Annotations.KserveAuth.SECURITY] = "true"
         elif deployment_mode == KServeDeploymentType.RAW_DEPLOYMENT:
             _annotations[Annotations.KserveAuth.SECURITY] = "true"
 
     # default to True if deployment_mode is Serverless (default behavior of Serverless) if was not provided by the user
-    # model mesh external route is set in servingruntime
+    # model mesh external route is set in ServingRuntime
     if external_route is None and deployment_mode == KServeDeploymentType.SERVERLESS:
         external_route = True
 
