@@ -32,6 +32,11 @@ def removed_isvc_env_vars(
         ):
             yield ovms_kserve_inference_service
 
+    else:
+        raise ValueError(
+            f"Inference service {ovms_kserve_inference_service.name} does not have env vars in predictor spec model."
+        )
+
 
 @pytest.fixture
 def isvc_pods(

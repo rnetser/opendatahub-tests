@@ -115,13 +115,22 @@ def wait_for_replicas_in_deployment(deployment: Deployment, replicas: int) -> No
         TimeoutExpiredError: If replicas are not updated in spec.
 
     """
-    for sample in TimeoutSampler(
-        wait_timeout=Timeout.TIMEOUT_2MIN,
-        sleep=1,
-        func=lambda: deployment.instance,
-    ):
-        if sample and sample.spec.replicas == replicas:
-            return
+    _replicas: int | None = None
+
+    try:
+        for sample in TimeoutSampler(
+            wait_timeout=Timeout.TIMEOUT_2MIN,
+            sleep=5,
+            func=lambda: deployment.instance,
+        ):
+            if sample and (_replicas := sample.spec.replicas) == replicas:
+                return
+
+    except TimeoutExpiredError:
+        LOGGER.error(
+            f"Replicas are not updated in spec.replicas for deployment {deployment.name}.Current replicas: {_replicas}"
+        )
+        raise
 
 
 def wait_for_inference_deployment_replicas(
