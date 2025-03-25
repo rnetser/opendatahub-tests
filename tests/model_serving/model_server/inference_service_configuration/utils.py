@@ -26,7 +26,7 @@ def update_inference_service(
     Args:
         client (DynamicClient): DynamicClient object.
         isvc (InferenceService): InferenceService object.
-        isvc_updated_dict (dict[str, Any]): InferenceService object.
+        isvc_updated_dict (dict[str, Any]): Dictionary of InferenceService fields to update.
         wait_for_new_pods (bool): Whether to wait for new pods to be created.
 
     """
