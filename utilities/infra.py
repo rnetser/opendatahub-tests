@@ -24,7 +24,7 @@ from ocp_resources.namespace import Namespace
 from ocp_resources.pod import Pod
 from ocp_resources.project_project_openshift_io import Project
 from ocp_resources.project_request import ProjectRequest
-from ocp_resources.resource import ResourceEditor
+from ocp_resources.resource import ResourceEditor, get_client
 from ocp_resources.role import Role
 from ocp_resources.route import Route
 from ocp_resources.secret import Secret
@@ -36,7 +36,7 @@ from pytest_testconfig import config as py_config
 from semver import Version
 from simple_logger.logger import get_logger
 
-from utilities.constants import Labels, Timeout
+from utilities.constants import Annotations, KServeDeploymentType, Labels, Timeout
 from utilities.exceptions import FailedPodsError
 from timeout_sampler import TimeoutExpiredError, TimeoutSampler
 from utilities.general import create_isvc_label_selector_str, get_s3_secret_dict
@@ -109,14 +109,14 @@ def create_ns(
             project.wait_for_status(status=project.Status.ACTIVE, timeout=Timeout.TIMEOUT_2MIN)
             yield project
 
-            project.clean_up(wait=project.wait_deletion_)
+            wait_for_serverless_pods_deletion(resource=project, admin_client=admin_client)
 
     else:
         with Namespace(**namespace_kwargs) as ns:
             ns.wait_for_status(status=Namespace.Status.ACTIVE, timeout=Timeout.TIMEOUT_2MIN)
             yield ns
 
-            ns.clean_up(wait=ns.wait_deletion_)
+            wait_for_serverless_pods_deletion(resource=ns, admin_client=admin_client)
 
 
 def wait_for_inference_deployment_replicas(
@@ -700,3 +700,28 @@ def get_operator_distribution(client: DynamicClient, dsc_name: str = "default-ds
             raise ValueError("DSC release name not found in {dsc_name}")
 
     raise MissingResourceError(f"DSC {dsc_name} not found")
+
+
+def wait_for_serverless_pods_deletion(resource: Project | Namespace, admin_client: DynamicClient | None) -> None:
+    """
+    Wait for serverless pods deletion before namespace deletion.
+
+    This is a workaround for RHOAIENG-19969.
+
+    Args:
+        resource (Project | Namespace): project or namespace
+        admin_client (DynamicClient): admin client.
+
+    Returns:
+        bool: True if we should wait for namespace deletion else False
+
+    """
+    client = admin_client or get_client()
+    for pod in Pod.get(dyn_client=client, namespace=resource.name):
+        if (
+            pod.exists
+            and pod.instance.metadata.annotations.get(Annotations.KserveIo.DEPLOYMENT_MODE)
+            == KServeDeploymentType.SERVERLESS
+        ):
+            LOGGER.info(f"Waiting for serverless pod {pod.name} to be deleted")
+            pod.wait_deleted(timeout=Timeout.TIMEOUT_1MIN)
