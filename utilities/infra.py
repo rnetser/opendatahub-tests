@@ -60,6 +60,11 @@ def create_ns(
     """
     Create namespace with admin or unprivileged client.
 
+    For a namespace / project which contains Serverless ISVC,  there is a workaround for RHOAIENG-19969.
+    Currently, when Serverless ISVC is deleted and the namespace is deleted, namespace "SomeResourcesRemain" is True.
+    This is because the serverless pods are not immediately deleted resulting in prolonged namespace deletion.
+    Waiting for the pod(s) to be deleted before cleanup, eliminates the issue.
+
     Args:
         name (str): namespace name.
             Can be overwritten by `request.param["name"]`
@@ -704,11 +709,7 @@ def get_operator_distribution(client: DynamicClient, dsc_name: str = "default-ds
 
 def wait_for_serverless_pods_deletion(resource: Project | Namespace, admin_client: DynamicClient | None) -> None:
     """
-    Wait for serverless pods deletion before namespace deletion.
-
-    This is a workaround for RHOAIENG-19969.
-    Currently, when Serverless ISVC is deleted and the namespace is deleted, namespace "SomeResourcesRemain" is True.
-    This is because the serverless pods are not immediately deleted resulting in prolonged namespace deletion.
+    Wait for serverless pods deletion.
 
     Args:
         resource (Project | Namespace): project or namespace
