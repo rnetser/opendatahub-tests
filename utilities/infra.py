@@ -707,6 +707,8 @@ def wait_for_serverless_pods_deletion(resource: Project | Namespace, admin_clien
     Wait for serverless pods deletion before namespace deletion.
 
     This is a workaround for RHOAIENG-19969.
+    Currently, when Serverless ISVC is deleted and the namespace is deleted, namespace "SomeResourcesRemain" is True.
+    This is because the serverless pods are not immediately deleted resulting in prolonged namespace deletion.
 
     Args:
         resource (Project | Namespace): project or namespace
@@ -723,5 +725,5 @@ def wait_for_serverless_pods_deletion(resource: Project | Namespace, admin_clien
             and pod.instance.metadata.annotations.get(Annotations.KserveIo.DEPLOYMENT_MODE)
             == KServeDeploymentType.SERVERLESS
         ):
-            LOGGER.info(f"Waiting for serverless pod {pod.name} to be deleted")
+            LOGGER.info(f"Waiting for {KServeDeploymentType.SERVERLESS} pod {pod.name} to be deleted")
             pod.wait_deleted(timeout=Timeout.TIMEOUT_1MIN)
