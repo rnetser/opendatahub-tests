@@ -604,14 +604,14 @@ def create_isvc(
         })
 
     if enable_auth:
-        # model mesh auth is set in ServingRuntime
+        # model mesh auth is set in servingruntime
         if deployment_mode == KServeDeploymentType.SERVERLESS:
             _annotations[Annotations.KserveAuth.SECURITY] = "true"
         elif deployment_mode == KServeDeploymentType.RAW_DEPLOYMENT:
             labels[Labels.KserveAuth.SECURITY] = "true"
 
     # default to True if deployment_mode is Serverless (default behavior of Serverless) if was not provided by the user
-    # model mesh external route is set in ServingRuntime
+    # model mesh external route is set in servingruntime
     if external_route is None and deployment_mode == KServeDeploymentType.SERVERLESS:
         external_route = True
 
