@@ -173,6 +173,9 @@ class Labels:
     class OpenDataHubIo:
         MANAGED: str = Annotations.OpenDataHubIo.MANAGED
 
+    class Openshift:
+        APP: str = "app"
+
 
 class Timeout:
     TIMEOUT_1MIN: int = 60
@@ -192,6 +195,22 @@ class RunTimeConfigs:
         "runtime-name": ModelInferenceRuntime.ONNX_RUNTIME,
         "model-format": {ModelFormat.ONNX: ModelVersion.OPSET13},
     }
+
+
+class MinIo:
+    class Metadata:
+        NAME: str = "minio"
+        DEFAULT_PORT: int = 9000
+        DEFAULT_ENDPOINT: str = f"{Protocols.HTTP}://{NAME}:{DEFAULT_PORT}"
+
+    class Credentials:
+        ACCESS_KEY_NAME: str = "MINIO_ACCESS_KEY"
+        ACCESS_KEY_VALUE: str = "THEACCESSKEY"
+        SECRET_KEY_NAME: str = "MINIO_SECRET_KEY"
+        SECRET_KEY_VALUE: str = "THESECRETKEY"
+
+    class Buckets:
+        MODELMESH_EXAMPLE_MODELS: str = "modelmesh-example-models"
 
 
 MODEL_REGISTRY: str = "model-registry"

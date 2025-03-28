@@ -1,6 +1,5 @@
 import pytest
 
-from tests.model_explainability.constants import MINIO_DATA_DICT
 from tests.model_explainability.trustyai_service.trustyai_service_utils import (
     send_inferences_and_verify_trustyai_service_registered,
     verify_upload_data_to_trustyai_service,
@@ -9,17 +8,30 @@ from tests.model_explainability.trustyai_service.trustyai_service_utils import (
     verify_trustyai_service_metric_scheduling_request,
     verify_trustyai_service_metric_delete_request,
 )
+from utilities.constants import Labels, MinIo
 from utilities.manifests.openvino import OPENVINO_KSERVE_INFERENCE_CONFIG
 
 BASE_DATA_PATH: str = "./tests/model_explainability/trustyai_service/drift/model_data"
 
 
 @pytest.mark.parametrize(
-    "model_namespace, minio_data_connection",
+    "model_namespace, minio_pod, minio_data_connection",
     [
         pytest.param(
             {"name": "test-drift"},
-            {"data-dict": MINIO_DATA_DICT},
+            {
+                "args": ["server", "/data1"],
+                "image": "quay.io/trustyai_testing/modelmesh-minio-examples"
+                "@sha256:d2ccbe92abf9aa5085b594b2cae6c65de2bf06306c30ff5207956eb949bb49da",
+                "labels": {
+                    Labels.Openshift.APP: MinIo.Metadata.NAME,
+                    "maistra.io/expose-route": "true",
+                },
+                "annotations": {
+                    "sidecar.istio.io/inject": "true",
+                },
+            },
+            {"bucket": MinIo.Buckets.MODELMESH_EXAMPLE_MODELS},
         )
     ],
     indirect=True,
@@ -67,29 +79,47 @@ class TestDriftMetrics:
         )
 
     def test_drift_metric_meanshift(
-        self, admin_client, current_client_token, trustyai_service_with_pvc_storage, gaussian_credit_model
+        self,
+        admin_client,
+        current_client_token,
+        trustyai_service_with_pvc_storage,
+        gaussian_credit_model,
     ):
         verify_trustyai_service_metric_request(
             client=admin_client,
             trustyai_service=trustyai_service_with_pvc_storage,
             token=current_client_token,
             metric_name=TrustyAIServiceMetrics.Drift.MEANSHIFT,
-            json_data={"modelId": gaussian_credit_model.name, "referenceTag": "TRAINING"},
+            json_data={
+                "modelId": gaussian_credit_model.name,
+                "referenceTag": "TRAINING",
+            },
         )
 
     def test_drift_metric_schedule_meanshift(
-        self, admin_client, current_client_token, trustyai_service_with_pvc_storage, gaussian_credit_model
+        self,
+        admin_client,
+        current_client_token,
+        trustyai_service_with_pvc_storage,
+        gaussian_credit_model,
     ):
         verify_trustyai_service_metric_scheduling_request(
             client=admin_client,
             trustyai_service=trustyai_service_with_pvc_storage,
             token=current_client_token,
             metric_name=TrustyAIServiceMetrics.Drift.MEANSHIFT,
-            json_data={"modelId": gaussian_credit_model.name, "referenceTag": "TRAINING"},
+            json_data={
+                "modelId": gaussian_credit_model.name,
+                "referenceTag": "TRAINING",
+            },
         )
 
     def test_drift_metric_delete(
-        self, admin_client, minio_data_connection, current_client_token, trustyai_service_with_pvc_storage
+        self,
+        admin_client,
+        minio_data_connection,
+        current_client_token,
+        trustyai_service_with_pvc_storage,
     ):
         verify_trustyai_service_metric_delete_request(
             client=admin_client,

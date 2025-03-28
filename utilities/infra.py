@@ -608,7 +608,7 @@ def verify_no_failed_pods(
                     for container_status in pod_status.containerStatuses:
                         is_waiting_pull_back_off = (
                             wait_state := container_status.state.waiting
-                        ) and wait_state.reason == pod.Status.IMAGE_PULL_BACK_OFF
+                        ) and wait_state.reason in (pod.Status.IMAGE_PULL_BACK_OFF, pod.Status.CRASH_LOOPBACK_OFF)
 
                         is_terminated_error = (
                             terminate_state := container_status.state.terminated

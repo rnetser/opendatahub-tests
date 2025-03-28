@@ -270,25 +270,32 @@ def http_s3_ovms_model_mesh_serving_runtime(
 
 
 @pytest.fixture(scope="class")
-def openvino_kserve_serving_runtime(
+def ovms_kserve_serving_runtime(
     request: FixtureRequest,
     admin_client: DynamicClient,
     model_namespace: Namespace,
 ) -> Generator[ServingRuntime, Any, Any]:
-    with ServingRuntimeFromTemplate(
-        client=admin_client,
-        name=request.param["runtime-name"],
-        namespace=model_namespace.name,
-        template_name=RuntimeTemplates.OVMS_KSERVE,
-        multi_model=False,
-        resources={
+    runtime_kwargs = {
+        "client": admin_client,
+        "namespace": model_namespace.name,
+        "name": request.param["runtime-name"],
+        "template_name": RuntimeTemplates.OVMS_KSERVE,
+        "multi_model": False,
+        "resources": {
             ModelFormat.OVMS: {
                 "requests": {"cpu": "1", "memory": "4Gi"},
                 "limits": {"cpu": "2", "memory": "8Gi"},
             }
         },
-        model_format_name=request.param["model-format"],
-    ) as model_runtime:
+    }
+
+    if model_format_name := request.param.get("model-format"):
+        runtime_kwargs["model_format_name"] = model_format_name
+
+    if supported_model_formats := request.param.get("supported-model-formats"):
+        runtime_kwargs["supported_model_formats"] = supported_model_formats
+
+    with ServingRuntimeFromTemplate(**runtime_kwargs) as model_runtime:
         yield model_runtime
 
 
@@ -333,7 +340,7 @@ def ovms_kserve_inference_service(
     request: FixtureRequest,
     admin_client: DynamicClient,
     model_namespace: Namespace,
-    openvino_kserve_serving_runtime: ServingRuntime,
+    ovms_kserve_serving_runtime: ServingRuntime,
     ci_endpoint_s3_secret: Secret,
 ) -> Generator[InferenceService, Any, Any]:
     deployment_mode = request.param["deployment-mode"]
@@ -341,7 +348,7 @@ def ovms_kserve_inference_service(
         "client": admin_client,
         "name": f"{request.param['name']}-{deployment_mode.lower()}",
         "namespace": model_namespace.name,
-        "runtime": openvino_kserve_serving_runtime.name,
+        "runtime": ovms_kserve_serving_runtime.name,
         "storage_path": request.param["model-dir"],
         "storage_key": ci_endpoint_s3_secret.name,
         "model_format": ModelAndFormat.OPENVINO_IR,

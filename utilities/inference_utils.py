@@ -567,7 +567,7 @@ def create_isvc(
     predictor_dict: dict[str, Any] = {
         "model": {
             "modelFormat": {"name": model_format},
-            "version": "1",
+            "version": model_version,
             "runtime": runtime,
         },
     }
