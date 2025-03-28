@@ -2,8 +2,6 @@ from typing import Any
 
 from ocp_resources.resource import Resource
 
-OPENDATAHUB_IO: str = "opendatahub.io"
-
 
 class KServeDeploymentType:
     SERVERLESS: str = "Serverless"
@@ -66,6 +64,9 @@ class RuntimeTemplates:
     OVMS_KSERVE: str = f"kserve-{ModelFormat.OVMS}"
     CAIKIT_STANDALONE_SERVING: str = "caikit-standalone-serving-template"
     TGIS_GRPC_SERVING: str = "tgis-grpc-serving-template"
+    VLLM_CUDA: str = "vllm-cuda-runtime-template"
+    VLLM_ROCM: str = "vllm-rocm-runtime-template"
+    VLLM_GAUDUI: str = "vllm-gaudi-runtime-template"
 
 
 class ModelInferenceRuntime:
@@ -112,6 +113,10 @@ class AcceleratorType:
     SUPPORTED_LISTS: list[str] = [NVIDIA, AMD, GAUDI]
 
 
+class ApiGroups:
+    OPENDATAHUB_IO: str = "opendatahub.io"
+
+
 class Annotations:
     class KubernetesIo:
         NAME: str = f"{Resource.ApiGroup.APP_KUBERNETES_IO}/name"
@@ -123,11 +128,11 @@ class Annotations:
         DEPLOYMENT_MODE: str = "serving.kserve.io/deploymentMode"
 
     class KserveAuth:
-        SECURITY: str = f"security.{OPENDATAHUB_IO}/enable-auth"
+        SECURITY: str = f"security.{ApiGroups.OPENDATAHUB_IO}/enable-auth"
 
     class OpenDataHubIo:
-        MANAGED: str = f"{OPENDATAHUB_IO}/managed"
-        SERVICE_MESH: str = f"{OPENDATAHUB_IO}/service-mesh"
+        MANAGED: str = f"{ApiGroups.OPENDATAHUB_IO}/managed"
+        SERVICE_MESH: str = f"{ApiGroups.OPENDATAHUB_IO}/service-mesh"
 
 
 class StorageClassName:
@@ -157,13 +162,16 @@ class DscComponents:
 
 class Labels:
     class OpenDataHub:
-        DASHBOARD: str = f"{OPENDATAHUB_IO}/dashboard"
+        DASHBOARD: str = f"{ApiGroups.OPENDATAHUB_IO}/dashboard"
 
     class KserveAuth:
-        SECURITY: str = f"security.{OPENDATAHUB_IO}/enable-auth"
+        SECURITY: str = f"security.{ApiGroups.OPENDATAHUB_IO}/enable-auth"
 
     class Notebook:
-        INJECT_OAUTH: str = f"notebooks.{OPENDATAHUB_IO}/inject-oauth"
+        INJECT_OAUTH: str = f"notebooks.{ApiGroups.OPENDATAHUB_IO}/inject-oauth"
+
+    class OpenDataHubIo:
+        MANAGED: str = Annotations.OpenDataHubIo.MANAGED
 
 
 class Timeout:
@@ -173,6 +181,17 @@ class Timeout:
     TIMEOUT_5MIN: int = 5 * TIMEOUT_1MIN
     TIMEOUT_10MIN: int = 10 * TIMEOUT_1MIN
     TIMEOUT_15MIN: int = 15 * TIMEOUT_1MIN
+
+
+class Containers:
+    KSERVE_CONTAINER_NAME: str = "kserve-container"
+
+
+class RunTimeConfigs:
+    ONNX_OPSET13_RUNTIME_CONFIG: dict[str, Any] = {
+        "runtime-name": ModelInferenceRuntime.ONNX_RUNTIME,
+        "model-format": {ModelFormat.ONNX: ModelVersion.OPSET13},
+    }
 
 
 MODEL_REGISTRY: str = "model-registry"
