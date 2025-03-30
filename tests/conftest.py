@@ -6,6 +6,7 @@ import shutil
 from typing import Any, Generator
 
 import pytest
+import shortuuid
 import yaml
 from _pytest.tmpdir import TempPathFactory
 from ocp_resources.config_map import ConfigMap
@@ -346,7 +347,7 @@ def unprivileged_model_namespace(
 @pytest.fixture(scope="class")
 def minio_namespace(admin_client: DynamicClient) -> Generator[Namespace, Any, Any]:
     with create_ns(
-        name=MinIo.Metadata.NAME,
+        name=f"{MinIo.Metadata.NAME}-{shortuuid.uuid().lower()}",
         admin_client=admin_client,
     ) as ns:
         yield ns

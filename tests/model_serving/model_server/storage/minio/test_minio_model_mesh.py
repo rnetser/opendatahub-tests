@@ -1,18 +1,19 @@
 import pytest
 
 from tests.model_serving.model_server.storage.minio.constants import (
-    INFERENCE_TYPE,
     MINIO_DATA_CONNECTION_CONFIG,
-    MINIO_INFERENCE_CONFIG,
-    MINIO_RUNTIME_CONFIG,
 )
 from tests.model_serving.model_server.utils import verify_inference_response
 from utilities.constants import (
     KServeDeploymentType,
     MinIo,
+    ModelAndFormat,
+    ModelFormat,
+    ModelName,
     Protocols,
+    RunTimeConfigs,
 )
-from utilities.manifests.openvino import OPENVINO_INFERENCE_CONFIG
+from utilities.manifests.onnx import ONNX_INFERENCE_CONFIG
 
 pytestmark = [pytest.mark.modelmesh, pytest.mark.minio, pytest.mark.sanity]
 
@@ -28,10 +29,13 @@ pytestmark = [pytest.mark.modelmesh, pytest.mark.minio, pytest.mark.sanity]
             },
             MinIo.PodConfig.KSERVE_MINIO_CONFIG,
             MINIO_DATA_CONNECTION_CONFIG,
-            MINIO_RUNTIME_CONFIG,
+            {"runtime_image": MinIo.PodConfig.KSERVE_MINIO_IMAGE, **RunTimeConfigs.ONNX_OPSET13_RUNTIME_CONFIG},
             {
+                "name": f"{ModelName.MNIST}-model",
+                "model-format": ModelAndFormat.OPENVINO_IR,
+                "model-version": "1",
+                "model-dir": f"modelmesh/{ModelFormat.ONNX}",
                 "deployment-mode": KServeDeploymentType.MODEL_MESH,
-                **MINIO_INFERENCE_CONFIG,
             },
         )
     ],
@@ -46,8 +50,8 @@ class TestMinioModelMesh:
         """Verify that model mesh minio model can be queried using REST"""
         verify_inference_response(
             inference_service=model_mesh_ovms_minio_inference_service,
-            inference_config=OPENVINO_INFERENCE_CONFIG,
-            inference_type=INFERENCE_TYPE,
+            inference_config=ONNX_INFERENCE_CONFIG,
+            inference_type=f"infer-{ModelName.MNIST}",
             protocol=Protocols.HTTP,
             use_default_query=True,
         )

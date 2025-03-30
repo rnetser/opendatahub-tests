@@ -24,6 +24,7 @@ class ModelName:
     FLAN_T5_SMALL_HF: str = f"{FLAN_T5_SMALL}-hf"
     CAIKIT_BGE_LARGE_EN: str = f"bge-large-en-v1.5-{ModelFormat.CAIKIT}"
     BLOOM_560M: str = "bloom-560m"
+    MNIST: str = "mnist"
 
 
 class ModelAndFormat:
@@ -214,6 +215,10 @@ class MinIo:
         MODELMESH_EXAMPLE_MODELS: str = f"modelmesh-{EXAMPLE_MODELS}"
 
     class PodConfig:
+        KSERVE_MINIO_IMAGE: str = (
+            "quay.io/jooholee/model-minio@sha256:b50aa0fbfea740debb314ece8e925b3e8e761979f345b6cd12a6833efd04e2c2"  # noqa: E501
+        )
+
         MINIO_BASE_CONFIG: dict[str, Any] = {
             "args": ["server", "/data1"],
             "labels": {
@@ -230,7 +235,7 @@ class MinIo:
         }
 
         KSERVE_MINIO_CONFIG: dict[str, Any] = {
-            "image": "quay.io/jooholee/model-minio@sha256:b50aa0fbfea740debb314ece8e925b3e8e761979f345b6cd12a6833efd04e2c2",  # noqa: E501
+            "image": KSERVE_MINIO_IMAGE,
             **MINIO_BASE_CONFIG,
         }
 

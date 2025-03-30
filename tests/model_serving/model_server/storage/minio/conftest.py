@@ -31,6 +31,7 @@ def kserve_ovms_minio_inference_service(
         storage_key=minio_data_connection.name,
         storage_path=request.param["model-dir"],
         model_version=request.param["model-version"],
+        external_route=request.param.get("external-route"),
     ) as isvc:
         yield isvc
 

@@ -1,7 +1,7 @@
 import pytest
 
 from tests.model_serving.model_server.storage.minio.constants import (
-    INFERENCE_TYPE,
+    AGE_GENDER_INFERENCE_TYPE,
     MINIO_DATA_CONNECTION_CONFIG,
     MINIO_INFERENCE_CONFIG,
     MINIO_RUNTIME_CONFIG,
@@ -22,7 +22,7 @@ pytestmark = [pytest.mark.rawdeployment, pytest.mark.minio, pytest.mark.sanity]
             MinIo.PodConfig.KSERVE_MINIO_CONFIG,
             MINIO_DATA_CONNECTION_CONFIG,
             MINIO_RUNTIME_CONFIG,
-            {"deployment-mode": KServeDeploymentType.RAW_DEPLOYMENT, "external_route": True, **MINIO_INFERENCE_CONFIG},
+            {"deployment-mode": KServeDeploymentType.RAW_DEPLOYMENT, "external-route": True, **MINIO_INFERENCE_CONFIG},
         )
     ],
     indirect=True,
@@ -37,7 +37,7 @@ class TestMinioRawDeployment:
         verify_inference_response(
             inference_service=kserve_ovms_minio_inference_service,
             inference_config=OPENVINO_INFERENCE_CONFIG,
-            inference_type=INFERENCE_TYPE,
+            inference_type=AGE_GENDER_INFERENCE_TYPE,
             protocol=Protocols.HTTPS,
             use_default_query=True,
         )

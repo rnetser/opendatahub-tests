@@ -34,7 +34,7 @@ OPENVINO_INFERENCE_CONFIG = {
         },
         "age-gender-recognition": {
             "query_input": "@utilities/manifests/openvino/age-gender-recognition-retail-0001.jpg",
-            "query_output": r'{"outputs":{"age_conv3":\[\[\[\[0.\d+\]\]\]\],"prob":\[\[\[\[0.\d+\]\],\[\[0.\d+\]\]\]\]}}',
+            "query_output": r'{"outputs":{(?=.*"age_conv3":\[\[\[\[0.\d+\]\]\]\])(?=.*"prob":\[\[\[\[0.\d+\]\],\[\[0.\d+\]\]\]\].*)',
             "use_regex": True
         },
 
