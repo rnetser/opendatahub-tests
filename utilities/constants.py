@@ -17,6 +17,7 @@ class ModelFormat:
     VLLM: str = "vllm"
     TENSORFLOW: str = "tensorflow"
     PYTORCH: str = "pytorch"
+    MNIST: str = "mnist"
 
 
 class ModelName:
@@ -210,7 +211,33 @@ class MinIo:
         SECRET_KEY_VALUE: str = "THESECRETKEY"
 
     class Buckets:
-        MODELMESH_EXAMPLE_MODELS: str = "modelmesh-example-models"
+        EXAMPLE_MODELS: str = "example-models"
+        MODELMESH_EXAMPLE_MODELS: str = f"modelmesh-{EXAMPLE_MODELS}"
+
+    class PodConfig:
+        MINIO_BASE_CONFIG: dict[str, Any] = {
+            "args": ["server", "/data1"],
+            "labels": {
+                "maistra.io/expose-route": "true",
+            },
+            "annotations": {
+                "sidecar.istio.io/inject": "true",
+            },
+        }
+
+        MODEL_MESH_MINIO_CONFIG: dict[str, Any] = {
+            "image": "quay.io/trustyai_testing/modelmesh-minio-examples@sha256:d2ccbe92abf9aa5085b594b2cae6c65de2bf06306c30ff5207956eb949bb49da",  # noqa: E501
+            **MINIO_BASE_CONFIG,
+        }
+
+        MM_KSERVE_MINIO_CONFIG: dict[str, Any] = {
+            "image": "quay.io/jooholee/model-minio@sha256:b50aa0fbfea740debb314ece8e925b3e8e761979f345b6cd12a6833efd04e2c2",  # noqa: E501
+            **MINIO_BASE_CONFIG,
+        }
+
+    class RunTimeConfig:
+        # TODO: Remove runtime_image once ovms/loan_model_alpha model works with latest ovms
+        IMAGE = "quay.io/opendatahub/openvino_model_server@sha256:564664371d3a21b9e732a5c1b4b40bacad714a5144c0a9aaf675baec4a04b148"  # noqa: E501
 
 
 MODEL_REGISTRY: str = "model-registry"

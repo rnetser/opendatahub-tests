@@ -45,16 +45,19 @@ def get_fairness_request_json_data(isvc: InferenceService) -> dict[str, Any]:
     }
 
 
+@pytest.mark.usefixtures("minio_pod")
 @pytest.mark.parametrize(
-    "model_namespace, minio_data_connection",
+    "model_namespace, minio_pod, minio_data_connection",
     [
         pytest.param(
             {"name": "test-fairness-pvc"},
+            MinIo.PodConfig.MODEL_MESH_MINIO_CONFIG,
             {"bucket": MinIo.Buckets.MODELMESH_EXAMPLE_MODELS},
         )
     ],
     indirect=True,
 )
+@pytest.mark.usefixtures("minio_pod")
 class TestFairnessMetricsWithPVCStorage:
     """
     Verifies all the basic operations with a fairness metric (spd) available in TrustyAI, using PVC storage.
@@ -124,15 +127,17 @@ class TestFairnessMetricsWithPVCStorage:
 
 
 @pytest.mark.parametrize(
-    "model_namespace, minio_data_connection",
+    "model_namespace, minio_pod, minio_data_connection",
     [
         pytest.param(
             {"name": "test-fairness-db"},
+            MinIo.PodConfig.MODEL_MESH_MINIO_CONFIG,
             {"bucket": MinIo.Buckets.MODELMESH_EXAMPLE_MODELS},
         )
     ],
     indirect=True,
 )
+@pytest.mark.usefixtures("minio_pod")
 class TestFairnessMetricsWithDBStorage:
     """
     Verifies all the basic operations with a fairness metric (spd) available in TrustyAI, using MariaDB storage.

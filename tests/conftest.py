@@ -31,7 +31,14 @@ from utilities.infra import (
     login_with_user_password,
     get_openshift_token,
 )
-from utilities.constants import AcceleratorType, ApiGroups, DscComponents, Labels, MinIo, Protocols
+from utilities.constants import (
+    AcceleratorType,
+    ApiGroups,
+    DscComponents,
+    Labels,
+    MinIo,
+    Protocols,
+)
 from utilities.infra import update_configmap_data
 
 
@@ -288,7 +295,9 @@ def updated_dsc_component_state(
 
 
 @pytest.fixture(scope="package")
-def enabled_modelmesh_in_dsc(dsc_resource: DataScienceCluster) -> Generator[DataScienceCluster, Any, Any]:
+def enabled_modelmesh_in_dsc(
+    dsc_resource: DataScienceCluster,
+) -> Generator[DataScienceCluster, Any, Any]:
     with update_components_in_dsc(
         dsc=dsc_resource,
         components={DscComponents.MODELMESHSERVING: DscComponents.ManagementState.MANAGED},
@@ -308,7 +317,9 @@ def enabled_kserve_in_dsc(
 
 
 @pytest.fixture(scope="session")
-def cluster_monitoring_config(admin_client: DynamicClient) -> Generator[ConfigMap, Any, Any]:
+def cluster_monitoring_config(
+    admin_client: DynamicClient,
+) -> Generator[ConfigMap, Any, Any]:
     data = {"config.yaml": yaml.dump({"enableUserWorkload": True})}
 
     with update_configmap_data(
@@ -347,13 +358,18 @@ def minio_pod(
     admin_client: DynamicClient,
     minio_namespace: Namespace,
 ) -> Generator[Pod, Any, Any]:
+    pod_labels = {Labels.Openshift.APP: MinIo.Metadata.NAME}
+
+    if labels := request.param.get("labels"):
+        pod_labels.update(labels)
+
     with Pod(
         client=admin_client,
         name=MinIo.Metadata.NAME,
         namespace=minio_namespace.name,
         containers=[
             {
-                "args": request.param["args"],
+                "args": request.param.get("args"),
                 "env": [
                     {
                         "name": MinIo.Credentials.ACCESS_KEY_NAME,
@@ -364,12 +380,12 @@ def minio_pod(
                         "value": MinIo.Credentials.SECRET_KEY_VALUE,
                     },
                 ],
-                "image": request.param["image"],
+                "image": request.param.get("image"),
                 "name": MinIo.Metadata.NAME,
             }
         ],
-        label=request.param["labels"],
-        annotations=request.param["annotations"],
+        label=pod_labels,
+        annotations=request.param.get("annotations"),
     ) as minio_pod:
         yield minio_pod
 
@@ -397,13 +413,16 @@ def minio_service(admin_client: DynamicClient, minio_namespace: Namespace) -> Ge
 
 @pytest.fixture(scope="class")
 def minio_data_connection(
-    request: FixtureRequest, admin_client: DynamicClient, model_namespace: Namespace, minio_service: Service
+    request: FixtureRequest,
+    admin_client: DynamicClient,
+    model_namespace: Namespace,
+    minio_service: Service,
 ) -> Generator[Secret, Any, Any]:
     data_dict = get_s3_secret_dict(
         aws_access_key=MinIo.Credentials.ACCESS_KEY_VALUE,
-        aws_secret_access_key=MinIo.Credentials.ACCESS_KEY_NAME,  # pragma: allowlist secret
-        aws_s3_bucket=request.param("bucket"),
-        aws_s3_endpoint=f"http://{MinIo.Metadata.NAME}:{str(MinIo.Metadata.DEFAULT_PORT)}",
+        aws_secret_access_key=MinIo.Credentials.SECRET_KEY_VALUE,  # pragma: allowlist secret
+        aws_s3_bucket=request.param["bucket"],
+        aws_s3_endpoint=f"{Protocols.HTTP}://{minio_service.instance.spec.clusterIP}:{str(MinIo.Metadata.DEFAULT_PORT)}",  # noqa: E501
         aws_s3_region="us-south",
     )
 

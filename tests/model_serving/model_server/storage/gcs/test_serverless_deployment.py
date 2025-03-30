@@ -9,35 +9,37 @@ from utilities.constants import (
 from utilities.inference_utils import Inference
 from utilities.manifests.tensorflow import TENSORFLOW_INFERENCE_CONFIG
 
-pytestmark = [pytest.mark.serverless, pytest.mark.minio, pytest.mark.sanity]
+# pytestmark = [pytest.mark.serverless, pytest.mark.gcs, pytest.mark.sanity]
 
 
 @pytest.mark.parametrize(
     "model_namespace, ovms_kserve_serving_runtime, ovms_kserve_storage_uri_inference_service",
     [
         pytest.param(
-            {"name": "minio-tensorflow-serverless"},
+            {"name": "gcs-tensorflow-serverless"},
             {
-                "runtime-name": "minio-tensorflow-serverless",
-                "supported-model-formats": {
-                    "name": ModelFormat.TENSORFLOW,
-                    "version": "0001",
-                    "autoSelect": True,
-                    "priority": 1,
-                },
+                "runtime-name": "gcs-tensorflow-serverless",
+                "supported-model-formats": [
+                    {
+                        "name": ModelFormat.TENSORFLOW,
+                        "version": "0001",
+                        "autoSelect": True,
+                        "priority": 1,
+                    }
+                ],
             },
             {
                 "name": ModelFormat.TENSORFLOW,
                 "storage-uri": "gs://kfserving-examples/models/tensorflow/flowers",
                 "deployment-mode": KServeDeploymentType.SERVERLESS,
                 "model-format": ModelFormat.TENSORFLOW,
-                "model-version": "2",
+                "model-version": "0001",
             },
         )
     ],
     indirect=True,
 )
-class TestTensorflowMinIoServerless:
+class TestTensorflowGcsServerless:
     def test_serverless_tensorflow_rest_inference(self, ovms_kserve_storage_uri_inference_service):
         """Verify that kserve Serverless tensorflow model can be queried using REST"""
         verify_inference_response(

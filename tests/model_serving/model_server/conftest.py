@@ -295,6 +295,9 @@ def ovms_kserve_serving_runtime(
     if supported_model_formats := request.param.get("supported-model-formats"):
         runtime_kwargs["supported_model_formats"] = supported_model_formats
 
+    if runtime_image := request.param.get("runtime-image"):
+        runtime_kwargs["runtime_image"] = runtime_image
+
     with ServingRuntimeFromTemplate(**runtime_kwargs) as model_runtime:
         yield model_runtime
 

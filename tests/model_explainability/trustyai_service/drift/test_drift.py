@@ -8,7 +8,7 @@ from tests.model_explainability.trustyai_service.trustyai_service_utils import (
     verify_trustyai_service_metric_scheduling_request,
     verify_trustyai_service_metric_delete_request,
 )
-from utilities.constants import Labels, MinIo
+from utilities.constants import MinIo
 from utilities.manifests.openvino import OPENVINO_KSERVE_INFERENCE_CONFIG
 
 BASE_DATA_PATH: str = "./tests/model_explainability/trustyai_service/drift/model_data"
@@ -19,23 +19,13 @@ BASE_DATA_PATH: str = "./tests/model_explainability/trustyai_service/drift/model
     [
         pytest.param(
             {"name": "test-drift"},
-            {
-                "args": ["server", "/data1"],
-                "image": "quay.io/trustyai_testing/modelmesh-minio-examples"
-                "@sha256:d2ccbe92abf9aa5085b594b2cae6c65de2bf06306c30ff5207956eb949bb49da",
-                "labels": {
-                    Labels.Openshift.APP: MinIo.Metadata.NAME,
-                    "maistra.io/expose-route": "true",
-                },
-                "annotations": {
-                    "sidecar.istio.io/inject": "true",
-                },
-            },
+            MinIo.PodConfig.MODEL_MESH_MINIO_CONFIG,
             {"bucket": MinIo.Buckets.MODELMESH_EXAMPLE_MODELS},
         )
     ],
     indirect=True,
 )
+@pytest.mark.usefixtures("minio_pod")
 @pytest.mark.smoke
 class TestDriftMetrics:
     """
