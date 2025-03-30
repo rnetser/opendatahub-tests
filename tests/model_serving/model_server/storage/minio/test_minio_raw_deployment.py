@@ -10,7 +10,7 @@ from tests.model_serving.model_server.utils import verify_inference_response
 from utilities.constants import KServeDeploymentType, MinIo, Protocols
 from utilities.manifests.openvino import OPENVINO_INFERENCE_CONFIG
 
-pytestmark = [pytest.mark.serverless, pytest.mark.minio, pytest.mark.sanity]
+pytestmark = [pytest.mark.rawdeployment, pytest.mark.minio, pytest.mark.sanity]
 
 
 @pytest.mark.parametrize(
@@ -18,22 +18,22 @@ pytestmark = [pytest.mark.serverless, pytest.mark.minio, pytest.mark.sanity]
     "kserve_ovms_minio_inference_service",
     [
         pytest.param(
-            {"name": f"{MinIo.Metadata.NAME}-{KServeDeploymentType.SERVERLESS.lower()}"},
+            {"name": f"{MinIo.Metadata.NAME}-{KServeDeploymentType.RAW_DEPLOYMENT.lower()}"},
             MinIo.PodConfig.KSERVE_MINIO_CONFIG,
             MINIO_DATA_CONNECTION_CONFIG,
             MINIO_RUNTIME_CONFIG,
-            {"deployment-mode": KServeDeploymentType.SERVERLESS, **MINIO_INFERENCE_CONFIG},
+            {"deployment-mode": KServeDeploymentType.RAW_DEPLOYMENT, "external_route": True, **MINIO_INFERENCE_CONFIG},
         )
     ],
     indirect=True,
 )
 @pytest.mark.usefixtures("minio_pod")
-class TestMinioServerless:
-    def test_minio_serverless_inference(
+class TestMinioRawDeployment:
+    def test_minio_raw_inference(
         self,
         kserve_ovms_minio_inference_service,
     ) -> None:
-        """Verify that kserve Serverless minio model can be queried using REST"""
+        """Verify that kserve raw deployment minio model can be queried using REST"""
         verify_inference_response(
             inference_service=kserve_ovms_minio_inference_service,
             inference_config=OPENVINO_INFERENCE_CONFIG,

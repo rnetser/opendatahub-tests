@@ -261,6 +261,11 @@ def http_s3_ovms_model_mesh_serving_runtime(
     if hasattr(request, "param"):
         enable_external_route = request.param.get("enable-external-route")
         enable_auth = request.param.get("enable-auth")
+        if supported_model_formats := request.param.get("supported-model-formats"):
+            runtime_kwargs["supported_model_formats"] = supported_model_formats
+
+        if runtime_image := request.param.get("runtime-image"):
+            runtime_kwargs["runtime_image"] = runtime_image
 
     runtime_kwargs["enable_external_route"] = enable_external_route
     runtime_kwargs["enable_auth"] = enable_auth

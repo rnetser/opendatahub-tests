@@ -17,7 +17,6 @@ class ModelFormat:
     VLLM: str = "vllm"
     TENSORFLOW: str = "tensorflow"
     PYTORCH: str = "pytorch"
-    MNIST: str = "mnist"
 
 
 class ModelName:
@@ -205,9 +204,9 @@ class MinIo:
         DEFAULT_ENDPOINT: str = f"{Protocols.HTTP}://{NAME}:{DEFAULT_PORT}"
 
     class Credentials:
-        ACCESS_KEY_NAME: str = "MINIO_ACCESS_KEY"
+        ACCESS_KEY_NAME: str = "MINIO_ROOT_USER"
         ACCESS_KEY_VALUE: str = "THEACCESSKEY"
-        SECRET_KEY_NAME: str = "MINIO_SECRET_KEY"
+        SECRET_KEY_NAME: str = "MINIO_ROOT_PASSWORD"
         SECRET_KEY_VALUE: str = "THESECRETKEY"
 
     class Buckets:
@@ -230,7 +229,7 @@ class MinIo:
             **MINIO_BASE_CONFIG,
         }
 
-        MM_KSERVE_MINIO_CONFIG: dict[str, Any] = {
+        KSERVE_MINIO_CONFIG: dict[str, Any] = {
             "image": "quay.io/jooholee/model-minio@sha256:b50aa0fbfea740debb314ece8e925b3e8e761979f345b6cd12a6833efd04e2c2",  # noqa: E501
             **MINIO_BASE_CONFIG,
         }
