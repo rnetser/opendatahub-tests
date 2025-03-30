@@ -208,13 +208,13 @@ def vllm_gateway_config(admin_client: DynamicClient, model_namespace: Namespace)
 @pytest.fixture(scope="class")
 def minio_llm_deployment(
     admin_client: DynamicClient,
-    model_namespace: Namespace,
+    minio_namespace: Namespace,
     llm_models_pvc: PersistentVolumeClaim,
 ) -> Generator[Deployment, Any, Any]:
     with Deployment(
         client=admin_client,
         name="llm-container-deployment",
-        namespace=model_namespace.name,
+        namespace=minio_namespace.name,
         replicas=1,
         selector={"matchLabels": {Labels.Openshift.APP: MinIo.Metadata.NAME}},
         template={
@@ -286,12 +286,12 @@ def minio_llm_deployment(
 
 @pytest.fixture(scope="class")
 def llm_models_pvc(
-    admin_client: DynamicClient, model_namespace: Namespace
+    admin_client: DynamicClient, minio_namespace: Namespace
 ) -> Generator[PersistentVolumeClaim, Any, Any]:
     with PersistentVolumeClaim(
         client=admin_client,
         name="llm-models-claim",
-        namespace=model_namespace.name,
+        namespace=minio_namespace.name,
         accessmodes=PersistentVolumeClaim.AccessMode.RWO,
         volume_mode=PersistentVolumeClaim.VolumeMode.FILE,
         size="10Gi",
