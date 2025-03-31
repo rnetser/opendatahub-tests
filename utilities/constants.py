@@ -1,3 +1,5 @@
+from typing import Any
+
 from ocp_resources.resource import Resource
 
 
@@ -62,6 +64,9 @@ class RuntimeTemplates:
     OVMS_KSERVE: str = f"kserve-{ModelFormat.OVMS}"
     CAIKIT_STANDALONE_SERVING: str = "caikit-standalone-serving-template"
     TGIS_GRPC_SERVING: str = "tgis-grpc-serving-template"
+    VLLM_CUDA: str = "vllm-cuda-runtime-template"
+    VLLM_ROCM: str = "vllm-rocm-runtime-template"
+    VLLM_GAUDUI: str = "vllm-gaudi-runtime-template"
 
 
 class ModelInferenceRuntime:
@@ -80,8 +85,19 @@ class Protocols:
     HTTPS: str = "https"
     GRPC: str = "grpc"
     REST: str = "rest"
+    TCP: str = "TCP"
     TCP_PROTOCOLS: set[str] = {HTTP, HTTPS}
     ALL_SUPPORTED_PROTOCOLS: set[str] = TCP_PROTOCOLS.union({GRPC})
+
+
+class Ports:
+    GRPC_PORT: int = 8033
+    REST_PORT: int = 8080
+
+
+class PortNames:
+    REST_PORT_NAME: str = "http1"
+    GRPC_PORT_NAME: str = "h2c"
 
 
 class HTTPRequest:
@@ -97,6 +113,10 @@ class AcceleratorType:
     SUPPORTED_LISTS: list[str] = [NVIDIA, AMD, GAUDI]
 
 
+class ApiGroups:
+    OPENDATAHUB_IO: str = "opendatahub.io"
+
+
 class Annotations:
     class KubernetesIo:
         NAME: str = f"{Resource.ApiGroup.APP_KUBERNETES_IO}/name"
@@ -108,10 +128,11 @@ class Annotations:
         DEPLOYMENT_MODE: str = "serving.kserve.io/deploymentMode"
 
     class KserveAuth:
-        SECURITY: str = "security.opendatahub.io/enable-auth"
+        SECURITY: str = f"security.{ApiGroups.OPENDATAHUB_IO}/enable-auth"
 
     class OpenDataHubIo:
-        MANAGED: str = "opendatahub.io/managed"
+        MANAGED: str = f"{ApiGroups.OPENDATAHUB_IO}/managed"
+        SERVICE_MESH: str = f"{ApiGroups.OPENDATAHUB_IO}/service-mesh"
 
 
 class StorageClassName:
@@ -141,10 +162,16 @@ class DscComponents:
 
 class Labels:
     class OpenDataHub:
-        DASHBOARD: str = "opendatahub.io/dashboard"
+        DASHBOARD: str = f"{ApiGroups.OPENDATAHUB_IO}/dashboard"
 
     class KserveAuth:
-        SECURITY: str = "security.opendatahub.io/enable-auth"
+        SECURITY: str = f"security.{ApiGroups.OPENDATAHUB_IO}/enable-auth"
+
+    class Notebook:
+        INJECT_OAUTH: str = f"notebooks.{ApiGroups.OPENDATAHUB_IO}/inject-oauth"
+
+    class OpenDataHubIo:
+        MANAGED: str = Annotations.OpenDataHubIo.MANAGED
 
 
 class Timeout:
@@ -156,7 +183,30 @@ class Timeout:
     TIMEOUT_15MIN: int = 15 * TIMEOUT_1MIN
 
 
+class Containers:
+    KSERVE_CONTAINER_NAME: str = "kserve-container"
+
+
+class RunTimeConfigs:
+    ONNX_OPSET13_RUNTIME_CONFIG: dict[str, Any] = {
+        "runtime-name": ModelInferenceRuntime.ONNX_RUNTIME,
+        "model-format": {ModelFormat.ONNX: ModelVersion.OPSET13},
+    }
+
+
 MODEL_REGISTRY: str = "model-registry"
 MODELMESH_SERVING: str = "modelmesh-serving"
 ISTIO_CA_BUNDLE_FILENAME: str = "istio_knative.crt"
 OPENSHIFT_CA_BUNDLE_FILENAME: str = "openshift_ca.crt"
+INTERNAL_IMAGE_REGISTRY_PATH: str = "image-registry.openshift-image-registry.svc:5000"
+
+vLLM_CONFIG: dict[str, dict[str, Any]] = {
+    "port_configurations": {
+        "grpc": [{"containerPort": Ports.GRPC_PORT, "name": PortNames.GRPC_PORT_NAME, "protocol": Protocols.TCP}],
+        "raw": [
+            {"containerPort": Ports.REST_PORT, "name": PortNames.REST_PORT_NAME, "protocol": Protocols.TCP},
+            {"containerPort": Ports.GRPC_PORT, "name": PortNames.GRPC_PORT_NAME, "protocol": Protocols.TCP},
+        ],
+    },
+    "commands": {"GRPC": "vllm_tgis_adapter"},
+}
