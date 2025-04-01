@@ -15,7 +15,7 @@ from utilities.constants import Protocols, Timeout
 from utilities.constants import KServeDeploymentType, ModelStoragePath
 from utilities.inference_utils import Inference, create_isvc
 from utilities.infra import verify_no_failed_pods
-from utilities.manifests.openvino import OPENVINO_INFERENCE_CONFIG
+from utilities.manifests.onnx import ONNX_INFERENCE_CONFIG
 
 
 @pytest.fixture(scope="class")
@@ -65,8 +65,8 @@ def multiple_onnx_inference_requests(
 ) -> None:
     run_inference_multiple_times(
         isvc=ovms_kserve_inference_service,
-        inference_config=OPENVINO_INFERENCE_CONFIG,
-        inference_type=Inference.MNIST,
+        inference_config=ONNX_INFERENCE_CONFIG,
+        inference_type=Inference.INFER,
         protocol=Protocols.HTTPS,
         iterations=100,
         run_in_parallel=True,

@@ -6,7 +6,6 @@ from tests.model_serving.model_server.serverless.constants import (
 from tests.model_serving.model_server.serverless.utils import verify_canary_traffic
 from tests.model_serving.model_server.utils import verify_inference_response
 from utilities.constants import (
-    ModelStoragePath,
     Protocols,
     RunTimeConfigs,
 )
@@ -47,13 +46,21 @@ class TestServerlessCanaryRollout:
         "inference_service_updated_canary_config",
         [
             pytest.param(
-                {"canary-traffic-percent": 30, "model-path": ModelStoragePath.MNIST_8_ONNX},
+                {"canary-traffic-percent": 30, "model-path": "openvino-example-model"},
             )
         ],
         indirect=True,
     )
     def test_serverless_during_canary_rollout(self, inference_service_updated_canary_config):
         """Test inference during canary rollout"""
+        verify_inference_response(
+            inference_service=inference_service_updated_canary_config,
+            inference_config=OPENVINO_INFERENCE_CONFIG,
+            inference_type=Inference.INFER,
+            protocol=Protocols.HTTPS,
+            use_default_query=True,
+        )
+
         verify_canary_traffic(
             isvc=inference_service_updated_canary_config,
             inference_config=OPENVINO_INFERENCE_CONFIG,
