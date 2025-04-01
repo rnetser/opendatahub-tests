@@ -104,7 +104,7 @@ def get_pods_by_isvc_generation(client: DynamicClient, isvc: InferenceService) -
             list[Pod]: A list of all matching pods
 
     Raises:
-                ResourceNotFoundError: if no pods are found.
+            ResourceNotFoundError: if no pods are found.
 
     """
     isvc_generation = str(isvc.instance.metadata.generation)
