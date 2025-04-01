@@ -2,6 +2,7 @@ import re
 import shlex
 
 from kubernetes.dynamic import DynamicClient
+from kubernetes.dynamic.exceptions import ResourceNotFoundError
 from ocp_resources.inference_service import InferenceService
 from ocp_resources.pod import Pod
 
@@ -82,3 +83,19 @@ def delete_multi_node_pod_by_role(client: DynamicClient, isvc: InferenceService,
 
         else:
             pod.delete()
+
+
+def get_pods_by_isvc_generation(client: DynamicClient, isvc: InferenceService) -> list[Pod]:
+    isvc_generation = str(isvc.instance.metadata.generation)
+
+    if pods := [
+        pod
+        for pod in Pod.get(
+            dyn_client=client,
+            namespace=isvc.namespace,
+            label_selector=f"isvc.generation={isvc_generation}",
+        )
+    ]:
+        return pods
+
+    raise ResourceNotFoundError(f"InferenceService {isvc.name} generation {isvc_generation} has no pods")

@@ -141,9 +141,26 @@ def patched_multi_node_isvc_external_route(
             sleep=1,
             func=lambda: multi_node_inference_service.instance.status,
         ):
-            if sample and sample.status.get("url", "").startswith(Protocols.HTTPS):
+            if sample and sample.get("url", "").startswith(Protocols.HTTPS):
                 break
 
+        yield multi_node_inference_service
+
+
+@pytest.fixture(scope="function")
+def patched_multi_node_worker_spec(
+    request: FixtureRequest,
+    multi_node_inference_service: InferenceService,
+) -> Generator[InferenceService, Any, Any]:
+    with ResourceEditor(
+        patches={
+            multi_node_inference_service: {
+                "spec": {
+                    "predictor": {"workerSpec": {request.param["worker-spec"]}},
+                },
+            }
+        }
+    ):
         yield multi_node_inference_service
 
 

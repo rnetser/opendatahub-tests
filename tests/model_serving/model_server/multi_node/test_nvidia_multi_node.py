@@ -1,14 +1,20 @@
+from typing import Any
+
 import pytest
 from kubernetes.dynamic.exceptions import ResourceNotFoundError
 from simple_logger.logger import get_logger
 
-from tests.model_serving.model_server.multi_node.constants import HEAD_POD_ROLE, WORKER_POD_ROLE
+from tests.model_serving.model_server.multi_node.constants import (
+    HEAD_POD_ROLE,
+    WORKER_POD_ROLE,
+)
 from tests.model_serving.model_server.multi_node.utils import (
+    get_pods_by_isvc_generation,
     verify_nvidia_gpu_status,
     verify_ray_status,
 )
 from tests.model_serving.model_server.utils import verify_inference_response
-from utilities.constants import Protocols, StorageClassName, Timeout
+from utilities.constants import Labels, Protocols, StorageClassName, Timeout
 from utilities.infra import verify_no_failed_pods
 from utilities.manifests.vllm import VLLM_INFERENCE_CONFIG
 
@@ -174,4 +180,41 @@ class TestMultiNode:
             inference_type="completions",
             protocol=Protocols.HTTPS,
             use_default_query=True,
+        )
+
+    @pytest.mark.parametrize(
+        "patched_multi_node_worker_spec",
+        [pytest.param({"worker-spec": {"pipelineParallelSize": 2, "tensorParallelSize": 4}})],
+        indirect=True,
+    )
+    def test_multi_node_tensor_parallel_size_propagation(self, admin_client, patched_multi_node_worker_spec):
+        """Test multi node tensor parallel size (number of GPUs per pod) propagation to pod config"""
+        isvc_parallel_size = str(patched_multi_node_worker_spec.instance.spec.predictor.workerSpec.tensorParallelSize)
+
+        failed_pods: list[dict[str, Any]] = []
+        for pod in get_pods_by_isvc_generation(client=admin_client, isvc=patched_multi_node_worker_spec):
+            pod_resources = pod.instance.spec.containers[0].resources
+            if (
+                not isvc_parallel_size
+                == pod_resources.limits[Labels.Nvidia.NVIDIA_COM_GPU]
+                == pod_resources.requests[Labels.Nvidia.NVIDIA_COM_GPU]
+            ):
+                failed_pods.append({pod.name: pod_resources})
+
+        assert not failed_pods, (
+            f"Failed pods resources : {failed_pods}, expected tesnor parallel size {isvc_parallel_size}"
+        )
+
+    @pytest.mark.parametrize(
+        "patched_multi_node_worker_spec",
+        [pytest.param({"worker-spec": {"pipelineParallelSize": 2, "tensorParallelSize": 2}})],
+        indirect=True,
+    )
+    def test_multi_node_pipeline_parallel_size_propagation(self, admin_client, patched_multi_node_worker_spec):
+        """Test multi node pipeline parallel size (number of pods) propagation to pod config"""
+        isvc_parallel_size = patched_multi_node_worker_spec.instance.spec.predictor.workerSpec.pipelineParallelSize
+        isvc_num_pods = get_pods_by_isvc_generation(client=admin_client, isvc=patched_multi_node_worker_spec)
+
+        assert isvc_parallel_size == len(isvc_num_pods), (
+            f"Expected pipeline parallel size {isvc_parallel_size} does not match number of pods {len(isvc_num_pods)}"
         )
