@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 import shlex
 
@@ -5,9 +7,15 @@ from kubernetes.dynamic import DynamicClient
 from kubernetes.dynamic.exceptions import ResourceNotFoundError
 from ocp_resources.inference_service import InferenceService
 from ocp_resources.pod import Pod
+from simple_logger.logger import get_logger
+from timeout_sampler import retry
 
 from tests.model_serving.model_server.multi_node.constants import WORKER_POD_ROLE
+from utilities.constants import Timeout
 from utilities.infra import get_pods_by_isvc_label
+
+
+LOGGER = get_logger(name=__name__)
 
 
 def verify_ray_status(pods: list[Pod]) -> None:
@@ -85,17 +93,29 @@ def delete_multi_node_pod_by_role(client: DynamicClient, isvc: InferenceService,
             pod.delete()
 
 
+@retry(wait_timeout=Timeout.TIMEOUT_2MIN, sleep=5)
 def get_pods_by_isvc_generation(client: DynamicClient, isvc: InferenceService) -> list[Pod]:
+    """
+    Args:
+        client (DynamicClient): OCP Client to use.
+        isvc (InferenceService):InferenceService object.
+
+    Returns:
+            list[Pod]: A list of all matching pods
+
+    Raises:
+                ResourceNotFoundError: if no pods are found.
+
+    """
     isvc_generation = str(isvc.instance.metadata.generation)
 
-    if pods := [
-        pod
-        for pod in Pod.get(
+    if pods := list(
+        Pod.get(
             dyn_client=client,
             namespace=isvc.namespace,
             label_selector=f"isvc.generation={isvc_generation}",
         )
-    ]:
+    ):
         return pods
 
     raise ResourceNotFoundError(f"InferenceService {isvc.name} generation {isvc_generation} has no pods")
