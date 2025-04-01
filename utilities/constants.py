@@ -177,6 +177,7 @@ class Labels:
 
     class Kserve:
         NETWORKING_KSERVE_IO: str = "networking.kserve.io/visibility"
+        EXPOSED: str = "exposed"
 
     class Nvidia:
         NVIDIA_COM_GPU: str = "nvidia.com/gpu"

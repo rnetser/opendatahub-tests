@@ -49,7 +49,7 @@ def patched_s3_caikit_kserve_isvc_visibility_label(
                 func=lambda: s3_models_inference_service.instance.status.url,
             ):
                 if sample:
-                    if visibility == "exposed" and isvc_orig_url == sample:
+                    if visibility == Labels.Kserve.EXPOSED and isvc_orig_url == sample:
                         break
 
                     elif sample != isvc_orig_url:

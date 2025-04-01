@@ -132,7 +132,7 @@ def patched_multi_node_isvc_external_route(
     with ResourceEditor(
         patches={
             multi_node_inference_service: {
-                "metadata": {"labels": {Labels.Kserve.NETWORKING_KSERVE_IO: "exposed"}},
+                "metadata": {"labels": {Labels.Kserve.NETWORKING_KSERVE_IO: Labels.Kserve.EXPOSED}},
             }
         }
     ):

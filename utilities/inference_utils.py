@@ -116,7 +116,7 @@ class Inference:
         labels = self.inference_service.labels
 
         if self.deployment_mode in KServeDeploymentType.RAW_DEPLOYMENT:
-            return labels and labels.get(Labels.Kserve.NETWORKING_KSERVE_IO) == "exposed"
+            return labels and labels.get(Labels.Kserve.NETWORKING_KSERVE_IO) == Labels.Kserve.EXPOSED
 
         if self.deployment_mode == KServeDeploymentType.SERVERLESS:
             if labels and labels.get("networking.knative.dev/visibility") == "cluster-local":
@@ -629,7 +629,7 @@ def create_isvc(
         external_route = True
 
     if external_route and deployment_mode == KServeDeploymentType.RAW_DEPLOYMENT:
-        labels[Labels.Kserve.NETWORKING_KSERVE_IO] = "exposed"
+        labels[Labels.Kserve.NETWORKING_KSERVE_IO] = Labels.Kserve.EXPOSED
 
     if deployment_mode == KServeDeploymentType.SERVERLESS and external_route is False:
         labels["networking.knative.dev/visibility"] = "cluster-local"

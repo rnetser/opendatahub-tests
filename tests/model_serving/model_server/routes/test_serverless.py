@@ -79,7 +79,7 @@ class TestRestServerlessRoutes:
         "patched_s3_caikit_kserve_isvc_visibility_label",
         [
             pytest.param(
-                {"visibility": "exposed"},
+                {"visibility": Labels.Kserve.EXPOSED},
             )
         ],
         indirect=True,
