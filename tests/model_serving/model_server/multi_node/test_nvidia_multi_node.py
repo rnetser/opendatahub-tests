@@ -132,9 +132,8 @@ class TestMultiNode:
         ray_tls_secret.clean_up()
         ray_tls_secret.wait()
 
-    @pytest.mark.usefixtures("deleted_serving_runtime")
     @pytest.mark.dependency(name="test_ray_tls_deleted_on_runtime_deletion")
-    def test_ray_tls_deleted_on_runtime_deletion(self, ray_tls_secret, ray_ca_tls_secret):
+    def test_ray_tls_deleted_on_runtime_deletion(self, ray_tls_secret, ray_ca_tls_secret, deleted_serving_runtime):
         """Test multi node ray tls secret deletion on runtime deletion"""
         ray_tls_secret.wait_deleted()
         assert ray_ca_tls_secret.exists
