@@ -61,7 +61,6 @@ OPENVINO_INFERENCE_CONFIG = {
             "http": DEFAULT_FORM_QUERY,
         },
     "infer-mnist": {
-            "http": DEFAULT_FORM_QUERY,
             "http": {
                 "endpoint": "v2/models/$model_name/infer",
                 "header": "application/x-www-form-urlencoded",
