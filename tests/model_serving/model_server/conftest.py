@@ -388,7 +388,7 @@ def ovms_raw_inference_service(
     request: FixtureRequest,
     admin_client: DynamicClient,
     model_namespace: Namespace,
-    openvino_kserve_serving_runtime: ServingRuntime,
+    ovms_kserve_serving_runtime: ServingRuntime,
     ci_endpoint_s3_secret: Secret,
 ) -> Generator[InferenceService, Any, Any]:
     with create_isvc(
@@ -396,7 +396,7 @@ def ovms_raw_inference_service(
         name=f"{request.param['name']}-raw",
         namespace=model_namespace.name,
         external_route=True,
-        runtime=openvino_kserve_serving_runtime.name,
+        runtime=ovms_kserve_serving_runtime.name,
         storage_path=request.param["model-dir"],
         storage_key=ci_endpoint_s3_secret.name,
         model_format=ModelAndFormat.OPENVINO_IR,
