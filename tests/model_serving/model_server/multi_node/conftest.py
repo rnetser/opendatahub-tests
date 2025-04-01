@@ -156,7 +156,7 @@ def patched_multi_node_worker_spec(
         patches={
             multi_node_inference_service: {
                 "spec": {
-                    "predictor": {"workerSpec": {request.param["worker-spec"]}},
+                    "predictor": {"workerSpec": request.param["worker-spec"]},
                 },
             }
         }

@@ -207,7 +207,7 @@ class TestMultiNode:
 
     @pytest.mark.parametrize(
         "patched_multi_node_worker_spec",
-        [pytest.param({"worker-spec": {"pipelineParallelSize": 2, "tensorParallelSize": 2}})],
+        [pytest.param({"worker-spec": {"pipelineParallelSize": 2, "tensorParallelSize": 1}})],
         indirect=True,
     )
     def test_multi_node_pipeline_parallel_size_propagation(self, admin_client, patched_multi_node_worker_spec):
