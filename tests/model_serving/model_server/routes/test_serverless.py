@@ -3,6 +3,7 @@ import pytest
 from tests.model_serving.model_server.utils import verify_inference_response
 from utilities.constants import (
     KServeDeploymentType,
+    Labels,
     ModelFormat,
     ModelStoragePath,
     Protocols,
@@ -39,7 +40,7 @@ class TestRestServerlessRoutes:
     def test_serverless_default_visibility_value(self, s3_models_inference_service):
         """Test default route visibility value"""
         if labels := s3_models_inference_service.labels:
-            assert labels.get("networking.kserve.io/visibility") is None
+            assert labels.get(Labels.Kserve.NETWORKING_KSERVE_IO) is None
 
     def test_rest_serverless_external_route(self, s3_models_inference_service):
         """Test HTTP inference using internal route"""

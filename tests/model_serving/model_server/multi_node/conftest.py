@@ -12,11 +12,12 @@ from ocp_resources.resource import ResourceEditor
 from ocp_resources.secret import Secret
 from ocp_resources.serving_runtime import ServingRuntime
 from pytest_testconfig import config as py_config
+from timeout_sampler import TimeoutSampler
 
 from tests.model_serving.model_server.multi_node.utils import (
     delete_multi_node_pod_by_role,
 )
-from utilities.constants import KServeDeploymentType
+from utilities.constants import KServeDeploymentType, Labels, Protocols, Timeout
 from utilities.general import download_model_data
 from utilities.inference_utils import create_isvc
 from utilities.infra import (
@@ -131,10 +132,18 @@ def patched_multi_node_isvc_external_route(
     with ResourceEditor(
         patches={
             multi_node_inference_service: {
-                "metadata": {"labels": {"networking.kserve.io/visibility": "exposed"}},
+                "metadata": {"labels": {Labels.Kserve.NETWORKING_KSERVE_IO: "exposed"}},
             }
         }
     ):
+        for sample in TimeoutSampler(
+            wait_timeout=Timeout.TIMEOUT_1MIN,
+            sleep=1,
+            func=lambda: multi_node_inference_service.instance.status,
+        ):
+            if sample and sample.status.get("url", "").startswith(Protocols.HTTPS):
+                break
+
         yield multi_node_inference_service
 
 

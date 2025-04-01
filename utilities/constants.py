@@ -175,6 +175,9 @@ class Labels:
     class OpenDataHubIo:
         MANAGED: str = Annotations.OpenDataHubIo.MANAGED
 
+    class Kserve:
+        NETWORKING_KSERVE_IO: str = "networking.kserve.io/visibility"
+
 
 class Timeout:
     TIMEOUT_1MIN: int = 60
