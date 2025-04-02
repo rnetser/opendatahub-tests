@@ -143,6 +143,7 @@ class TestMultiNode:
         ray_tls_secret.clean_up()
         ray_tls_secret.wait()
 
+    @pytest.mark.tls
     @pytest.mark.dependency(name="test_ray_tls_deleted_on_runtime_deletion")
     def test_ray_tls_deleted_on_runtime_deletion(self, ray_tls_secret, ray_ca_tls_secret, deleted_serving_runtime):
         """Test multi node ray tls secret deletion on runtime deletion"""
@@ -198,10 +199,11 @@ class TestMultiNode:
         isvc_parallel_size = str(patched_multi_node_worker_spec.instance.spec.predictor.workerSpec.tensorParallelSize)
 
         failed_pods: list[dict[str, Any]] = []
+
         for pod in get_pods_by_isvc_generation(client=admin_client, isvc=patched_multi_node_worker_spec):
             pod_resources = pod.instance.spec.containers[0].resources
-            if (
-                not isvc_parallel_size
+            if not (
+                isvc_parallel_size
                 == pod_resources.limits[Labels.Nvidia.NVIDIA_COM_GPU]
                 == pod_resources.requests[Labels.Nvidia.NVIDIA_COM_GPU]
             ):
