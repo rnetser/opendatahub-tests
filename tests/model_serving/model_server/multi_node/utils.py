@@ -10,7 +10,7 @@ from ocp_resources.pod import Pod
 from simple_logger.logger import get_logger
 from timeout_sampler import retry
 
-from tests.model_serving.model_server.multi_node.constants import WORKER_POD_ROLE
+from tests.model_serving.model_server.multi_node.constants import HEAD_POD_ROLE, SUPPORTED_ROLES, WORKER_POD_ROLE
 from utilities.constants import Timeout
 from utilities.infra import get_pods_by_isvc_label
 
@@ -74,8 +74,10 @@ def verify_nvidia_gpu_status(pod: Pod) -> None:
 
 
 def delete_multi_node_pod_by_role(client: DynamicClient, isvc: InferenceService, role: str) -> None:
-    """
+    f"""
     Delete multi node pod by role
+
+    Worker pods have {WORKER_POD_ROLE} str in their name, head pod does not have an identifier in the name.
 
     Args:
         client (DynamicClient): Dynamic client
@@ -83,13 +85,16 @@ def delete_multi_node_pod_by_role(client: DynamicClient, isvc: InferenceService,
         role (str): pod role
 
     """
+    if role not in SUPPORTED_ROLES:
+        raise ValueError(f"Role {role} is not supported; supported roles are {SUPPORTED_ROLES}")
+
     pods = get_pods_by_isvc_label(client=client, isvc=isvc)
 
     for pod in pods:
         if role == WORKER_POD_ROLE and WORKER_POD_ROLE in pod.name:
             pod.delete()
 
-        else:
+        elif role == HEAD_POD_ROLE and WORKER_POD_ROLE not in pod.name:
             pod.delete()
 
 
