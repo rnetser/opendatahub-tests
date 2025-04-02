@@ -78,6 +78,7 @@ class TestMultiNode:
             use_default_query=True,
         )
 
+    @pytest.mark.tls
     def test_tls_secret_exists_in_control_ns(self, multi_node_inference_service, ray_ca_tls_secret):
         """Test multi node ray ca tls secret exists in control (applications) namespace"""
         if not ray_ca_tls_secret.exists:
@@ -85,11 +86,13 @@ class TestMultiNode:
                 f"Secret {ray_ca_tls_secret.name} does not exist in {ray_ca_tls_secret.namespace} namespace"
             )
 
+    @pytest.mark.tls
     def test_tls_secret_exists_in_inference_ns(self, ray_tls_secret):
         """Test multi node ray tls secret exists in isvc namespace"""
         if not ray_tls_secret.exists:
             raise ResourceNotFoundError(f"Secret {ray_tls_secret.name} does not exist")
 
+    @pytest.mark.tls
     def test_cert_files_exist_in_pods(self, multi_node_predictor_pods_scope_class):
         """Test multi node cert files exist in pods"""
         missing_certs_pods = []
@@ -126,12 +129,14 @@ class TestMultiNode:
             timeout=Timeout.TIMEOUT_10MIN,
         )
 
+    @pytest.mark.tls
     @pytest.mark.dependency(name="test_ray_ca_tls_secret_reconciliation")
     def test_ray_ca_tls_secret_reconciliation(self, multi_node_inference_service, ray_ca_tls_secret):
         """Test multi node ray ca tls secret reconciliation"""
         ray_ca_tls_secret.clean_up()
         ray_ca_tls_secret.wait()
 
+    @pytest.mark.tls
     @pytest.mark.dependency(name="test_ray_tls_secret_reconciliation")
     def test_ray_tls_secret_reconciliation(self, ray_tls_secret):
         """Test multi node ray ca tls secret reconciliation"""
@@ -144,6 +149,7 @@ class TestMultiNode:
         ray_tls_secret.wait_deleted()
         assert ray_ca_tls_secret.exists
 
+    @pytest.mark.tls
     @pytest.mark.dependency(depends=["test_ray_tls_deleted_on_runtime_deletion"])
     def test_ray_tls_created_on_runtime_creation(self, ray_tls_secret, ray_ca_tls_secret):
         """Test multi node ray tls secret creation on runtime creation"""
