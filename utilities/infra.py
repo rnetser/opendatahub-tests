@@ -592,6 +592,8 @@ def verify_no_failed_pods(
 
     """
     LOGGER.info("Verifying no failed pods")
+    timeout_watch = TimeoutWatch(timeout=timeout_wait_for_pods)
+
     for pods in TimeoutSampler(
         wait_timeout=timeout,
         sleep=10,
@@ -601,8 +603,6 @@ def verify_no_failed_pods(
         runtime_name=runtime_name,
         exceptions_dict={ResourceNotFoundError: []},
     ):
-        timeout_watch = TimeoutWatch(timeout=timeout_wait_for_pods)
-
         ready_pods = 0
         failed_pods: dict[str, Any] = {}
 
