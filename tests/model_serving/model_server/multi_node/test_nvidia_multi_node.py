@@ -1,7 +1,6 @@
 from typing import Any
 
 import pytest
-from kubernetes.dynamic.exceptions import ResourceNotFoundError
 from simple_logger.logger import get_logger
 
 from tests.model_serving.model_server.multi_node.constants import (
@@ -82,15 +81,13 @@ class TestMultiNode:
     def test_tls_secret_exists_in_control_ns(self, multi_node_inference_service, ray_ca_tls_secret):
         """Test multi node ray ca tls secret exists in control (applications) namespace"""
         if not ray_ca_tls_secret.exists:
-            raise ResourceNotFoundError(
-                f"Secret {ray_ca_tls_secret.name} does not exist in {ray_ca_tls_secret.namespace} namespace"
-            )
+            pytest.fail(f"Secret {ray_ca_tls_secret.name} does not exist in {ray_ca_tls_secret.namespace} namespace")
 
     @pytest.mark.tls
     def test_tls_secret_exists_in_inference_ns(self, ray_tls_secret):
         """Test multi node ray tls secret exists in isvc namespace"""
         if not ray_tls_secret.exists:
-            raise ResourceNotFoundError(f"Secret {ray_tls_secret.name} does not exist")
+            pytest.fail(f"Secret {ray_tls_secret.name} does not exist")
 
     @pytest.mark.tls
     def test_cert_files_exist_in_pods(self, multi_node_predictor_pods_scope_class):
@@ -101,7 +98,8 @@ class TestMultiNode:
             if "ca.crt" not in certs or "tls.pem" not in certs:
                 missing_certs_pods.append(pod.name)
 
-        assert not missing_certs_pods, f"Missing certs in pods: {missing_certs_pods}"
+        if missing_certs_pods:
+            pytest.fail(f"Missing certs in pods: {missing_certs_pods}")
 
     @pytest.mark.parametrize(
         "deleted_multi_node_pod",
@@ -209,9 +207,8 @@ class TestMultiNode:
             ):
                 failed_pods.append({pod.name: pod_resources})
 
-        assert not failed_pods, (
-            f"Failed pods resources : {failed_pods}, expected tesnor parallel size {isvc_parallel_size}"
-        )
+        if failed_pods:
+            pytest.fail(f"Failed pods resources : {failed_pods}, expected tesnor parallel size {isvc_parallel_size}")
 
     @pytest.mark.parametrize(
         "patched_multi_node_worker_spec",
@@ -223,6 +220,8 @@ class TestMultiNode:
         isvc_parallel_size = patched_multi_node_worker_spec.instance.spec.predictor.workerSpec.pipelineParallelSize
         isvc_num_pods = get_pods_by_isvc_generation(client=admin_client, isvc=patched_multi_node_worker_spec)
 
-        assert isvc_parallel_size == len(isvc_num_pods), (
-            f"Expected pipeline parallel size {isvc_parallel_size} does not match number of pods {len(isvc_num_pods)}"
-        )
+        if isvc_parallel_size != len(isvc_num_pods):
+            pytest.fail(
+                f"Expected pipeline parallel size {isvc_parallel_size} "
+                f"does not match number of pods {len(isvc_num_pods)}"
+            )
