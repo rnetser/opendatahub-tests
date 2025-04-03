@@ -13,8 +13,7 @@ from tests.model_serving.model_server.multi_node.utils import (
     verify_ray_status,
 )
 from tests.model_serving.model_server.utils import verify_inference_response
-from utilities.constants import Labels, Protocols, StorageClassName, Timeout
-from utilities.infra import verify_no_failed_pods
+from utilities.constants import Labels, Protocols, StorageClassName
 from utilities.manifests.vllm import VLLM_INFERENCE_CONFIG
 
 pytestmark = [
@@ -106,12 +105,14 @@ class TestMultiNode:
         [pytest.param({"pod-role": HEAD_POD_ROLE})],
         indirect=True,
     )
-    def test_multi_node_head_pod_deleted(self, admin_client, multi_node_inference_service, deleted_multi_node_pod):
+    def test_multi_node_head_pod_deletion(self, admin_client, multi_node_inference_service, deleted_multi_node_pod):
         """Test multi node when head pod is deleted"""
-        verify_no_failed_pods(
-            client=admin_client,
-            isvc=multi_node_inference_service,
-            timeout=Timeout.TIMEOUT_10MIN,
+        verify_inference_response(
+            inference_service=multi_node_inference_service,
+            inference_config=VLLM_INFERENCE_CONFIG,
+            inference_type="completions",
+            protocol=Protocols.HTTP,
+            use_default_query=True,
         )
 
     @pytest.mark.parametrize(
@@ -119,12 +120,14 @@ class TestMultiNode:
         [pytest.param({"pod-role": WORKER_POD_ROLE})],
         indirect=True,
     )
-    def test_multi_node_worker_pod_deleted(self, admin_client, multi_node_inference_service, deleted_multi_node_pod):
+    def test_multi_node_worker_pod_deletion(self, admin_client, multi_node_inference_service, deleted_multi_node_pod):
         """Test multi node when worker pod is deleted"""
-        verify_no_failed_pods(
-            client=admin_client,
-            isvc=multi_node_inference_service,
-            timeout=Timeout.TIMEOUT_10MIN,
+        verify_inference_response(
+            inference_service=multi_node_inference_service,
+            inference_config=VLLM_INFERENCE_CONFIG,
+            inference_type="completions",
+            protocol=Protocols.HTTP,
+            use_default_query=True,
         )
 
     @pytest.mark.tls
@@ -153,29 +156,6 @@ class TestMultiNode:
     def test_ray_tls_created_on_runtime_creation(self, ray_tls_secret, ray_ca_tls_secret):
         """Test multi node ray tls secret creation on runtime creation"""
         ray_tls_secret.wait()
-
-    @pytest.mark.parametrize(
-        "deleted_multi_node_pod",
-        [pytest.param({"pod-role": HEAD_POD_ROLE})],
-        indirect=True,
-    )
-    @pytest.mark.dependency(depends=["test_ray_tls_secret_reconciliation"])
-    def test_multi_node_inference_after_pod_deletion(
-        self, admin_client, multi_node_inference_service, deleted_multi_node_pod
-    ):
-        """Test multi node inference after pod deletion"""
-        verify_no_failed_pods(
-            client=admin_client,
-            isvc=multi_node_inference_service,
-            timeout=Timeout.TIMEOUT_10MIN,
-        )
-        verify_inference_response(
-            inference_service=multi_node_inference_service,
-            inference_config=VLLM_INFERENCE_CONFIG,
-            inference_type="completions",
-            protocol=Protocols.HTTP,
-            use_default_query=True,
-        )
 
     def test_multi_node_basic_external_inference(self, patched_multi_node_isvc_external_route):
         """Test multi node basic external inference"""

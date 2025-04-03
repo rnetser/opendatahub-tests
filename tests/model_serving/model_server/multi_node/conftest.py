@@ -22,6 +22,7 @@ from utilities.general import download_model_data
 from utilities.inference_utils import create_isvc
 from utilities.infra import (
     get_pods_by_isvc_label,
+    verify_no_failed_pods,
     wait_for_inference_deployment_replicas,
 )
 from utilities.serving_runtime import ServingRuntimeFromTemplate
@@ -203,4 +204,10 @@ def deleted_multi_node_pod(
         client=admin_client,
         isvc=multi_node_inference_service,
         role=request.param["pod-role"],
+    )
+
+    verify_no_failed_pods(
+        client=admin_client,
+        isvc=multi_node_inference_service,
+        timeout=Timeout.TIMEOUT_10MIN,
     )
