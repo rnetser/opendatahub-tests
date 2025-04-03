@@ -40,7 +40,7 @@ from utilities.constants import ApiGroups, Labels, Timeout
 from utilities.constants import KServeDeploymentType
 from utilities.constants import Annotations
 from utilities.exceptions import FailedPodsError
-from timeout_sampler import TimeoutExpiredError, TimeoutSampler
+from timeout_sampler import TimeoutExpiredError, TimeoutSampler, TimeoutWatch
 import utilities.general
 
 LOGGER = get_logger(name=__name__)
@@ -591,24 +591,6 @@ def verify_no_failed_pods(
         TimeoutExpiredError: If no pods were created within `timeout_wait_for_pods` seconds.
 
     """
-    LOGGER.info("Wait for pods creation")
-
-    try:
-        for pods in TimeoutSampler(
-            wait_timeout=timeout_wait_for_pods,
-            sleep=10,
-            func=get_pods_by_isvc_label,
-            client=client,
-            isvc=isvc,
-            runtime_name=runtime_name,
-        ):
-            if pods:
-                break
-
-    except TimeoutExpiredError:
-        LOGGER.error(f"No pods were created for {isvc.name} in {timeout_wait_for_pods} seconds")
-        raise
-
     LOGGER.info("Verifying no failed pods")
     for pods in TimeoutSampler(
         wait_timeout=timeout,
@@ -617,7 +599,10 @@ def verify_no_failed_pods(
         client=client,
         isvc=isvc,
         runtime_name=runtime_name,
+        exceptions_dict={ResourceNotFoundError: []},
     ):
+        timeout_watch = TimeoutWatch(timeout=timeout_wait_for_pods)
+
         ready_pods = 0
         failed_pods: dict[str, Any] = {}
 
@@ -634,12 +619,15 @@ def verify_no_failed_pods(
                 pod_status = pod.instance.status
 
                 if pod_status.containerStatuses:
-                    for container_status in pod_status.containerStatuses:
+                    for container_status in pod_status.get("containerStatuses", []) + pod_status.get(
+                        "initContainerStatuses", []
+                    ):
                         is_waiting_pull_back_off = (
                             wait_state := container_status.state.waiting
                         ) and wait_state.reason in (
                             pod.Status.IMAGE_PULL_BACK_OFF,
                             pod.Status.CRASH_LOOPBACK_OFF,
+                            pod.Status.ERR_IMAGE_PULL,
                             "InvalidImageName",
                         )
 
@@ -653,11 +641,6 @@ def verify_no_failed_pods(
                         if is_waiting_pull_back_off or is_terminated_error:
                             failed_pods[pod.name] = pod_status
 
-                        if init_container_status := pod_status.initContainerStatuses:
-                            if container_terminated := init_container_status[0].lastState.terminated:
-                                if container_terminated.reason == "Error":
-                                    failed_pods[pod.name] = pod_status
-
                 elif pod_status.phase in (
                     pod.Status.CRASH_LOOPBACK_OFF,
                     pod.Status.FAILED,
@@ -668,6 +651,10 @@ def verify_no_failed_pods(
 
             if failed_pods:
                 raise FailedPodsError(pods=failed_pods)
+
+        else:
+            if timeout_watch.remaining_time() == 0:
+                raise ResourceNotFoundError(f"No pods were created for {isvc.name} in {timeout_wait_for_pods} seconds")
 
 
 def check_pod_status_in_time(pod: Pod, status: Set[str], duration: int = Timeout.TIMEOUT_2MIN, wait: int = 1) -> None:
