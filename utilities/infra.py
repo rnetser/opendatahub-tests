@@ -586,7 +586,6 @@ def verify_no_failed_pods(
 
     Raises:
         FailedPodsError: If any pod is in failed state
-        TimeoutExpiredError: If no pods were created within `timeout_wait_for_pods` seconds.
 
     """
     wait_for_isvc_pods(client=client, isvc=isvc, runtime_name=runtime_name)
