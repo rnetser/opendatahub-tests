@@ -40,7 +40,7 @@ from utilities.constants import ApiGroups, Labels, Timeout
 from utilities.constants import KServeDeploymentType
 from utilities.constants import Annotations
 from utilities.exceptions import FailedPodsError
-from timeout_sampler import TimeoutExpiredError, TimeoutSampler, TimeoutWatch
+from timeout_sampler import TimeoutExpiredError, TimeoutSampler, retry
 import utilities.general
 
 LOGGER = get_logger(name=__name__)
@@ -574,26 +574,24 @@ def verify_no_failed_pods(
     isvc: InferenceService,
     runtime_name: str | None = None,
     timeout: int = Timeout.TIMEOUT_5MIN,
-    timeout_wait_for_pods: int = Timeout.TIMEOUT_1MIN,
 ) -> None:
     """
-    Verify no failed pods.
+    Verify pods created and no failed pods.
 
     Args:
         client (DynamicClient): DynamicClient object
         isvc (InferenceService): InferenceService object
         runtime_name (str): ServingRuntime name
         timeout (int): Time to wait for the pod.
-        timeout_wait_for_pods (int): Time to wait for the pods.
 
     Raises:
         FailedPodsError: If any pod is in failed state
         TimeoutExpiredError: If no pods were created within `timeout_wait_for_pods` seconds.
 
     """
-    LOGGER.info("Verifying no failed pods")
-    timeout_watch = TimeoutWatch(timeout=timeout_wait_for_pods)
+    wait_for_isvc_pods(client=client, isvc=isvc, runtime_name=runtime_name)
 
+    LOGGER.info("Verifying no failed pods")
     for pods in TimeoutSampler(
         wait_timeout=timeout,
         sleep=10,
@@ -601,7 +599,6 @@ def verify_no_failed_pods(
         client=client,
         isvc=isvc,
         runtime_name=runtime_name,
-        exceptions_dict={ResourceNotFoundError: []},
     ):
         ready_pods = 0
         failed_pods: dict[str, Any] = {}
@@ -651,10 +648,6 @@ def verify_no_failed_pods(
 
             if failed_pods:
                 raise FailedPodsError(pods=failed_pods)
-
-        else:
-            if timeout_watch.remaining_time() == 0:
-                raise ResourceNotFoundError(f"No pods were created for {isvc.name} in {timeout_wait_for_pods} seconds")
 
 
 def check_pod_status_in_time(pod: Pod, status: Set[str], duration: int = Timeout.TIMEOUT_2MIN, wait: int = 1) -> None:
@@ -791,3 +784,23 @@ def wait_for_serverless_pods_deletion(resource: Project | Namespace, admin_clien
         ):
             LOGGER.info(f"Waiting for {KServeDeploymentType.SERVERLESS} pod {pod.name} to be deleted")
             pod.wait_deleted(timeout=Timeout.TIMEOUT_1MIN)
+
+
+@retry(wait_timeout=Timeout.TIMEOUT_30SEC, sleep=1, exceptions_dict={ResourceNotFoundError: []})
+def wait_for_isvc_pods(client: DynamicClient, isvc: InferenceService, runtime_name: str | None = None) -> list[Pod]:
+    """
+    Wait for ISVC pods.
+
+    Args:
+        client (DynamicClient): DynamicClient object
+        isvc (InferenceService): InferenceService object
+        runtime_name (ServingRuntime): ServingRuntime name
+
+    Returns:
+        list[Pod]: A list of all matching pods
+
+    Raises:
+        TimeoutExpiredError: If pods do not exist
+    """
+    LOGGER.info("Waiting for pods to be created")
+    return get_pods_by_isvc_label(client=client, isvc=isvc, runtime_name=runtime_name)
