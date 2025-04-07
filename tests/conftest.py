@@ -253,10 +253,11 @@ def unprivileged_client(
 
     else:
         current_user = run_command(command=["oc", "whoami"])[1].strip()
+        non_admin_user_name = non_admin_user_password[0]
 
         if login_with_user_password(
             api_address=admin_client.configuration.host,
-            user=non_admin_user_password[0],
+            user=non_admin_user_name,
             password=non_admin_user_password[1],
         ):
             with open(kubconfig_filepath) as fd:
@@ -264,14 +265,17 @@ def unprivileged_client(
 
             unprivileged_context = kubeconfig_content["current-context"]
 
+            unprivileged_client = get_client(config_file=kubconfig_filepath, context=unprivileged_context)
+
             # Get back to admin account
             login_with_user_password(
                 api_address=admin_client.configuration.host,
                 user=current_user.strip(),
             )
-            yield get_client(config_file=kubconfig_filepath, context=unprivileged_context)
+            yield unprivileged_client
 
         else:
+            LOGGER.error(f"Failed to log in as user {non_admin_user_name}; logging in as admin user.")
             yield admin_client
 
 

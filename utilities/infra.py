@@ -330,7 +330,10 @@ def login_with_user_password(api_address: str, user: str, password: str | None =
 
     _, out, _ = run_command(command=shlex.split(login_command), hide_log_command=True)
 
-    return "Login successful" in out
+    if re.search(r"Login successful|Logged into", out):
+        return True
+
+    return False
 
 
 @cache
