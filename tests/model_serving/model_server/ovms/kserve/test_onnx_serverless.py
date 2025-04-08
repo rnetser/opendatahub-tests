@@ -33,6 +33,7 @@ pytestmark = [pytest.mark.serverless, pytest.mark.usefixtures("valid_aws_config"
 )
 class TestONNXServerless:
     @pytest.mark.smoke
+    @pytest.mark.rhoai_2_16
     @pytest.mark.jira("RHOAIENG-9045")
     def test_serverless_onnx_rest_inference(self, ovms_kserve_inference_service):
         """Verify that kserve Serverless ONNX model can be queried using REST"""

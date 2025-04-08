@@ -47,6 +47,7 @@ RAW_ISVC_PARAMS = {
     indirect=True,
 )
 class TestServerlessRawInternalDeploymentInferenceCoExist:
+    @pytest.mark.rhoai_2_16
     def test_serverless_openvino_created_before_raw_internal_deployment_caikit_inference(
         self, ovms_kserve_inference_service, s3_models_inference_service
     ):
@@ -59,6 +60,7 @@ class TestServerlessRawInternalDeploymentInferenceCoExist:
             use_default_query=True,
         )
 
+    @pytest.mark.rhoai_2_19
     def test_raw_internal_deployment_caikit_created_after_serverless_in_namespace_rest_inference(
         self,
         ovms_kserve_inference_service,
@@ -90,6 +92,7 @@ class TestServerlessRawInternalDeploymentInferenceCoExist:
     indirect=True,
 )
 class TestServerlessRawExternalDeploymentInferenceCoExist:
+    @pytest.mark.rhoai_2_16
     def test_serverless_openvino_created_before_raw_external_deployment_caikit_inference(
         self, ovms_kserve_inference_service, s3_models_inference_service
     ):
@@ -102,6 +105,7 @@ class TestServerlessRawExternalDeploymentInferenceCoExist:
             use_default_query=True,
         )
 
+    @pytest.mark.rhoai_2_16
     def test_raw_external_deployment_caikit_created_after_serverless_in_namespace_rest_inference(
         self,
         ovms_kserve_inference_service,
@@ -133,6 +137,7 @@ class TestServerlessRawExternalDeploymentInferenceCoExist:
     indirect=True,
 )
 class TestRawInternalDeploymentServerlessInferenceCoExist:
+    @pytest.mark.rhoai_2_16
     def test_raw_internal_deployment_caikit_created_before_serverless_openvino_in_namespace_rest_inference(
         self,
         s3_models_inference_service,
@@ -148,6 +153,7 @@ class TestRawInternalDeploymentServerlessInferenceCoExist:
             use_default_query=True,
         )
 
+    @pytest.mark.rhoai_2_19
     def test_serverless_openvino_created_after_raw_internal_deployment_caikit_ns_rest_inference(
         self,
         s3_models_inference_service,
@@ -178,6 +184,7 @@ class TestRawInternalDeploymentServerlessInferenceCoExist:
     indirect=True,
 )
 class TestRawExternalDeploymentServerlessInferenceCoExist:
+    @pytest.mark.rhoai_2_19
     def test_raw_external_deployment_caikit_created_before_serverless_openvino_in_namespace_rest_inference(
         self,
         s3_models_inference_service,
@@ -193,6 +200,7 @@ class TestRawExternalDeploymentServerlessInferenceCoExist:
             use_default_query=True,
         )
 
+    @pytest.mark.rhoai_2_16
     def test_serverless_openvino_created_after_raw_external_deployment_caikit_ns_rest_inference(
         self, s3_models_inference_service, ovms_kserve_inference_service
     ):

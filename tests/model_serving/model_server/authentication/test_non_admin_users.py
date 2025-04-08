@@ -21,6 +21,7 @@ from utilities.monitoring import validate_metrics_value
     indirect=True,
 )
 @pytest.mark.smoke
+@pytest.mark.rhoai_2_16
 @pytest.mark.serverless
 class TestServerlessUnprivilegedUser:
     @pytest.mark.polarion("ODS-2552")
@@ -46,6 +47,7 @@ class TestServerlessUnprivilegedUser:
     ],
     indirect=True,
 )
+@pytest.mark.rhoai_2_16
 @pytest.mark.sanity
 @pytest.mark.rawdeployment
 class TestRawUnprivilegedUser:

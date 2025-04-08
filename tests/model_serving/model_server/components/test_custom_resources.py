@@ -13,7 +13,13 @@ from utilities.constants import (
 
 LOGGER = get_logger(name=__name__)
 
-pytestmark = [pytest.mark.serverless, pytest.mark.tier2, pytest.mark.slow, pytest.mark.usefixtures("valid_aws_config")]
+pytestmark = [
+    pytest.mark.serverless,
+    pytest.mark.tier2,
+    pytest.mark.slow,
+    pytest.mark.usefixtures("valid_aws_config"),
+    pytest.mark.rhoai_2_16,
+]
 
 
 def wait_for_isvc_model_status(isvc: InferenceService, target_model_state: str, transition_status: str) -> None:

@@ -22,6 +22,7 @@ pytestmark = [pytest.mark.serverless, pytest.mark.usefixtures("valid_aws_config"
 )
 class TestKserveServerlessTokenAuthentication:
     @pytest.mark.smoke
+    @pytest.mark.rhoai_2_16
     @pytest.mark.dependency(name="test_model_authentication_using_rest")
     def test_model_authentication_using_rest(self, http_s3_caikit_serverless_inference_service, http_inference_token):
         """Verify model query with token using REST"""
@@ -36,6 +37,7 @@ class TestKserveServerlessTokenAuthentication:
         )
 
     @pytest.mark.smoke
+    @pytest.mark.rhoai_2_16
     def test_model_authentication_using_grpc(self, grpc_s3_inference_service, grpc_inference_token):
         """Verify model query with token using GRPC"""
         verify_inference_response(
@@ -48,6 +50,7 @@ class TestKserveServerlessTokenAuthentication:
             token=grpc_inference_token,
         )
 
+    @pytest.mark.rhoai_2_16
     @pytest.mark.dependency(name="test_disabled_model_authentication")
     def test_disabled_model_authentication(self, patched_remove_authentication_isvc):
         """Verify model query after authentication is disabled"""
@@ -60,6 +63,7 @@ class TestKserveServerlessTokenAuthentication:
             use_default_query=True,
         )
 
+    @pytest.mark.rhoai_2_16
     @pytest.mark.dependency(depends=["test_disabled_model_authentication"])
     def test_re_enabled_model_authentication(self, http_s3_caikit_serverless_inference_service, http_inference_token):
         """Verify model query after authentication is re-enabled"""
@@ -73,6 +77,7 @@ class TestKserveServerlessTokenAuthentication:
             token=http_inference_token,
         )
 
+    @pytest.mark.rhoai_2_16
     def test_model_authentication_using_invalid_token(self, http_s3_caikit_serverless_inference_service):
         """Verify model query with an invalid token"""
         verify_inference_response(
@@ -86,6 +91,7 @@ class TestKserveServerlessTokenAuthentication:
             authorized_user=False,
         )
 
+    @pytest.mark.rhoai_2_16
     def test_model_authentication_without_token(self, http_s3_caikit_serverless_inference_service):
         """Verify model query without providing a token"""
         verify_inference_response(
@@ -99,6 +105,7 @@ class TestKserveServerlessTokenAuthentication:
         )
 
     @pytest.mark.sanity
+    @pytest.mark.rhoai_2_16
     def test_block_cross_model_authentication(self, http_s3_caikit_serverless_inference_service, grpc_inference_token):
         """Verify model query with a second model's token is blocked"""
         verify_inference_response(
@@ -113,6 +120,7 @@ class TestKserveServerlessTokenAuthentication:
         )
 
     @pytest.mark.sanity
+    @pytest.mark.rhoai_2_17
     def test_serverless_disable_enable_authentication_no_pod_rollout(self, http_s3_caikit_serverless_inference_service):
         """Verify no pod rollout when disabling and enabling authentication"""
         pod = get_pods_by_isvc_label(

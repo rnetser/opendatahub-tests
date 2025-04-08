@@ -15,7 +15,7 @@ from utilities.constants import (
 )
 from utilities.manifests.onnx import ONNX_INFERENCE_CONFIG
 
-pytestmark = [pytest.mark.modelmesh, pytest.mark.minio, pytest.mark.sanity]
+pytestmark = [pytest.mark.modelmesh, pytest.mark.minio, pytest.mark.sanity, pytest.mark.rhoai_2_19]
 
 
 @pytest.mark.parametrize(

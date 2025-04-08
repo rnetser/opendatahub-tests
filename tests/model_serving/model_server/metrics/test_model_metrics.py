@@ -19,6 +19,7 @@ from utilities.monitoring import get_metrics_value, validate_metrics_value
 pytestmark = [
     pytest.mark.serverless,
     pytest.mark.usefixtures("valid_aws_config", "user_workload_monitoring_config_map"),
+    pytest.mark.rhoai_2_16,
 ]
 
 

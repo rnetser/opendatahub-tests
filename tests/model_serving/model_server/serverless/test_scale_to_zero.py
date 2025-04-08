@@ -18,6 +18,7 @@ pytestmark = [
     pytest.mark.serverless,
     pytest.mark.sanity,
     pytest.mark.usefixtures("valid_aws_config"),
+    pytest.mark.rhoai_2_19,
 ]
 
 

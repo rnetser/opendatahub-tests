@@ -3,9 +3,11 @@ from __future__ import annotations
 import logging
 import os
 import pathlib
+import re
 import shutil
 
 import shortuuid
+from ocp_resources.resource import get_client
 from pytest import (
     Parser,
     Session,
@@ -18,8 +20,10 @@ from pytest import (
 from _pytest.terminal import TerminalReporter
 from typing import Optional, Any
 from pytest_testconfig import config as py_config
+from semver import Version
 
 from utilities.constants import KServeDeploymentType
+from utilities.infra import get_product_version
 from utilities.logger import separator, setup_logging
 
 
@@ -154,13 +158,21 @@ def pytest_collection_modifyitems(session: Session, config: Config, items: list[
     post_upgrade_tests: list[Item] = []
     non_upgrade_tests: list[Item] = []
     upgrade_deployment_modes: list[str] = []
+    formatted_product_version: Version | None = None
 
     run_pre_upgrade_tests: str | None = config.getoption(name="pre_upgrade")
     run_post_upgrade_tests: str | None = config.getoption(name="post_upgrade")
     if config_upgrade_deployment_modes := config.getoption(name="upgrade_deployment_modes"):
         upgrade_deployment_modes = config_upgrade_deployment_modes.split(",")
 
+    if product_version := get_product_version(admin_client=get_client(), raise_on_missing_csv=False):
+        formatted_product_version = Version.parse(
+            f"{product_version.major}.{product_version.minor}",
+            optional_minor_and_patch=True,
+        )
+
     for item in items:
+        # Upgrade tests filtering
         if "pre_upgrade" in item.keywords and _add_upgrade_test(
             _item=item, _upgrade_deployment_modes=upgrade_deployment_modes
         ):
@@ -173,6 +185,24 @@ def pytest_collection_modifyitems(session: Session, config: Config, items: list[
 
         else:
             non_upgrade_tests.append(item)
+
+        try:
+            # Product version filtering - if version marker < product version, remove test from list
+            if formatted_product_version and (
+                product_marker := next(marker for marker in item.keywords if re.match(r"rhoai_\d+_\d+", marker))
+            ):
+                marker_major, marker_minor = product_marker.split("_")[1:]
+                test_version = Version.parse(f"{marker_major}.{marker_minor}", optional_minor_and_patch=True)
+                if test_version > formatted_product_version:
+                    LOGGER.info(
+                        f"Test {item.name} is not compatible with RHOAI version {formatted_product_version}; "
+                        "it will be skipped"
+                    )
+                    non_upgrade_tests.remove(item)
+
+        # TODO: Raise once all teams added a marker; need to make sure that we do not have tests without product release
+        except StopIteration:
+            LOGGER.error(f"Test {item.name} is missing RHOAI version marker")
 
     upgrade_tests = pre_upgrade_tests + post_upgrade_tests
 

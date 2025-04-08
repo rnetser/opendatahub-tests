@@ -7,7 +7,7 @@ from utilities.inference_utils import Inference
 from utilities.manifests.onnx import ONNX_INFERENCE_CONFIG
 
 
-pytestmark = [pytest.mark.rawdeployment, pytest.mark.usefixtures("valid_aws_config")]
+pytestmark = [pytest.mark.rawdeployment, pytest.mark.usefixtures("valid_aws_config"), pytest.mark.rhoai_2_19]
 
 
 @pytest.mark.parametrize(

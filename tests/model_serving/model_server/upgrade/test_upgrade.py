@@ -13,6 +13,7 @@ from utilities.manifests.openvino import OPENVINO_INFERENCE_CONFIG
 
 @pytest.mark.usefixtures("valid_aws_config", "skipped_teardown_resources")
 class TestPreUpgradeModelServer:
+    @pytest.mark.rhoai_2_16
     @pytest.mark.pre_upgrade
     @pytest.mark.serverless
     def test_serverless_onnx_pre_upgrade_inference(self, ovms_serverless_inference_service_scope_session):
@@ -26,6 +27,7 @@ class TestPreUpgradeModelServer:
         )
 
     @pytest.mark.pre_upgrade
+    @pytest.mark.rhoai_2_16
     @pytest.mark.rawdeployment
     def test_raw_caikit_bge_pre_upgrade_inference(self, caikit_raw_inference_service_scope_session):
         """Test Caikit bge-large-en embedding model inference using internal route before upgrade"""
@@ -39,6 +41,7 @@ class TestPreUpgradeModelServer:
         )
 
     @pytest.mark.pre_upgrade
+    @pytest.mark.rhoai_2_16
     @pytest.mark.modelmesh
     def test_model_mesh_openvino_pre_upgrade_inference(self, openvino_model_mesh_inference_service_scope_session):
         """Test OpenVINO ModelMesh inference with internal route before upgrade"""
@@ -54,6 +57,7 @@ class TestPreUpgradeModelServer:
 @pytest.mark.usefixtures("reused_resources")
 class TestPostUpgradeModelServer:
     @pytest.mark.post_upgrade
+    @pytest.mark.rhoai_2_16
     @pytest.mark.serverless
     @pytest.mark.dependency(name="test_serverless_onnx_post_upgrade_inference_service_exists")
     def test_serverless_onnx_post_upgrade_inference_service_exists(
@@ -63,6 +67,7 @@ class TestPostUpgradeModelServer:
         assert ovms_serverless_inference_service_scope_session.exists
 
     @pytest.mark.post_upgrade
+    @pytest.mark.rhoai_2_16
     @pytest.mark.serverless
     @pytest.mark.dependency(depends=["test_serverless_onnx_post_upgrade_inference_service_exists"])
     def test_serverless_onnx_post_upgrade_inference(self, ovms_serverless_inference_service_scope_session):
@@ -76,6 +81,7 @@ class TestPostUpgradeModelServer:
         )
 
     @pytest.mark.post_upgrade
+    @pytest.mark.rhoai_2_16
     @pytest.mark.rawdeployment
     @pytest.mark.dependency(name="test_raw_caikit_bge_post_upgrade_inference_exists")
     def test_raw_caikit_bge_post_upgrade_inference_exists(self, caikit_raw_inference_service_scope_session):
@@ -83,6 +89,7 @@ class TestPostUpgradeModelServer:
         assert caikit_raw_inference_service_scope_session.exists
 
     @pytest.mark.post_upgrade
+    @pytest.mark.rhoai_2_16
     @pytest.mark.rawdeployment
     @pytest.mark.dependency(depends=["test_raw_caikit_bge_post_upgrade_inference_exists"])
     def test_raw_caikit_bge_post_upgrade_inference(self, caikit_raw_inference_service_scope_session):
@@ -97,6 +104,7 @@ class TestPostUpgradeModelServer:
         )
 
     @pytest.mark.post_upgrade
+    @pytest.mark.rhoai_2_16
     @pytest.mark.modelmesh
     @pytest.mark.dependency(name="test_model_mesh_openvino_post_upgrade_inference_exists")
     def test_model_mesh_openvino_post_upgrade_inference_exists(
@@ -106,6 +114,7 @@ class TestPostUpgradeModelServer:
         assert openvino_model_mesh_inference_service_scope_session.exists
 
     @pytest.mark.post_upgrade
+    @pytest.mark.rhoai_2_16
     @pytest.mark.modelmesh
     @pytest.mark.dependency(depends=["test_model_mesh_openvino_post_upgrade_inference_exists"])
     def test_model_mesh_openvino_post_upgrade_inference(self, openvino_model_mesh_inference_service_scope_session):

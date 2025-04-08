@@ -30,6 +30,7 @@ POD_TOUCH_SPLIT_COMMAND: list[str] = shlex.split("touch /mnt/models/test")
     indirect=True,
 )
 class TestKservePVCWriteAccess:
+    @pytest.mark.rhoai_2_16
     def test_pod_containers_not_restarted(self, first_predictor_pod):
         """Test that the containers are not restarted"""
         restarted_containers = [
@@ -39,12 +40,14 @@ class TestKservePVCWriteAccess:
         ]
         assert not restarted_containers, f"Containers {restarted_containers} restarted"
 
+    @pytest.mark.rhoai_2_16
     def test_isvc_read_only_annotation_not_set_by_default(self, pvc_inference_service):
         """Test that the read only annotation is not set by default"""
         assert not pvc_inference_service.instance.metadata.annotations.get("storage.kserve.io/readonly"), (
             "Read only annotation is set"
         )
 
+    @pytest.mark.rhoai_2_16
     def test_isvc_read_only_annotation_default_value(self, first_predictor_pod):
         """Test that write access is denied by default"""
         with pytest.raises(ExecOnPodError):
@@ -62,6 +65,7 @@ class TestKservePVCWriteAccess:
         ],
         indirect=True,
     )
+    @pytest.mark.rhoai_2_16
     def test_isvc_read_only_annotation_false(self, admin_client, patched_read_only_isvc):
         """Test that write access is allowed when the read only annotation is set to false"""
         new_pod = get_pods_by_isvc_label(
@@ -82,6 +86,7 @@ class TestKservePVCWriteAccess:
         ],
         indirect=True,
     )
+    @pytest.mark.rhoai_2_16
     def test_isvc_read_only_annotation_true(self, admin_client, patched_read_only_isvc):
         """ """
         new_pod = get_pods_by_isvc_label(

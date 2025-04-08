@@ -7,7 +7,7 @@ LOGGER = get_logger(name=__name__)
 TIMEOUT = 6 * 60
 
 
-pytestmark = pytest.mark.smoke
+pytestmark = [pytest.mark.smoke, pytest.mark.rhoai_2_16]
 
 
 @pytest.mark.usefixtures("managed_modelmesh_kserve_in_dsc")

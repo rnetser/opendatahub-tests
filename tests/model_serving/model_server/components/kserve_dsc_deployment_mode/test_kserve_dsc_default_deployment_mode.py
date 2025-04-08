@@ -14,7 +14,7 @@ from utilities.constants import (
 from utilities.inference_utils import Inference
 from utilities.manifests.openvino import OPENVINO_KSERVE_INFERENCE_CONFIG
 
-pytestmark = [pytest.mark.sanity]
+pytestmark = [pytest.mark.sanity, pytest.mark.rhoai_2_17]
 
 RUNTIME_PARAMS = {
     "runtime-name": ModelInferenceRuntime.OPENVINO_KSERVE_RUNTIME,

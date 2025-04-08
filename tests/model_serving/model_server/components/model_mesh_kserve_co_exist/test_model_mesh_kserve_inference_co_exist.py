@@ -31,6 +31,7 @@ MODELMESH_ISVC_PARAMS = {
     indirect=True,
 )
 class TestOpenVINOServerlessModelMesh:
+    @pytest.mark.rhoai_2_16
     def test_serverless_openvino_created_before_model_mesh_ns_rest_inference(
         self, ovms_kserve_inference_service, http_s3_openvino_model_mesh_inference_service
     ):
@@ -43,6 +44,7 @@ class TestOpenVINOServerlessModelMesh:
             use_default_query=True,
         )
 
+    @pytest.mark.rhoai_2_16
     def test_model_mesh_openvino_created_after_serverless_in_namespace_rest_inference(
         self, ovms_kserve_inference_service, http_s3_openvino_model_mesh_inference_service
     ):
@@ -70,6 +72,7 @@ class TestOpenVINOServerlessModelMesh:
     indirect=True,
 )
 class TestOpenVINOModelMeshServerless:
+    @pytest.mark.rhoai_2_16
     def test_model_mesh_openvino_created_before_serverless_in_namespace_rest_inference(
         self, http_s3_openvino_model_mesh_inference_service, ovms_kserve_inference_service
     ):
@@ -82,6 +85,7 @@ class TestOpenVINOModelMeshServerless:
             use_default_query=True,
         )
 
+    @pytest.mark.rhoai_2_16
     def test_serverless_openvino_created_after_model_mesh_ns_rest_inference(
         self, http_s3_openvino_model_mesh_inference_service, ovms_kserve_inference_service
     ):

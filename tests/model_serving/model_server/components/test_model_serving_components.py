@@ -41,6 +41,7 @@ def component_deployment(
 
 
 @pytest.mark.smoke
+@pytest.mark.rhoai_2_16
 @pytest.mark.parametrize(
     "component_deployment",
     [

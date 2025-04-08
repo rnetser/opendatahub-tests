@@ -42,14 +42,17 @@ LOGGER = get_logger(name=__name__)
     indirect=True,
 )
 class TestMultiNode:
+    @pytest.mark.rhoai_2_16
     def test_multi_node_ray_status(self, multi_node_predictor_pods_scope_class):
         """Test multi node ray status"""
         verify_ray_status(pods=multi_node_predictor_pods_scope_class)
 
+    @pytest.mark.rhoai_2_16
     def test_multi_node_nvidia_gpu_status(self, multi_node_predictor_pods_scope_class):
         """Test multi node ray status"""
         verify_nvidia_gpu_status(pod=multi_node_predictor_pods_scope_class[0])
 
+    @pytest.mark.rhoai_2_16
     def test_multi_node_default_config(self, multi_node_serving_runtime, multi_node_predictor_pods_scope_class):
         """Test multi node inference service with default config"""
         runtime_worker_spec = multi_node_serving_runtime.instance.spec.workerSpec
@@ -57,6 +60,7 @@ class TestMultiNode:
         if runtime_worker_spec.tensorParallelSize != 1 or runtime_worker_spec.pipelineParallelSize != 2:
             pytest.fail(f"Multinode runtime default worker spec is not as expected, {runtime_worker_spec}")
 
+    @pytest.mark.rhoai_2_16
     def test_multi_node_pods_distribution(self, multi_node_predictor_pods_scope_class, nvidia_gpu_nodes):
         """Verify multi node pods are distributed between cluster GPU nodes"""
         pods_nodes = {pod.node.name for pod in multi_node_predictor_pods_scope_class}
@@ -66,6 +70,7 @@ class TestMultiNode:
 
         assert pods_nodes.issubset({node.name for node in nvidia_gpu_nodes}), "Pods not running on GPU nodes"
 
+    @pytest.mark.rhoai_2_16
     def test_multi_node_basic_internal_inference(self, multi_node_inference_service):
         """Test multi node basic internal inference"""
         verify_inference_response(
@@ -77,18 +82,21 @@ class TestMultiNode:
         )
 
     @pytest.mark.tls
+    @pytest.mark.rhoai_2_19
     def test_tls_secret_exists_in_control_ns(self, multi_node_inference_service, ray_ca_tls_secret):
         """Test multi node ray ca tls secret exists in control (applications) namespace"""
         if not ray_ca_tls_secret.exists:
             pytest.fail(f"Secret {ray_ca_tls_secret.name} does not exist in {ray_ca_tls_secret.namespace} namespace")
 
     @pytest.mark.tls
+    @pytest.mark.rhoai_2_19
     def test_tls_secret_exists_in_inference_ns(self, ray_tls_secret):
         """Test multi node ray tls secret exists in isvc namespace"""
         if not ray_tls_secret.exists:
             pytest.fail(f"Secret {ray_tls_secret.name} does not exist")
 
     @pytest.mark.tls
+    @pytest.mark.rhoai_2_19
     def test_cert_files_exist_in_pods(self, multi_node_predictor_pods_scope_class):
         """Test multi node cert files exist in pods"""
         missing_certs_pods = []
@@ -105,6 +113,7 @@ class TestMultiNode:
         [pytest.param({"pod-role": HEAD_POD_ROLE})],
         indirect=True,
     )
+    @pytest.mark.rhoai_2_19
     def test_multi_node_head_pod_deletion(self, admin_client, multi_node_inference_service, deleted_multi_node_pod):
         """Test multi node when head pod is deleted"""
         verify_inference_response(
@@ -120,6 +129,7 @@ class TestMultiNode:
         [pytest.param({"pod-role": WORKER_POD_ROLE})],
         indirect=True,
     )
+    @pytest.mark.rhoai_2_19
     def test_multi_node_worker_pod_deletion(self, admin_client, multi_node_inference_service, deleted_multi_node_pod):
         """Test multi node when worker pod is deleted"""
         verify_inference_response(
@@ -131,6 +141,7 @@ class TestMultiNode:
         )
 
     @pytest.mark.tls
+    @pytest.mark.rhoai_2_19
     @pytest.mark.dependency(name="test_ray_ca_tls_secret_reconciliation")
     def test_ray_ca_tls_secret_reconciliation(self, multi_node_inference_service, ray_ca_tls_secret):
         """Test multi node ray ca tls secret reconciliation"""
@@ -138,6 +149,7 @@ class TestMultiNode:
         ray_ca_tls_secret.wait()
 
     @pytest.mark.tls
+    @pytest.mark.rhoai_2_19
     @pytest.mark.dependency(name="test_ray_tls_secret_reconciliation")
     def test_ray_tls_secret_reconciliation(self, ray_tls_secret):
         """Test multi node ray ca tls secret reconciliation"""
@@ -145,6 +157,7 @@ class TestMultiNode:
         ray_tls_secret.wait()
 
     @pytest.mark.tls
+    @pytest.mark.rhoai_2_19
     @pytest.mark.dependency(name="test_ray_tls_deleted_on_runtime_deletion")
     def test_ray_tls_deleted_on_runtime_deletion(self, ray_tls_secret, ray_ca_tls_secret, deleted_serving_runtime):
         """Test multi node ray tls secret deletion on runtime deletion"""
@@ -152,11 +165,13 @@ class TestMultiNode:
         assert ray_ca_tls_secret.exists
 
     @pytest.mark.tls
+    @pytest.mark.rhoai_2_19
     @pytest.mark.dependency(depends=["test_ray_tls_deleted_on_runtime_deletion"])
     def test_ray_tls_created_on_runtime_creation(self, ray_tls_secret, ray_ca_tls_secret):
         """Test multi node ray tls secret creation on runtime creation"""
         ray_tls_secret.wait()
 
+    @pytest.mark.rhoai_2_19
     def test_multi_node_basic_external_inference(self, patched_multi_node_isvc_external_route):
         """Test multi node basic external inference"""
         verify_inference_response(
@@ -172,6 +187,7 @@ class TestMultiNode:
         [pytest.param({"worker-spec": {"pipelineParallelSize": 2, "tensorParallelSize": 4}})],
         indirect=True,
     )
+    @pytest.mark.rhoai_2_19
     def test_multi_node_tensor_parallel_size_propagation(self, admin_client, patched_multi_node_worker_spec):
         """Test multi node tensor parallel size (number of GPUs per pod) propagation to pod config"""
         isvc_parallel_size = str(patched_multi_node_worker_spec.instance.spec.predictor.workerSpec.tensorParallelSize)
@@ -195,6 +211,7 @@ class TestMultiNode:
         [pytest.param({"worker-spec": {"pipelineParallelSize": 2, "tensorParallelSize": 1}})],
         indirect=True,
     )
+    @pytest.mark.rhoai_2_19
     def test_multi_node_pipeline_parallel_size_propagation(self, admin_client, patched_multi_node_worker_spec):
         """Test multi node pipeline parallel size (number of pods) propagation to pod config"""
         isvc_parallel_size = patched_multi_node_worker_spec.instance.spec.predictor.workerSpec.pipelineParallelSize

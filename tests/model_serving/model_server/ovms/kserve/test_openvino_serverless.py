@@ -38,6 +38,7 @@ pytestmark = [pytest.mark.serverless, pytest.mark.usefixtures("valid_aws_config"
 )
 class TestOpenVINOServerless:
     @pytest.mark.smoke
+    @pytest.mark.rhoai_2_16
     @pytest.mark.polarion("ODS-2626")
     def test_serverless_openvino_rest_inference(self, ovms_kserve_inference_service):
         """Verify that kserve Serverless OpenVINO model can be queried using REST"""

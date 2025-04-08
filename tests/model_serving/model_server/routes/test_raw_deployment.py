@@ -13,7 +13,7 @@ from utilities.constants import (
 from utilities.inference_utils import Inference
 from utilities.manifests.caikit_tgis import CAIKIT_TGIS_INFERENCE_CONFIG
 
-pytestmark = [pytest.mark.usefixtures("valid_aws_config"), pytest.mark.rawdeployment]
+pytestmark = [pytest.mark.usefixtures("valid_aws_config"), pytest.mark.rawdeployment, pytest.mark.rhoai_2_17]
 
 
 @pytest.mark.parametrize(

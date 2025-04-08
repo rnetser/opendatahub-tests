@@ -10,7 +10,7 @@ from utilities.inference_utils import Inference
 from utilities.manifests.openvino import OPENVINO_INFERENCE_CONFIG
 from utilities.manifests.tensorflow import TENSORFLOW_INFERENCE_CONFIG
 
-pytestmark = [pytest.mark.modelmesh, pytest.mark.sanity]
+pytestmark = [pytest.mark.modelmesh, pytest.mark.sanity, pytest.mark.rhoai_2_16]
 
 
 @pytest.mark.parametrize(

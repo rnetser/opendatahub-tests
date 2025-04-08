@@ -686,15 +686,16 @@ def check_pod_status_in_time(pod: Pod, status: Set[str], duration: int = Timeout
         LOGGER.info(f"Pod status is {pod.status} as expected")
 
 
-def get_product_version(admin_client: DynamicClient) -> Version:
+def get_product_version(admin_client: DynamicClient, raise_on_missing_csv: bool = True) -> Version | None:
     """
     Get RHOAI/ODH product version
 
     Args:
         admin_client (DynamicClient): DynamicClient object
+        raise_on_missing_csv (bool): raise exception if True and ClusterServiceVersion does not exist
 
     Returns:
-        Version: RHOAI/ODH product version
+        Version: RHOAI/ODH product version or None if raise_on_missing_csv is False and CSV does not exist
 
     Raises:
         MissingResourceError: If product's ClusterServiceVersion not found
@@ -707,7 +708,10 @@ def get_product_version(admin_client: DynamicClient) -> Version:
             break
 
     if not operator_version:
-        raise MissingResourceError("Operator ClusterServiceVersion not found")
+        if raise_on_missing_csv:
+            raise MissingResourceError("Operator ClusterServiceVersion not found")
+        else:
+            return None
 
     return Version.parse(operator_version)
 

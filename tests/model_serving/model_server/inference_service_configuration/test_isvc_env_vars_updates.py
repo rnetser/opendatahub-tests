@@ -9,7 +9,7 @@ from tests.model_serving.model_server.inference_service_configuration.utils impo
 )
 from utilities.constants import KServeDeploymentType, RunTimeConfigs
 
-pytestmark = [pytest.mark.sanity, pytest.mark.usefixtures("valid_aws_config")]
+pytestmark = [pytest.mark.sanity, pytest.mark.usefixtures("valid_aws_config"), pytest.mark.rhoai_2_19]
 
 
 ISVC_ENV_VARS_CONFIG = {

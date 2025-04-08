@@ -29,6 +29,7 @@ pytestmark = pytest.mark.serverless
 )
 class TestKserveModelCar:
     @pytest.mark.smoke
+    @pytest.mark.rhoai_2_16
     @pytest.mark.jira("RHOAIENG-13465")
     def test_model_car_no_restarts(self, model_car_serverless_inference_service):
         """Verify that model pod doesn't restart"""
@@ -42,6 +43,7 @@ class TestKserveModelCar:
         assert not restarted_containers, f"Containers {restarted_containers} restarted"
 
     @pytest.mark.smoke
+    @pytest.mark.rhoai_2_16
     @pytest.mark.jira("RHOAIENG-12306")
     def test_model_car_using_rest(self, model_car_serverless_inference_service):
         """Verify model query with token using REST"""

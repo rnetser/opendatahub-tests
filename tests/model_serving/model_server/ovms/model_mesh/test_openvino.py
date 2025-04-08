@@ -13,7 +13,7 @@ from utilities.inference_utils import Inference
 from utilities.infra import get_pods_by_isvc_label, get_product_version
 from utilities.manifests.openvino import OPENVINO_INFERENCE_CONFIG
 
-pytestmark = [pytest.mark.modelmesh]
+pytestmark = [pytest.mark.modelmesh, pytest.mark.rhoai_2_16]
 
 
 @pytest.mark.parametrize(

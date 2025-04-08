@@ -37,11 +37,13 @@ pytestmark = [pytest.mark.usefixtures("valid_aws_config"), pytest.mark.serverles
     indirect=True,
 )
 class TestRestServerlessRoutes:
+    @pytest.mark.rhoai_2_16
     def test_serverless_default_visibility_value(self, s3_models_inference_service):
         """Test default route visibility value"""
         if labels := s3_models_inference_service.labels:
             assert labels.get(Labels.Kserve.NETWORKING_KSERVE_IO) is None
 
+    @pytest.mark.rhoai_2_16
     def test_rest_serverless_external_route(self, s3_models_inference_service):
         """Test HTTP inference using internal route"""
         verify_inference_response(
@@ -62,6 +64,7 @@ class TestRestServerlessRoutes:
         ],
         indirect=True,
     )
+    @pytest.mark.rhoai_2_16
     @pytest.mark.dependency(name="test_rest_serverless_internal_route")
     def test_rest_serverless_internal_route(self, patched_s3_caikit_kserve_isvc_visibility_label):
         """Test HTTP inference using exposed (external) route"""
@@ -84,6 +87,7 @@ class TestRestServerlessRoutes:
         ],
         indirect=True,
     )
+    @pytest.mark.rhoai_2_16
     def test_rest_serverless_exposed_label_route(self, patched_s3_caikit_kserve_isvc_visibility_label):
         """Test HTTP inference fails when using external route after it was disabled"""
         verify_inference_response(

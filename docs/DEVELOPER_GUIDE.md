@@ -41,7 +41,7 @@ To contribute code to the project:
 
 ## Branching strategy
 The project follows RHOAI [release lifecyle strategy](https://access.redhat.com/support/policy/updates/rhoai-sm/lifecycle).  
-If needed, once your PR is merged to `main`, cherry-pick your PR to the relevant branch(es).
+Tests should be marked with the release they're tested against.
 
 
 ## Python
@@ -142,6 +142,13 @@ Check [pytest.ini](../pytest.ini) for available markers; additional markers can 
 - Classes are good to group related tests together, for example when they share a fixture.  
 You should NOT group unrelated tests in one class (because it is misleading the reader).
 
+
+## Markers
+Do not forget to add the relevant marker(s) to your test(s)
+Check [pytest.ini](../pytest.ini) for available markers; additional markers can always be added when needed.
+For features which are only supported in upstream, add the `upstream` marker.
+For features which are only supported in ODH (`midstream`, add the `odh` marker.
+For features which are only supported from a specific RHOAI release, add the `rhoai_x_y` marker.  For example: `rhoai_2_19`
 
 ## Check the code
 ### pre-commit

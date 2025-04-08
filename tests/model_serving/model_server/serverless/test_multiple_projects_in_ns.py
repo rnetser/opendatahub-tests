@@ -9,7 +9,7 @@ from utilities.constants import (
 from utilities.inference_utils import Inference
 from utilities.manifests.onnx import ONNX_INFERENCE_CONFIG
 
-pytestmark = [pytest.mark.serverless, pytest.mark.sanity]
+pytestmark = [pytest.mark.serverless, pytest.mark.sanity, pytest.mark.rhoai_2_19]
 
 
 @pytest.mark.polarion("ODS-2371")

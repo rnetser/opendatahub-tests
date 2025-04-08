@@ -25,6 +25,7 @@ pytestmark = pytest.mark.usefixtures("valid_aws_config")
 )
 class TestKserveTokenAuthenticationRawForRest:
     @pytest.mark.smoke
+    @pytest.mark.rhoai_2_16
     @pytest.mark.dependency(name="test_model_authentication_using_rest_raw")
     def test_model_authentication_using_rest_raw(self, http_s3_caikit_raw_inference_service, http_raw_inference_token):
         """Verify RAW Kserve model query with token using REST"""
@@ -38,6 +39,7 @@ class TestKserveTokenAuthenticationRawForRest:
             token=http_raw_inference_token,
         )
 
+    @pytest.mark.rhoai_2_16
     @pytest.mark.dependency(name="test_disabled_raw_model_authentication")
     def test_disabled_raw_model_authentication(self, patched_remove_raw_authentication_isvc):
         """Verify model query after authentication is disabled"""
@@ -51,6 +53,7 @@ class TestKserveTokenAuthenticationRawForRest:
         )
 
     @pytest.mark.sanity
+    @pytest.mark.rhoai_2_17
     @pytest.mark.jira("RHOAIENG-19275", run=False)
     def test_raw_disable_enable_authentication_no_pod_rollout(self, http_s3_caikit_raw_inference_service):
         """Verify no pod rollout when disabling and enabling authentication"""
@@ -83,6 +86,7 @@ class TestKserveTokenAuthenticationRawForRest:
 
         check_pod_status_in_time(pod=pod, status={pod.Status.RUNNING})
 
+    @pytest.mark.rhoai_2_17
     @pytest.mark.dependency(depends=["test_disabled_raw_model_authentication"])
     def test_re_enabled_raw_model_authentication(self, http_s3_caikit_raw_inference_service, http_raw_inference_token):
         """Verify model query after authentication is re-enabled"""
@@ -96,6 +100,7 @@ class TestKserveTokenAuthenticationRawForRest:
             token=http_raw_inference_token,
         )
 
+    @pytest.mark.rhoai_2_17
     @pytest.mark.dependency(name="test_cross_model_authentication_raw")
     def test_cross_model_authentication_raw(
         self, http_s3_caikit_raw_inference_service_2, http_raw_inference_token, admin_client

@@ -28,6 +28,7 @@ pytestmark = [pytest.mark.serverless, pytest.mark.usefixtures("skip_if_no_nfs_st
     indirect=True,
 )
 class TestKservePVCReadWriteManyAccess:
+    @pytest.mark.rhoai_2_16
     def test_first_isvc_pvc_read_access(self, predictor_pods_scope_class):
         """Test that the first predictor pod has read access to the PVC"""
         predictor_pods_scope_class[0].execute(
@@ -35,6 +36,7 @@ class TestKservePVCReadWriteManyAccess:
             command=POD_LS_SPLIT_COMMAND,
         )
 
+    @pytest.mark.rhoai_2_16
     def test_second_isvc_pvc_read_access(self, predictor_pods_scope_class):
         """Test that the second predictor pod has read access to the PVC"""
         predictor_pods_scope_class[1].execute(

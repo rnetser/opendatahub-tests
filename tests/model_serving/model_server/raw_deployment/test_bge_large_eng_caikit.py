@@ -11,7 +11,7 @@ from utilities.constants import (
 )
 from utilities.manifests.caikit_standalone import CAIKIT_STANDALONE_INFERENCE_CONFIG
 
-pytestmark = [pytest.mark.rawdeployment, pytest.mark.usefixtures("valid_aws_config")]
+pytestmark = [pytest.mark.rawdeployment, pytest.mark.usefixtures("valid_aws_config"), pytest.mark.rhoai_2_16]
 
 
 @pytest.mark.smoke
