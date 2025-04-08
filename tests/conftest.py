@@ -24,6 +24,7 @@ from pytest_testconfig import config as py_config
 from simple_logger.logger import get_logger
 
 from utilities.data_science_cluster_utils import update_components_in_dsc
+from utilities.exceptions import ClusterLoginError
 from utilities.general import get_s3_secret_dict
 from utilities.infra import (
     create_ns,
@@ -249,7 +250,7 @@ def unprivileged_client(
     Provides none privileged API client. If non_admin_user_password is None, then it will yield admin_client.
     """
     if non_admin_user_password is None:
-        yield admin_client
+        raise ValueError("Unprivileged user not provisioned")
 
     else:
         current_user = run_command(command=["oc", "whoami"])[1].strip()
@@ -275,8 +276,7 @@ def unprivileged_client(
             yield unprivileged_client
 
         else:
-            LOGGER.error(f"Failed to log in as user {non_admin_user_name}; logging in as admin user.")
-            yield admin_client
+            raise ClusterLoginError(user=non_admin_user_name)
 
 
 @pytest.fixture(scope="session")
