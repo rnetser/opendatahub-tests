@@ -26,11 +26,6 @@ class TestServerlessUnprivilegedUser:
     @pytest.mark.polarion("ODS-2552")
     def test_non_admin_deploy_serverless_and_query_model(self, unprivileged_s3_caikit_serverless_inference_service):
         """Verify non admin can deploy a model and query using REST"""
-        from ocp_resources.node import Node
-
-        for i in Node.get(dyn_client=unprivileged_s3_caikit_serverless_inference_service.client):
-            print(i.name)
-
         verify_inference_response(
             inference_service=unprivileged_s3_caikit_serverless_inference_service,
             inference_config=CAIKIT_TGIS_INFERENCE_CONFIG,
