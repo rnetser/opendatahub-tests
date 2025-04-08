@@ -165,11 +165,12 @@ def pytest_collection_modifyitems(session: Session, config: Config, items: list[
     if config_upgrade_deployment_modes := config.getoption(name="upgrade_deployment_modes"):
         upgrade_deployment_modes = config_upgrade_deployment_modes.split(",")
 
-    if product_version := get_product_version(admin_client=get_client(), raise_on_missing_csv=False):
-        formatted_product_version = Version.parse(
-            f"{product_version.major}.{product_version.minor}",
-            optional_minor_and_patch=True,
-        )
+    if not session.config.option.setupplan and not session.config.option.collectonly:
+        if product_version := get_product_version(admin_client=get_client(), raise_on_missing_csv=False):
+            formatted_product_version = Version.parse(
+                f"{product_version.major}.{product_version.minor}",
+                optional_minor_and_patch=True,
+            )
 
     for item in items:
         # Upgrade tests filtering
