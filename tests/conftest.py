@@ -247,7 +247,7 @@ def unprivileged_client(
     non_admin_user_password: tuple[str, str],
 ) -> Generator[DynamicClient, Any, Any]:
     """
-    Provides none privileged API client. If non_admin_user_password is None, then it will yield admin_client.
+    Provides none privileged API client. If non_admin_user_password is None, then it will raise.
     """
     if non_admin_user_password is None:
         raise ValueError("Unprivileged user not provisioned")
