@@ -444,6 +444,8 @@ def prometheus(admin_client: DynamicClient) -> Prometheus:
 def user_workload_monitoring_config_map(
     admin_client: DynamicClient, cluster_monitoring_config: ConfigMap
 ) -> Generator[ConfigMap, None, None]:
+    uwm_namespace = "openshift-user-workload-monitoring"
+
     data = {
         "config.yaml": yaml.dump({
             "prometheus": {
@@ -457,10 +459,14 @@ def user_workload_monitoring_config_map(
     with update_configmap_data(
         client=admin_client,
         name="user-workload-monitoring-config",
-        namespace="openshift-user-workload-monitoring",
+        namespace=uwm_namespace,
         data=data,
     ) as cm:
         yield cm
+
+    # UWM PVCs are not deleted once the configmap is deleted; forcefully deleting the PVCs to avoid having left-overs
+    for pvc in PersistentVolumeClaim.get(dyn_client=admin_client, namespace=uwm_namespace):
+        pvc.clean_up()
 
 
 @pytest.fixture(scope="class")

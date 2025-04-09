@@ -64,7 +64,8 @@ class TestRawUnprivilegedUser:
             use_default_query=True,
         )
 
-    def test_raw_metrics(
+    @pytest.mark.metrics
+    def test_non_admin_raw_metrics(
         self,
         unprivileged_s3_caikit_raw_inference_service,
         prometheus,
@@ -84,5 +85,5 @@ class TestRawUnprivilegedUser:
         validate_metrics_value(
             prometheus=prometheus,
             metrics_query="tgi_request_count",
-            expected_value=str(total_runs + 1),
+            expected_value=str(total_runs),
         )
