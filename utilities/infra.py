@@ -843,7 +843,7 @@ def cluster_sanity(
     nodes: list[Node],
     dsci_resource: DSCInitialization,
     dsc_resource: DataScienceCluster,
-    junitxml_property: Callable[[str, object], None],
+    junitxml_property: Callable[[str, object], None] | None = None,
 ) -> None:
     """
     Check cluster resources: nodes, DSCI, DSC and exits pytest execution on failure.
@@ -881,6 +881,9 @@ def cluster_sanity(
         return_code = 99
 
         LOGGER.error(error_msg)
-        junitxml_property(name="exit_code", value=return_code)  # type: ignore[call-arg]
+
+        if junitxml_property:
+            junitxml_property(name="exit_code", value=return_code)  # type: ignore[call-arg]
+
         # TODO: Write to file to easily report the failure in jenkins
         pytest.exit(reason=error_msg, returncode=return_code)
