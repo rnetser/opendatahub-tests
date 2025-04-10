@@ -8,6 +8,7 @@ from functools import cache
 from typing import Any, Generator, Optional, Set
 
 import kubernetes
+import pytest
 from _pytest.fixtures import FixtureRequest
 from kubernetes.dynamic import DynamicClient
 from kubernetes.dynamic.exceptions import ResourceNotFoundError, ResourceNotUniqueError
@@ -21,6 +22,7 @@ from ocp_resources.exceptions import MissingResourceError
 from ocp_resources.inference_service import InferenceService
 from ocp_resources.infrastructure import Infrastructure
 from ocp_resources.namespace import Namespace
+from ocp_resources.node_config_openshift_io import Node
 from ocp_resources.pod import Pod
 from ocp_resources.project_project_openshift_io import Project
 from ocp_resources.project_request import ProjectRequest
@@ -31,6 +33,8 @@ from ocp_resources.secret import Secret
 from ocp_resources.service import Service
 from ocp_resources.service_account import ServiceAccount
 from ocp_resources.serving_runtime import ServingRuntime
+from ocp_utilities.exceptions import NodeNotReadyError, NodeUnschedulableError
+from ocp_utilities.infra import assert_nodes_in_healthy_condition, assert_nodes_schedulable
 from pyhelper_utils.shell import run_command
 from pytest_testconfig import config as py_config
 from semver import Version
@@ -39,7 +43,7 @@ from simple_logger.logger import get_logger
 from utilities.constants import ApiGroups, Labels, Timeout
 from utilities.constants import KServeDeploymentType
 from utilities.constants import Annotations
-from utilities.exceptions import ClusterLoginError, FailedPodsError
+from utilities.exceptions import ClusterLoginError, ClusterSanityError, FailedPodsError
 from timeout_sampler import TimeoutExpiredError, TimeoutSampler, retry
 import utilities.general
 
@@ -809,3 +813,17 @@ def wait_for_isvc_pods(client: DynamicClient, isvc: InferenceService, runtime_na
     """
     LOGGER.info("Waiting for pods to be created")
     return get_pods_by_isvc_label(client=client, isvc=isvc, runtime_name=runtime_name)
+
+
+def cluster_sanity(
+    nodes: list[Node],
+):
+    try:
+        LOGGER.info("Check nodes sanity.")
+        assert_nodes_in_healthy_condition(nodes=nodes, healthy_node_condition_type={"KubeletReady": "True"})
+        assert_nodes_schedulable(nodes=nodes)
+        assert_dsci_ready(nodes=nodes)
+        assert_dsc_ready(nodes)
+
+    except (ClusterSanityError, NodeUnschedulableError, NodeNotReadyError):
+        pytest.exit(returncode=99)
