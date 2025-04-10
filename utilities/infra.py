@@ -5,7 +5,7 @@ import re
 import shlex
 from contextlib import contextmanager
 from functools import cache
-from typing import Any, Generator, Optional, Set
+from typing import Any, Callable, Generator, Optional, Set
 
 import kubernetes
 import pytest
@@ -34,7 +34,10 @@ from ocp_resources.service import Service
 from ocp_resources.service_account import ServiceAccount
 from ocp_resources.serving_runtime import ServingRuntime
 from ocp_utilities.exceptions import NodeNotReadyError, NodeUnschedulableError
-from ocp_utilities.infra import assert_nodes_in_healthy_condition, assert_nodes_schedulable
+from ocp_utilities.infra import (
+    assert_nodes_in_healthy_condition,
+    assert_nodes_schedulable,
+)
 from pyhelper_utils.shell import run_command
 from pytest_testconfig import config as py_config
 from semver import Version
@@ -43,7 +46,11 @@ from simple_logger.logger import get_logger
 from utilities.constants import ApiGroups, Labels, Timeout
 from utilities.constants import KServeDeploymentType
 from utilities.constants import Annotations
-from utilities.exceptions import ClusterLoginError, ClusterSanityError, FailedPodsError
+from utilities.exceptions import (
+    ClusterLoginError,
+    FailedPodsError,
+    ResourceNotReadyError,
+)
 from timeout_sampler import TimeoutExpiredError, TimeoutSampler, retry
 import utilities.general
 
@@ -795,7 +802,11 @@ def wait_for_serverless_pods_deletion(resource: Project | Namespace, admin_clien
             pod.wait_deleted(timeout=Timeout.TIMEOUT_1MIN)
 
 
-@retry(wait_timeout=Timeout.TIMEOUT_30SEC, sleep=1, exceptions_dict={ResourceNotFoundError: []})
+@retry(
+    wait_timeout=Timeout.TIMEOUT_30SEC,
+    sleep=1,
+    exceptions_dict={ResourceNotFoundError: []},
+)
 def wait_for_isvc_pods(client: DynamicClient, isvc: InferenceService, runtime_name: str | None = None) -> list[Pod]:
     """
     Wait for ISVC pods.
@@ -815,15 +826,61 @@ def wait_for_isvc_pods(client: DynamicClient, isvc: InferenceService, runtime_na
     return get_pods_by_isvc_label(client=client, isvc=isvc, runtime_name=runtime_name)
 
 
+def assert_dsci_ready(dsci_resource: DSCInitialization) -> None:
+    LOGGER.info(f"Verify DSCI {dsci_resource.name} are {dsci_resource.Status.READY}.")
+    if dsci_resource.status != dsci_resource.Status.READY:
+        raise ResourceNotReadyError(f"DSCI {dsci_resource.name} is not ready.\nStatus: {dsci_resource.instance.status}")
+
+
+def assert_dsc_ready(dsc_resource: DataScienceCluster) -> None:
+    LOGGER.info(f"Verify DSC {dsc_resource.name} are {dsc_resource.Status.READY}.")
+    if dsc_resource.status != dsc_resource.Status.READY:
+        raise ResourceNotReadyError(f"DSCI {dsc_resource.name} is not ready.\nStatus: {dsc_resource.instance.status}")
+
+
 def cluster_sanity(
+    request: FixtureRequest,
     nodes: list[Node],
-):
+    dsci_resource: DSCInitialization,
+    dsc_resource: DataScienceCluster,
+    junitxml_property: Callable[[str, object], None],
+) -> None:
+    """
+    Check cluster resources: nodes, DSCI, DSC and exits pytest execution on failure.
+
+    Args:
+        request (FixtureRequest): pytest request
+        nodes (list[Node]): list of nodes
+        dsci_resource (DSCInitialization): dsci resource
+        dsc_resource (DataScienceCluster): dsc resource
+        junitxml_property (property): Junitxml property
+
+    """
+    skip_cluster_sanity_check = "--cluster-sanity-skip-check"
+    skip_rhoai_check = "--cluster-sanity-skip-rhoai-check"
+
+    if request.session.config.getoption(skip_cluster_sanity_check):
+        LOGGER.warning(f"Skipping cluster sanity check, got {skip_cluster_sanity_check}")
+        return
+
     try:
-        LOGGER.info("Check nodes sanity.")
+        LOGGER.info("Check cluster sanity.")
+
         assert_nodes_in_healthy_condition(nodes=nodes, healthy_node_condition_type={"KubeletReady": "True"})
         assert_nodes_schedulable(nodes=nodes)
-        assert_dsci_ready(nodes=nodes)
-        assert_dsc_ready(nodes)
 
-    except (ClusterSanityError, NodeUnschedulableError, NodeNotReadyError):
-        pytest.exit(returncode=99)
+        if request.session.config.getoption(skip_rhoai_check):
+            LOGGER.warning(f"Skipping RHOAI resource checks, got {skip_rhoai_check}")
+
+        else:
+            assert_dsci_ready(dsci_resource=dsci_resource)
+            assert_dsc_ready(dsc_resource=dsc_resource)
+
+    except (ResourceNotReadyError, NodeUnschedulableError, NodeNotReadyError) as ex:
+        error_msg = f"Cluster sanity check failed: {str(ex)}"
+        return_code = 99
+
+        LOGGER.error(error_msg)
+        junitxml_property(name="exit_code", value=return_code)  # type: ignore[call-arg]
+        # TODO: Write to file to easily report the failure in jenkins
+        pytest.exit(reason=error_msg, returncode=return_code)
