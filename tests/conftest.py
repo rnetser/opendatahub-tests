@@ -285,7 +285,8 @@ def unprivileged_client(
 @pytest.fixture(scope="session")
 def dsci_resource(admin_client: DynamicClient) -> DSCInitialization:
     name = py_config["dsci_name"]
-    for dsci in DSCInitialization.get(dyn_client=admin_client, name=name):
+    dsci = DSCInitialization(client=admin_client, name=name)
+    if dsci.exists:
         return dsci
 
     raise ResourceNotFoundError(f"DSCI resource {name} not found")
@@ -294,7 +295,8 @@ def dsci_resource(admin_client: DynamicClient) -> DSCInitialization:
 @pytest.fixture(scope="session")
 def dsc_resource(admin_client: DynamicClient) -> DataScienceCluster:
     name = py_config["dsc_name"]
-    for dsc in DataScienceCluster.get(dyn_client=admin_client, name=name):
+    dsc = DataScienceCluster(client=admin_client, name=name)
+    if dsc.exists:
         return dsc
 
     raise ResourceNotFoundError(f"DSC resource {name} not found")

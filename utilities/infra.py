@@ -826,13 +826,13 @@ def wait_for_isvc_pods(client: DynamicClient, isvc: InferenceService, runtime_na
     return get_pods_by_isvc_label(client=client, isvc=isvc, runtime_name=runtime_name)
 
 
-def assert_dsci_ready(dsci_resource: DSCInitialization) -> None:
+def verify_dsci_status_ready(dsci_resource: DSCInitialization) -> None:
     LOGGER.info(f"Verify DSCI {dsci_resource.name} are {dsci_resource.Status.READY}.")
     if dsci_resource.status != dsci_resource.Status.READY:
         raise ResourceNotReadyError(f"DSCI {dsci_resource.name} is not ready.\nStatus: {dsci_resource.instance.status}")
 
 
-def assert_dsc_ready(dsc_resource: DataScienceCluster) -> None:
+def verify_dsc_status_ready(dsc_resource: DataScienceCluster) -> None:
     LOGGER.info(f"Verify DSC {dsc_resource.name} are {dsc_resource.Status.READY}.")
     if dsc_resource.status != dsc_resource.Status.READY:
         raise ResourceNotReadyError(f"DSC {dsc_resource.name} is not ready.\nStatus: {dsc_resource.instance.status}")
@@ -873,8 +873,8 @@ def cluster_sanity(
             LOGGER.warning(f"Skipping RHOAI resource checks, got {skip_rhoai_check}")
 
         else:
-            assert_dsci_ready(dsci_resource=dsci_resource)
-            assert_dsc_ready(dsc_resource=dsc_resource)
+            verify_dsci_status_ready(dsci_resource=dsci_resource)
+            verify_dsc_status_ready(dsc_resource=dsc_resource)
 
     except (ResourceNotReadyError, NodeUnschedulableError, NodeNotReadyError) as ex:
         error_msg = f"Cluster sanity check failed: {str(ex)}"
