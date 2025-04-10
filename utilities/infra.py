@@ -835,7 +835,7 @@ def assert_dsci_ready(dsci_resource: DSCInitialization) -> None:
 def assert_dsc_ready(dsc_resource: DataScienceCluster) -> None:
     LOGGER.info(f"Verify DSC {dsc_resource.name} are {dsc_resource.Status.READY}.")
     if dsc_resource.status != dsc_resource.Status.READY:
-        raise ResourceNotReadyError(f"DSCI {dsc_resource.name} is not ready.\nStatus: {dsc_resource.instance.status}")
+        raise ResourceNotReadyError(f"DSC {dsc_resource.name} is not ready.\nStatus: {dsc_resource.instance.status}")
 
 
 def cluster_sanity(
