@@ -216,7 +216,7 @@ def wait_for_inference_deployment_replicas(
 
 @contextmanager
 def s3_endpoint_secret(
-    admin_client: DynamicClient,
+    client: DynamicClient,
     name: str,
     namespace: str,
     aws_access_key: str,
@@ -224,12 +224,13 @@ def s3_endpoint_secret(
     aws_s3_bucket: str,
     aws_s3_endpoint: str,
     aws_s3_region: str,
+    teardown: bool = True,
 ) -> Generator[Secret, Any, Any]:
     """
     Create S3 endpoint secret.
 
     Args:
-        admin_client (DynamicClient): Dynamic client.
+        client (DynamicClient): Dynamic client.
         name (str): Secret name.
         namespace (str): Secret namespace name.
         aws_access_key (str): Secret access key.
@@ -237,12 +238,13 @@ def s3_endpoint_secret(
         aws_s3_bucket (str): Secret s3 bucket.
         aws_s3_endpoint (str): Secret s3 endpoint.
         aws_s3_region (str): Secret s3 region.
+        teardown (bool): Whether to delete the secret.
 
     Yield:
         Secret: Secret object
 
     """
-    secret_kwargs = {"client": admin_client, "name": name, "namespace": namespace}
+    secret_kwargs = {"client": client, "name": name, "namespace": namespace}
     secret = Secret(**secret_kwargs)
 
     if secret.exists:
@@ -265,6 +267,7 @@ def s3_endpoint_secret(
                 aws_s3_region=aws_s3_region,
             ),
             wait_for_resource=True,
+            teardown=teardown,
             **secret_kwargs,
         ) as secret:
             yield secret
@@ -276,6 +279,7 @@ def create_isvc_view_role(
     isvc: InferenceService,
     name: str,
     resource_names: Optional[list[str]] = None,
+    teardown: bool = True,
 ) -> Generator[Role, Any, Any]:
     """
     Create a view role for an InferenceService.
@@ -285,6 +289,7 @@ def create_isvc_view_role(
         isvc (InferenceService): InferenceService object.
         name (str): Role name.
         resource_names (list[str]): Resource names to be attached to role.
+        teardown (bool): Whether to delete the role.
 
     Yields:
         Role: Role object.
@@ -306,6 +311,7 @@ def create_isvc_view_role(
         name=name,
         namespace=isvc.namespace,
         rules=rules,
+        teardown=teardown,
     ) as role:
         yield role
 
@@ -711,7 +717,7 @@ def get_product_version(admin_client: DynamicClient) -> Version:
     return Version.parse(operator_version)
 
 
-def get_dsci_applications_namespace(client: DynamicClient, dsci_name: str = "default-dsci") -> str:
+def get_dsci_applications_namespace(client: DynamicClient, dsci_name: str = "example") -> str:
     """
     Get the namespace where DSCI applications are deployed.
 
