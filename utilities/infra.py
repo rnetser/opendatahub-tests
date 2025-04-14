@@ -371,6 +371,7 @@ def is_managed_cluster(client: DynamicClient) -> bool:
     for entry in platform_statuses.values():
         if isinstance(entry, kubernetes.dynamic.resource.ResourceField):
             if tags := entry.resourceTags:
+                LOGGER.info(f"Infrastructure {infra.name} resource tags: {tags}")
                 return any([tag["value"] == "true" for tag in tags if tag["key"] == "red-hat-managed"])
 
     return False
