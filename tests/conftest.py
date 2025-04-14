@@ -16,7 +16,6 @@ from ocp_resources.service import Service
 from pyhelper_utils.shell import run_command
 from pytest import FixtureRequest, Config
 from kubernetes.dynamic import DynamicClient
-from kubernetes.dynamic.exceptions import ResourceNotFoundError
 from ocp_resources.data_science_cluster import DataScienceCluster
 from ocp_resources.namespace import Namespace
 from ocp_resources.resource import get_client
@@ -27,7 +26,7 @@ from utilities.data_science_cluster_utils import update_components_in_dsc
 from utilities.exceptions import ClusterLoginError
 from utilities.general import get_s3_secret_dict
 from utilities.infra import (
-    cluster_sanity,
+    verify_cluster_sanity,
     create_ns,
     get_dsci_applications_namespace,
     get_operator_distribution,
@@ -282,22 +281,12 @@ def unprivileged_client(
 
 @pytest.fixture(scope="session")
 def dsci_resource(admin_client: DynamicClient) -> DSCInitialization:
-    name = py_config["dsci_name"]
-    dsci = DSCInitialization(client=admin_client, name=name)
-    if dsci.exists:
-        return dsci
-
-    raise ResourceNotFoundError(f"DSCI resource {name} not found")
+    return DSCInitialization(client=admin_client, name=py_config["dsci_name"], ensure_exists=True)
 
 
 @pytest.fixture(scope="session")
 def dsc_resource(admin_client: DynamicClient) -> DataScienceCluster:
-    name = py_config["dsc_name"]
-    dsc = DataScienceCluster(client=admin_client, name=name)
-    if dsc.exists:
-        return dsc
-
-    raise ResourceNotFoundError(f"DSC resource {name} not found")
+    return DataScienceCluster(client=admin_client, name=py_config["dsc_name"], ensure_exists=True)
 
 
 @pytest.fixture(scope="module")
@@ -482,7 +471,7 @@ def cluster_sanity_scope_session(
     dsc_resource: DataScienceCluster,
     junitxml_plugin: Callable[[str, object], None],
 ) -> None:
-    cluster_sanity(
+    verify_cluster_sanity(
         request=request,
         nodes=nodes,
         dsc_resource=dsc_resource,

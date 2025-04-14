@@ -836,7 +836,7 @@ def verify_dsc_status_ready(dsc_resource: DataScienceCluster) -> None:
         raise ResourceNotReadyError(f"DSC {dsc_resource.name} is not ready.\nStatus: {dsc_resource.instance.status}")
 
 
-def cluster_sanity(
+def verify_cluster_sanity(
     request: FixtureRequest,
     nodes: list[Node],
     dsci_resource: DSCInitialization,
@@ -844,7 +844,7 @@ def cluster_sanity(
     junitxml_property: Callable[[str, object], None] | None = None,
 ) -> None:
     """
-    Check cluster resources: nodes, DSCI, DSC and exits pytest execution on failure.
+    Check that cluster resources (Nodes, DSCI, DSC) are healthy and exists pytest execution on failure.
 
     Args:
         request (FixtureRequest): pytest request
