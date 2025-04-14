@@ -719,7 +719,7 @@ def get_product_version(admin_client: DynamicClient) -> Version:
     return Version.parse(operator_version)
 
 
-def get_dsci_applications_namespace(client: DynamicClient, dsci_name: str = "example") -> str:
+def get_dsci_applications_namespace(client: DynamicClient, dsci_name: str = "default-dsci") -> str:
     """
     Get the namespace where DSCI applications are deployed.
 
