@@ -877,6 +877,7 @@ def verify_cluster_sanity(
 
     except (ResourceNotReadyError, NodeUnschedulableError, NodeNotReadyError) as ex:
         error_msg = f"Cluster sanity check failed: {str(ex)}"
+        # return_code set to 99 to not collide with https://docs.pytest.org/en/stable/reference/exit-codes.html
         return_code = 99
 
         LOGGER.error(error_msg)
