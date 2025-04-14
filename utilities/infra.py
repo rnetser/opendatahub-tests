@@ -722,13 +722,12 @@ def get_product_version(admin_client: DynamicClient) -> Version:
     return Version.parse(operator_version)
 
 
-def get_dsci_applications_namespace(client: DynamicClient, dsci_name: str = "default-dsci") -> str:
+def get_dsci_applications_namespace(client: DynamicClient) -> str:
     """
     Get the namespace where DSCI applications are deployed.
 
     Args:
         client (DynamicClient): DynamicClient object
-        dsci_name (str): DSCI name
 
     Returns:
         str: Namespace where DSCI applications are deployed.
@@ -738,6 +737,7 @@ def get_dsci_applications_namespace(client: DynamicClient, dsci_name: str = "def
             MissingResourceError: If DSCI not found
 
     """
+    dsci_name = py_config["dsci_name"]
     dsci = DSCInitialization(client=client, name=dsci_name)
 
     if dsci.exists:
