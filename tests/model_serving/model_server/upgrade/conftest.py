@@ -394,6 +394,7 @@ def model_service_account_scope_session(
             namespace=ci_endpoint_s3_secret_scope_session.namespace,
             name="upgrade-models-bucket-sa",
             secrets=[{"name": ci_endpoint_s3_secret_scope_session.name}],
+            teardown=teardown_resources,
         ) as sa:
             yield sa
 
@@ -457,6 +458,7 @@ def http_role_binding_scope_session(
             role_ref_kind=http_view_role_scope_session.kind,
             subjects_kind=model_service_account_scope_session.kind,
             subjects_name=model_service_account_scope_session.name,
+            teardown=teardown_resources,
         ) as rb:
             yield rb
 

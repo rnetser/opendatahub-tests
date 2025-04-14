@@ -114,14 +114,16 @@ def create_ns(
             project.wait_for_status(status=project.Status.ACTIVE, timeout=Timeout.TIMEOUT_2MIN)
             yield project
 
-            wait_for_serverless_pods_deletion(resource=project, admin_client=admin_client)
+            if teardown:
+                wait_for_serverless_pods_deletion(resource=project, admin_client=admin_client)
 
     else:
         with Namespace(**namespace_kwargs) as ns:
             ns.wait_for_status(status=Namespace.Status.ACTIVE, timeout=Timeout.TIMEOUT_2MIN)
             yield ns
 
-            wait_for_serverless_pods_deletion(resource=ns, admin_client=admin_client)
+            if teardown:
+                wait_for_serverless_pods_deletion(resource=ns, admin_client=admin_client)
 
 
 def wait_for_replicas_in_deployment(deployment: Deployment, replicas: int) -> None:
