@@ -230,10 +230,10 @@ def pytest_runtest_setup(item: Item) -> None:
     BASIC_LOGGER.info(f"\n{separator(symbol_='-', val=item.name)}")
     BASIC_LOGGER.info(f"{separator(symbol_='-', val='SETUP')}")
 
+    if "model_registry" in pathlib.Path(item.path).parts or KServeDeploymentType.SERVERLESS.lower() in item.keywords:
+        item.fixturenames.insert(0, "fail_if_missing_dependant_operators")
+
     if KServeDeploymentType.SERVERLESS.lower() in item.keywords:
-        item.fixturenames.insert(0, "skip_if_no_deployed_redhat_authorino_operator")
-        item.fixturenames.insert(0, "skip_if_no_deployed_openshift_serverless")
-        item.fixturenames.insert(0, "skip_if_no_deployed_openshift_service_mesh")
         item.fixturenames.insert(0, "enabled_kserve_in_dsc")
 
     elif KServeDeploymentType.RAW_DEPLOYMENT.lower() in item.keywords:
