@@ -4,7 +4,6 @@ distribution: str = "downstream"
 applications_namespace: str = "redhat-ods-applications"  # overwritten in conftest.py if distribution is upstream
 dsc_name: str = "default-dsc"
 dsci_name: str = "default-dsci"
-dependent_operators: str = "servicemeshoperator,authorino-operator,serverless-operator"
 
 for _dir in dir():
     val = locals()[_dir]
