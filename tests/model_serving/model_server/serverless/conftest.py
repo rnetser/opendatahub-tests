@@ -22,16 +22,15 @@ from utilities.manifests.caikit_tgis import CAIKIT_TGIS_INFERENCE_CONFIG
 def inference_service_patched_replicas(
     request: FixtureRequest, ovms_kserve_inference_service: InferenceService
 ) -> InferenceService:
-    if hasattr(request, "param"):
-        ResourceEditor(
-            patches={
-                ovms_kserve_inference_service: {
-                    "spec": {
-                        "predictor": {"minReplicas": request.param["min-replicas"]},
-                    }
+    ResourceEditor(
+        patches={
+            ovms_kserve_inference_service: {
+                "spec": {
+                    "predictor": {"minReplicas": request.param["min-replicas"]},
                 }
             }
-        ).update()
+        }
+    ).update()
 
     return ovms_kserve_inference_service
 
