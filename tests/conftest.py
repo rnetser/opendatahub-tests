@@ -485,7 +485,7 @@ def cluster_sanity_scope_session(
 def fail_if_missing_dependant_operators(admin_client: DynamicClient) -> None:
     missing_operators: list[str] = []
 
-    for operator_name in py_config["dependent_operators"]:
+    for operator_name in py_config.get("dependent_operators", []).split(","):
         LOGGER.info(f"Verifying if {operator_name} is installed")
         for csv in ClusterServiceVersion.get(
             dyn_client=admin_client,
