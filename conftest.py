@@ -223,7 +223,7 @@ def pytest_runtest_setup(item: Item) -> None:
     """
     Performs the following actions:
     1. Updates global config (`updated_global_config`)
-    2. Adds `fail_if_missing_dependant_operators` fixture for Serverless and model registry tests.
+    2. Adds `fail_if_missing_dependent_operators` fixture for Serverless and model registry tests.
     3. Adds fixtures to enable KServe/model mesh in DSC for model server tests.
     """
 
@@ -231,7 +231,7 @@ def pytest_runtest_setup(item: Item) -> None:
     BASIC_LOGGER.info(f"{separator(symbol_='-', val='SETUP')}")
 
     if "model_registry" in pathlib.Path(item.path).parts or KServeDeploymentType.SERVERLESS.lower() in item.keywords:
-        item.fixturenames.insert(0, "fail_if_missing_dependant_operators")
+        item.fixturenames.insert(0, "fail_if_missing_dependent_operators")
 
     if KServeDeploymentType.SERVERLESS.lower() in item.keywords:
         item.fixturenames.insert(0, "enabled_kserve_in_dsc")

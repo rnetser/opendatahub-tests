@@ -482,7 +482,7 @@ def cluster_sanity_scope_session(
 
 
 @pytest.fixture(scope="session")
-def fail_if_missing_dependant_operators(admin_client: DynamicClient) -> None:
+def fail_if_missing_dependent_operators(admin_client: DynamicClient) -> None:
     missing_operators: list[str] = []
 
     for operator_name in py_config.get("dependent_operators", []).split(","):
