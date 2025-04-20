@@ -499,10 +499,12 @@ def fail_if_missing_dependent_operators(admin_client: DynamicClient) -> None:
                     break
 
                 else:
-                    missing_operators.append(operator_name)
+                    missing_operators.append(
+                        f"Operator {operator_name} is installed but CSV is not in {csv.Status.SUCCEEDED} state"
+                    )
 
         else:
-            missing_operators.append(operator_name)
+            missing_operators.append(f"{operator_name} is not installed")
 
     if missing_operators:
-        pytest.fail(f"Missing dependent operators: {missing_operators}")
+        pytest.fail(missing_operators)
