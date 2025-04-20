@@ -20,6 +20,9 @@ pytestmark = [
     pytest.mark.usefixtures("valid_aws_config"),
 ]
 
+NO_PODS_AFTER_SCALE_TEST_NAME: str = "test_no_serverless_pods_after_scale_to_zero"
+INFERENCE_AFTER_SCALE_TEST_NAME: str = "test_serverless_inference_after_scale_to_zero"
+
 
 @pytest.mark.serverless
 @pytest.mark.parametrize(
@@ -56,14 +59,14 @@ class TestServerlessScaleToZero:
         indirect=True,
     )
     @pytest.mark.order(2)
-    @pytest.mark.dependency(name="test_no_serverless_pods_after_scale_to_zero")
+    @pytest.mark.dependency(name=NO_PODS_AFTER_SCALE_TEST_NAME)
     def test_no_serverless_pods_after_scale_to_zero(self, admin_client, inference_service_patched_replicas):
         """Verify pods are scaled to zero"""
         verify_no_inference_pods(client=admin_client, isvc=inference_service_patched_replicas)
 
     @pytest.mark.dependency(
-        name="test_serverless_inference_after_scale_to_zero",
-        depends=["test_no_serverless_pods_after_scale_to_zero"],
+        name=INFERENCE_AFTER_SCALE_TEST_NAME,
+        depends=[NO_PODS_AFTER_SCALE_TEST_NAME],
     )
     @pytest.mark.order(3)
     def test_serverless_inference_after_scale_to_zero(self, inference_service_patched_replicas):
@@ -77,8 +80,7 @@ class TestServerlessScaleToZero:
         )
 
     @pytest.mark.dependency(
-        name="test_no_serverless_pods_when_no_traffic",
-        depends=["test_serverless_inference_after_scale_to_zero"],
+        depends=[INFERENCE_AFTER_SCALE_TEST_NAME],
     )
     @pytest.mark.order(4)
     def test_no_serverless_pods_when_no_traffic(self, admin_client, inference_service_patched_replicas):
