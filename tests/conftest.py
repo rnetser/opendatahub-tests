@@ -507,4 +507,4 @@ def fail_if_missing_dependent_operators(admin_client: DynamicClient) -> None:
             missing_operators.append(f"{operator_name} is not installed")
 
     if missing_operators:
-        pytest.fail(missing_operators)
+        pytest.fail(str(missing_operators))
