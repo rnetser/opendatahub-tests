@@ -159,7 +159,7 @@ def verify_inference_response(
 
                 raise InferenceResponseError(
                     "Inference response output format does not match expected output."
-                    f"Expected: {expected_response_text}. Response: {res}"
+                    f"Expected: {expected_response_text}.\nResponse: {res}"
                 )
 
         else:
