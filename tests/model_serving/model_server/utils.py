@@ -151,16 +151,18 @@ def verify_inference_response(
                 response = res[inference.inference_response_key_name]
                 if isinstance(response, list):
                     response = response[0]
-                    if isinstance(response, dict):
-                        response_text = response[inference.inference_response_text_key_name]
-                        assert response_text == expected_response_text, (
-                            f"Expected: {expected_response_text} does not match response: {response_text}"
-                        )
 
-                raise InferenceResponseError(
-                    "Inference response output format does not match expected output."
-                    f"Expected: {expected_response_text}.\nResponse: {res}"
-                )
+                if isinstance(response, dict):
+                    response_text = response[inference.inference_response_text_key_name]
+                    assert response_text == expected_response_text, (
+                        f"Expected: {expected_response_text} does not match response: {response_text}"
+                    )
+
+                else:
+                    raise InferenceResponseError(
+                        "Inference response output does not match expected output format."
+                        f"Expected: {expected_response_text}.\nResponse: {res}"
+                    )
 
         else:
             raise InferenceResponseError(f"Inference response output not found in response. Response: {res}")
