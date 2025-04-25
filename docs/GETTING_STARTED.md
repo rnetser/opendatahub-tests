@@ -69,7 +69,7 @@ To skip RHOAI/ODH-related tests (for example when running in upstream), pass `--
 
 ### Check dependent operators
 By default, `Serveless` (serverless-operator), `Authorino` (authorino-operator) and `Service Mesh` (servicemeshoperator) operators are checked to be installed when  
-running model registry or model server Serverless tests.
+running model server Serverless tests.
 To check only specific operator, pass `--tc=dependent_operators:<operator_name>` to pytest.
 For example, to check only `Serveless` and `Service Mesh` operators, pass `--tc=dependent_operators:serverless-operator,servicemeshoperator`.
 
