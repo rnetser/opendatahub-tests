@@ -1,6 +1,7 @@
 import base64
 import os
 import shutil
+from ast import literal_eval
 from typing import Any, Callable, Generator
 
 import pytest
@@ -231,9 +232,30 @@ def vllm_runtime_image(pytestconfig: pytest.Config) -> str | None:
 
 
 @pytest.fixture(scope="session")
-def non_admin_user_password(admin_client: DynamicClient) -> tuple[str, str] | None:
+def use_unprivileged_client(pytestconfig: pytest.Config) -> bool:
+    _use_unprivileged_client = py_config.get("use_unprivileged_client")
+
+    if isinstance(_use_unprivileged_client, bool):
+        return _use_unprivileged_client
+
+    elif isinstance(_use_unprivileged_client, str):
+        return literal_eval(_use_unprivileged_client)
+
+    else:
+        raise ValueError(
+            "use_unprivileged_client is not defined.\n"
+            "Either pass with `--use-unprivileged-client` or "
+            "set in `use_unprivileged_client` in `tests/global_config.py`"
+        )
+
+
+@pytest.fixture(scope="session")
+def non_admin_user_password(admin_client: DynamicClient, use_unprivileged_client: bool) -> tuple[str, str] | None:
     def _decode_split_data(_data: str) -> list[str]:
         return base64.b64decode(_data).decode().split(",")
+
+    if not use_unprivileged_client:
+        return None
 
     if ldap_Secret := list(
         Secret.get(
@@ -267,17 +289,18 @@ def kubconfig_filepath() -> str:
 @pytest.fixture(scope="session")
 def unprivileged_client(
     admin_client: DynamicClient,
+    use_unprivileged_client: bool,
     kubconfig_filepath: str,
     non_admin_user_password: tuple[str, str],
 ) -> Generator[DynamicClient, Any, Any]:
     """
     Provides none privileged API client. If non_admin_user_password is None, then it will raise.
     """
-    if not py_config.get("use_unprivileged_client"):
+    if not use_unprivileged_client:
         LOGGER.warning("Unprivileged client is not enabled, using admin client")
         yield admin_client
 
-    if non_admin_user_password is None:
+    elif non_admin_user_password is None:
         raise ValueError("Unprivileged user not provisioned")
 
     else:
