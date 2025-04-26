@@ -20,7 +20,7 @@ pytestmark = [
 
 
 @pytest.mark.parametrize(
-    "model_namespace, serving_runtime_from_template, s3_models_inference_service",
+    "unprivileged_model_namespace, serving_runtime_from_template, s3_models_inference_service",
     [
         pytest.param(
             {"name": "serverless-auto-scale"},

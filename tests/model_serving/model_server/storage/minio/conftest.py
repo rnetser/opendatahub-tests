@@ -17,14 +17,14 @@ from utilities.inference_utils import create_isvc
 def kserve_ovms_minio_inference_service(
     request: FixtureRequest,
     unprivileged_client: DynamicClient,
-    model_namespace: Namespace,
+    unprivileged_model_namespace: Namespace,
     minio_data_connection: Secret,
     ovms_kserve_serving_runtime: ServingRuntime,
 ) -> Generator[InferenceService, Any, Any]:
     with create_isvc(
         client=unprivileged_client,
         name=request.param["name"],
-        namespace=model_namespace.name,
+        namespace=unprivileged_model_namespace.name,
         deployment_mode=request.param["deployment-mode"],
         model_format=request.param["model-format"],
         runtime=ovms_kserve_serving_runtime.name,
@@ -55,13 +55,13 @@ def model_mesh_ovms_minio_inference_service(
     unprivileged_client: DynamicClient,
     minio_data_connection: Secret,
     minio_service_account: ServiceAccount,
-    model_namespace: Namespace,
+    unprivileged_model_namespace: Namespace,
     http_s3_ovms_model_mesh_serving_runtime: ServingRuntime,
 ) -> Generator[InferenceService, Any, Any]:
     with create_isvc(
         client=unprivileged_client,
         name=request.param["name"],
-        namespace=model_namespace.name,
+        namespace=unprivileged_model_namespace.name,
         runtime=http_s3_ovms_model_mesh_serving_runtime.name,
         model_service_account=minio_service_account.name,
         storage_key=minio_data_connection.name,

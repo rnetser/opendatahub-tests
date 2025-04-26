@@ -15,13 +15,13 @@ from utilities.inference_utils import create_isvc
 def model_car_serverless_inference_service(
     request: FixtureRequest,
     unprivileged_client: DynamicClient,
-    model_namespace: Namespace,
+    unprivileged_model_namespace: Namespace,
     serving_runtime_from_template: ServingRuntime,
 ) -> Generator[InferenceService, Any, Any]:
     with create_isvc(
         client=unprivileged_client,
         name="serverless-model-car",
-        namespace=model_namespace.name,
+        namespace=unprivileged_model_namespace.name,
         runtime=serving_runtime_from_template.name,
         storage_uri=request.param["storage-uri"],
         model_format=serving_runtime_from_template.instance.spec.supportedModelFormats[0].name,

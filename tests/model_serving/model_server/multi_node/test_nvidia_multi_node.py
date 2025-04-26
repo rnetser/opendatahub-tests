@@ -26,7 +26,7 @@ LOGGER = get_logger(name=__name__)
 
 
 @pytest.mark.parametrize(
-    "model_namespace, models_bucket_downloaded_model_data, model_pvc, multi_node_inference_service",
+    "unprivileged_model_namespace, models_bucket_downloaded_model_data, model_pvc, multi_node_inference_service",
     [
         pytest.param(
             {"name": "gpu-multi-node"},
