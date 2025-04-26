@@ -14,12 +14,12 @@ from utilities.inference_utils import create_isvc
 @pytest.fixture(scope="class")
 def model_car_serverless_inference_service(
     request: FixtureRequest,
-    admin_client: DynamicClient,
+    unprivileged_client: DynamicClient,
     model_namespace: Namespace,
     serving_runtime_from_template: ServingRuntime,
 ) -> Generator[InferenceService, Any, Any]:
     with create_isvc(
-        client=admin_client,
+        client=unprivileged_client,
         name="serverless-model-car",
         namespace=model_namespace.name,
         runtime=serving_runtime_from_template.name,

@@ -58,7 +58,7 @@ LOGGER = get_logger(name=__name__)
 @contextmanager
 def create_ns(
     name: str | None = None,
-    admin_client: DynamicClient | None = None,
+    client: DynamicClient | None = None,
     unprivileged_client: DynamicClient | None = None,
     teardown: bool = True,
     delete_timeout: int = Timeout.TIMEOUT_4MIN,
@@ -79,7 +79,7 @@ def create_ns(
     Args:
         name (str): namespace name.
             Can be overwritten by `request.param["name"]`
-        admin_client (DynamicClient): admin client.
+        client (DynamicClient): admin client.
         unprivileged_client (UnprivilegedClient): unprivileged client.
         teardown (bool): should run resource teardown
         delete_timeout (int): delete timeout.
@@ -104,7 +104,7 @@ def create_ns(
 
     namespace_kwargs = {
         "name": name,
-        "client": admin_client,
+        "client": client,
         "teardown": teardown,
         "delete_timeout": delete_timeout,
         "label": labels or {},
@@ -126,7 +126,7 @@ def create_ns(
             yield project
 
             if teardown:
-                wait_for_serverless_pods_deletion(resource=project, admin_client=admin_client)
+                wait_for_serverless_pods_deletion(resource=project, admin_client=client)
 
     else:
         with Namespace(**namespace_kwargs) as ns:
@@ -134,7 +134,7 @@ def create_ns(
             yield ns
 
             if teardown:
-                wait_for_serverless_pods_deletion(resource=ns, admin_client=admin_client)
+                wait_for_serverless_pods_deletion(resource=ns, admin_client=client)
 
 
 def wait_for_replicas_in_deployment(deployment: Deployment, replicas: int) -> None:

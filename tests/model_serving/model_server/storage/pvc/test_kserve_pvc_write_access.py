@@ -62,10 +62,10 @@ class TestKservePVCWriteAccess:
         ],
         indirect=True,
     )
-    def test_isvc_read_only_annotation_false(self, admin_client, patched_read_only_isvc):
+    def test_isvc_read_only_annotation_false(self, unprivileged_client, patched_read_only_isvc):
         """Test that write access is allowed when the read only annotation is set to false"""
         new_pod = get_pods_by_isvc_label(
-            client=admin_client,
+            client=unprivileged_client,
             isvc=patched_read_only_isvc,
         )[0]
         new_pod.execute(
@@ -82,10 +82,10 @@ class TestKservePVCWriteAccess:
         ],
         indirect=True,
     )
-    def test_isvc_read_only_annotation_true(self, admin_client, patched_read_only_isvc):
+    def test_isvc_read_only_annotation_true(self, unprivileged_client, patched_read_only_isvc):
         """ """
         new_pod = get_pods_by_isvc_label(
-            client=admin_client,
+            client=unprivileged_client,
             isvc=patched_read_only_isvc,
         )[0]
         with pytest.raises(ExecOnPodError):

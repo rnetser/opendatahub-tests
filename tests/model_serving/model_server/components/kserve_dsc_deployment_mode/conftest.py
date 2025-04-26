@@ -57,13 +57,13 @@ def patched_default_deployment_mode_in_dsc(
 @pytest.fixture(scope="class")
 def ovms_inference_service(
     request: FixtureRequest,
-    admin_client: DynamicClient,
+    unprivileged_client: DynamicClient,
     model_namespace: Namespace,
     ovms_kserve_serving_runtime: ServingRuntime,
     ci_endpoint_s3_secret: Secret,
 ) -> Generator[InferenceService, Any, Any]:
     with create_isvc(
-        client=admin_client,
+        client=unprivileged_client,
         name=request.param["name"],
         namespace=model_namespace.name,
         runtime=ovms_kserve_serving_runtime.name,

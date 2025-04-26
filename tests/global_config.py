@@ -5,6 +5,8 @@ applications_namespace: str = "redhat-ods-applications"  # overwritten in confte
 dsc_name: str = "default-dsc"
 dsci_name: str = "default-dsci"
 
+use_unprivileged_client: bool = True
+
 for _dir in dir():
     val = locals()[_dir]
     if type(val) not in [bool, list, dict, str, int]:

@@ -111,7 +111,7 @@ def model_namespace(
         ns.clean_up()
     else:
         with create_ns(
-            admin_client=admin_client,
+            client=admin_client,
             pytest_request=request,
             teardown=teardown_resources,
         ) as ns:
@@ -275,6 +275,10 @@ def unprivileged_client(
     """
     Provides none privileged API client. If non_admin_user_password is None, then it will raise.
     """
+    if not py_config.get("use_unprivileged_client"):
+        LOGGER.warning("Unprivileged client is not enabled, using admin client")
+        yield admin_client
+
     if non_admin_user_password is None:
         raise ValueError("Unprivileged user not provisioned")
 
@@ -380,7 +384,7 @@ def unprivileged_model_namespace(
 def minio_namespace(admin_client: DynamicClient) -> Generator[Namespace, Any, Any]:
     with create_ns(
         name=f"{MinIo.Metadata.NAME}-{shortuuid.uuid().lower()}",
-        admin_client=admin_client,
+        client=admin_client,
     ) as ns:
         yield ns
 

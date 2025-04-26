@@ -42,7 +42,7 @@ def skip_if_no_gpu_nodes(nvidia_gpu_nodes: list[Node]) -> None:
 @pytest.fixture(scope="class")
 def models_bucket_downloaded_model_data(
     request: FixtureRequest,
-    admin_client: DynamicClient,
+    unprivileged_client: DynamicClient,
     model_namespace: Namespace,
     models_s3_bucket_name: str,
     model_pvc: PersistentVolumeClaim,
@@ -52,7 +52,7 @@ def models_bucket_downloaded_model_data(
     models_s3_bucket_region: str,
 ) -> str:
     return download_model_data(
-        admin_client=admin_client,
+        client=unprivileged_client,
         aws_access_key_id=aws_access_key_id,
         aws_secret_access_key=aws_secret_access_key,
         model_namespace=model_namespace.name,
@@ -67,11 +67,11 @@ def models_bucket_downloaded_model_data(
 @pytest.fixture(scope="class")
 def multi_node_serving_runtime(
     request: FixtureRequest,
-    admin_client: DynamicClient,
+    unprivileged_client: DynamicClient,
     model_namespace: Namespace,
 ) -> Generator[ServingRuntime, Any, Any]:
     with ServingRuntimeFromTemplate(
-        client=admin_client,
+        client=unprivileged_client,
         name="vllm-multinode-runtime",  # TODO: rename servingruntime when RHOAIENG-16147 is resolved
         namespace=model_namespace.name,
         template_name="vllm-multinode-runtime-template",
@@ -84,13 +84,13 @@ def multi_node_serving_runtime(
 @pytest.fixture(scope="class")
 def multi_node_inference_service(
     request: FixtureRequest,
-    admin_client: DynamicClient,
+    unprivileged_client: DynamicClient,
     multi_node_serving_runtime: ServingRuntime,
     model_pvc: PersistentVolumeClaim,
     models_bucket_downloaded_model_data: str,
 ) -> Generator[InferenceService, Any, Any]:
     with create_isvc(
-        client=admin_client,
+        client=unprivileged_client,
         name=request.param["name"],
         namespace=multi_node_serving_runtime.namespace,
         runtime=multi_node_serving_runtime.name,
@@ -102,7 +102,7 @@ def multi_node_inference_service(
         wait_for_predictor_pods=False,
     ) as isvc:
         wait_for_inference_deployment_replicas(
-            client=admin_client,
+            client=unprivileged_client,
             isvc=isvc,
             expected_num_deployments=2,
             runtime_name=multi_node_serving_runtime.name,
@@ -112,11 +112,11 @@ def multi_node_inference_service(
 
 @pytest.fixture(scope="class")
 def multi_node_predictor_pods_scope_class(
-    admin_client: DynamicClient,
+    unprivileged_client: DynamicClient,
     multi_node_inference_service: InferenceService,
 ) -> list[Pod]:
     return get_pods_by_isvc_label(
-        client=admin_client,
+        client=unprivileged_client,
         isvc=multi_node_inference_service,
     )
 
@@ -170,9 +170,9 @@ def ray_ca_tls_secret(admin_client: DynamicClient) -> Secret:
 
 
 @pytest.fixture()
-def ray_tls_secret(admin_client: DynamicClient, multi_node_inference_service: InferenceService) -> Secret:
+def ray_tls_secret(unprivileged_client: DynamicClient, multi_node_inference_service: InferenceService) -> Secret:
     return Secret(
-        client=admin_client,
+        client=unprivileged_client,
         name="ray-tls",
         namespace=multi_node_inference_service.namespace,
     )
@@ -192,17 +192,17 @@ def deleted_serving_runtime(
 @pytest.fixture()
 def deleted_multi_node_pod(
     request: FixtureRequest,
-    admin_client: DynamicClient,
+    unprivileged_client: DynamicClient,
     multi_node_inference_service: InferenceService,
 ) -> None:
     delete_multi_node_pod_by_role(
-        client=admin_client,
+        client=unprivileged_client,
         isvc=multi_node_inference_service,
         role=request.param["pod-role"],
     )
 
     verify_no_failed_pods(
-        client=admin_client,
+        client=unprivileged_client,
         isvc=multi_node_inference_service,
         timeout=Timeout.TIMEOUT_10MIN,
     )

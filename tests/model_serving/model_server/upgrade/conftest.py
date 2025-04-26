@@ -31,11 +31,11 @@ LOGGER = get_logger(name=__name__)
 @pytest.fixture(scope="session")
 def model_namespace_scope_session(
     pytestconfig: pytest.Config,
-    admin_client: DynamicClient,
+    unprivileged_client: DynamicClient,
     teardown_resources: bool,
 ) -> Generator[Namespace, Any, Any]:
     name = "upgrade-model-server"
-    ns = Namespace(client=admin_client, name=name)
+    ns = Namespace(client=unprivileged_client, name=name)
 
     if pytestconfig.option.post_upgrade:
         yield ns
@@ -43,7 +43,7 @@ def model_namespace_scope_session(
 
     else:
         with create_ns(
-            admin_client=admin_client,
+            client=unprivileged_client,
             name=name,
             model_mesh_enabled=True,
             add_dashboard_label=True,
@@ -55,7 +55,7 @@ def model_namespace_scope_session(
 @pytest.fixture(scope="session")
 def models_endpoint_s3_secret_scope_session(
     pytestconfig: pytest.Config,
-    admin_client: DynamicClient,
+    unprivileged_client: DynamicClient,
     model_namespace_scope_session: Namespace,
     aws_access_key_id: str,
     aws_secret_access_key: str,
@@ -65,7 +65,7 @@ def models_endpoint_s3_secret_scope_session(
     teardown_resources: bool,
 ) -> Generator[Secret, Any, Any]:
     secret_kwargs = {
-        "client": admin_client,
+        "client": unprivileged_client,
         "name": "models-bucket-secret",
         "namespace": model_namespace_scope_session.name,
     }
@@ -92,7 +92,7 @@ def models_endpoint_s3_secret_scope_session(
 @pytest.fixture(scope="session")
 def ci_endpoint_s3_secret_scope_session(
     pytestconfig: pytest.Config,
-    admin_client: DynamicClient,
+    unprivileged_client: DynamicClient,
     model_namespace_scope_session: Namespace,
     aws_access_key_id: str,
     aws_secret_access_key: str,
@@ -102,7 +102,7 @@ def ci_endpoint_s3_secret_scope_session(
     teardown_resources: bool,
 ) -> Generator[Secret, Any, Any]:
     secret_kwargs = {
-        "client": admin_client,
+        "client": unprivileged_client,
         "name": "ci-bucket-secret",
         "namespace": model_namespace_scope_session.name,
     }
@@ -129,12 +129,12 @@ def ci_endpoint_s3_secret_scope_session(
 @pytest.fixture(scope="session")
 def model_mesh_model_service_account_scope_session(
     pytestconfig: pytest.Config,
-    admin_client: DynamicClient,
+    unprivileged_client: DynamicClient,
     ci_endpoint_s3_secret_scope_session: Secret,
     teardown_resources: bool,
 ) -> Generator[ServiceAccount, Any, Any]:
     sa_kwargs = {
-        "client": admin_client,
+        "client": unprivileged_client,
         "name": "models-bucket-sa",
         "namespace": ci_endpoint_s3_secret_scope_session.namespace,
     }
@@ -157,12 +157,12 @@ def model_mesh_model_service_account_scope_session(
 @pytest.fixture(scope="session")
 def openvino_serverless_serving_runtime_scope_session(
     pytestconfig: pytest.Config,
-    admin_client: DynamicClient,
+    unprivileged_client: DynamicClient,
     model_namespace_scope_session: Namespace,
     teardown_resources: bool,
 ) -> Generator[ServingRuntime, Any, Any]:
     runtime_kwargs = {
-        "client": admin_client,
+        "client": unprivileged_client,
         "name": "onnx-serverless",
         "namespace": model_namespace_scope_session.name,
     }
@@ -193,13 +193,13 @@ def openvino_serverless_serving_runtime_scope_session(
 @pytest.fixture(scope="session")
 def ovms_serverless_inference_service_scope_session(
     pytestconfig: pytest.Config,
-    admin_client: DynamicClient,
+    unprivileged_client: DynamicClient,
     openvino_serverless_serving_runtime_scope_session: ServingRuntime,
     ci_endpoint_s3_secret_scope_session: Secret,
     teardown_resources: bool,
 ) -> Generator[InferenceService, Any, Any]:
     isvc_kwargs = {
-        "client": admin_client,
+        "client": unprivileged_client,
         "name": openvino_serverless_serving_runtime_scope_session.name,
         "namespace": openvino_serverless_serving_runtime_scope_session.namespace,
     }
@@ -227,12 +227,12 @@ def ovms_serverless_inference_service_scope_session(
 @pytest.fixture(scope="session")
 def caikit_raw_serving_runtime_scope_session(
     pytestconfig: pytest.Config,
-    admin_client: DynamicClient,
+    unprivileged_client: DynamicClient,
     model_namespace_scope_session: Namespace,
     teardown_resources: bool,
 ) -> Generator[ServingRuntime, Any, Any]:
     runtime_kwargs = {
-        "client": admin_client,
+        "client": unprivileged_client,
         "name": "caikit-raw",
         "namespace": model_namespace_scope_session.name,
     }
@@ -257,13 +257,13 @@ def caikit_raw_serving_runtime_scope_session(
 @pytest.fixture(scope="session")
 def caikit_raw_inference_service_scope_session(
     pytestconfig: pytest.Config,
-    admin_client: DynamicClient,
+    unprivileged_client: DynamicClient,
     caikit_raw_serving_runtime_scope_session: ServingRuntime,
     models_endpoint_s3_secret_scope_session: Secret,
     teardown_resources: bool,
 ) -> Generator[InferenceService, Any, Any]:
     isvc_kwargs = {
-        "client": admin_client,
+        "client": unprivileged_client,
         "name": caikit_raw_serving_runtime_scope_session.name,
         "namespace": caikit_raw_serving_runtime_scope_session.namespace,
     }
@@ -292,12 +292,12 @@ def caikit_raw_inference_service_scope_session(
 @pytest.fixture(scope="session")
 def s3_ovms_model_mesh_serving_runtime_scope_session(
     pytestconfig: pytest.Config,
-    admin_client: DynamicClient,
+    unprivileged_client: DynamicClient,
     model_namespace_scope_session: Namespace,
     teardown_resources: bool,
 ) -> Generator[ServingRuntime, Any, Any]:
     runtime_kwargs = {
-        "client": admin_client,
+        "client": unprivileged_client,
         "name": "ovms-model-mesh",
         "namespace": model_namespace_scope_session.name,
     }
@@ -328,14 +328,14 @@ def s3_ovms_model_mesh_serving_runtime_scope_session(
 @pytest.fixture(scope="session")
 def openvino_model_mesh_inference_service_scope_session(
     pytestconfig: pytest.Config,
-    admin_client: DynamicClient,
+    unprivileged_client: DynamicClient,
     s3_ovms_model_mesh_serving_runtime_scope_session: ServingRuntime,
     ci_endpoint_s3_secret_scope_session: Secret,
     model_mesh_model_service_account_scope_session: ServiceAccount,
     teardown_resources: bool,
 ) -> Generator[InferenceService, Any, Any]:
     isvc_kwargs = {
-        "client": admin_client,
+        "client": unprivileged_client,
         "name": s3_ovms_model_mesh_serving_runtime_scope_session.name,
         "namespace": s3_ovms_model_mesh_serving_runtime_scope_session.namespace,
     }
@@ -364,12 +364,12 @@ def openvino_model_mesh_inference_service_scope_session(
 @pytest.fixture(scope="session")
 def model_service_account_scope_session(
     pytestconfig: pytest.Config,
-    admin_client: DynamicClient,
+    unprivileged_client: DynamicClient,
     ci_endpoint_s3_secret_scope_session: Secret,
     teardown_resources: bool,
 ) -> Generator[ServiceAccount, Any, Any]:
     sa_kwargs = {
-        "client": admin_client,
+        "client": unprivileged_client,
         "name": "upgrade-models-bucket-sa",
         "namespace": ci_endpoint_s3_secret_scope_session.namespace,
     }
@@ -382,9 +382,7 @@ def model_service_account_scope_session(
 
     else:
         with ServiceAccount(
-            client=admin_client,
-            namespace=ci_endpoint_s3_secret_scope_session.namespace,
-            name="upgrade-models-bucket-sa",
+            **sa_kwargs,
             secrets=[{"name": ci_endpoint_s3_secret_scope_session.name}],
             teardown=teardown_resources,
         ) as sa:
@@ -394,12 +392,12 @@ def model_service_account_scope_session(
 @pytest.fixture(scope="session")
 def http_view_role_scope_session(
     pytestconfig: pytest.Config,
-    admin_client: DynamicClient,
+    unprivileged_client: DynamicClient,
     ovms_authenticated_serverless_inference_service_scope_session: InferenceService,
     teardown_resources: bool,
 ) -> Generator[Role, Any, Any]:
     role_kwargs = {
-        "client": admin_client,
+        "client": unprivileged_client,
         "name": f"{ovms_authenticated_serverless_inference_service_scope_session.name}-view",
     }
 
@@ -425,14 +423,14 @@ def http_view_role_scope_session(
 @pytest.fixture(scope="session")
 def http_role_binding_scope_session(
     pytestconfig: pytest.Config,
-    admin_client: DynamicClient,
+    unprivileged_client: DynamicClient,
     http_view_role_scope_session: Role,
     model_service_account_scope_session: ServiceAccount,
     ovms_authenticated_serverless_inference_service_scope_session: InferenceService,
     teardown_resources: bool,
 ) -> Generator[RoleBinding, Any, Any]:
     rb_kwargs = {
-        "client": admin_client,
+        "client": unprivileged_client,
         "name": f"{model_service_account_scope_session.name}-view",
         "namespace": ovms_authenticated_serverless_inference_service_scope_session.namespace,
     }
@@ -465,13 +463,13 @@ def http_inference_token_scope_session(
 @pytest.fixture(scope="session")
 def ovms_authenticated_serverless_inference_service_scope_session(
     pytestconfig: pytest.Config,
-    admin_client: DynamicClient,
+    unprivileged_client: DynamicClient,
     openvino_serverless_serving_runtime_scope_session: ServingRuntime,
     ci_endpoint_s3_secret_scope_session: Secret,
     teardown_resources: bool,
 ) -> Generator[InferenceService, Any, Any]:
     isvc_kwargs = {
-        "client": admin_client,
+        "client": unprivileged_client,
         "name": f"{openvino_serverless_serving_runtime_scope_session.name}-auth",
         "namespace": openvino_serverless_serving_runtime_scope_session.namespace,
     }

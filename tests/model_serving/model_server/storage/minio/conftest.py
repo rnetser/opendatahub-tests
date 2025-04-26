@@ -16,13 +16,13 @@ from utilities.inference_utils import create_isvc
 @pytest.fixture(scope="class")
 def kserve_ovms_minio_inference_service(
     request: FixtureRequest,
-    admin_client: DynamicClient,
+    unprivileged_client: DynamicClient,
     model_namespace: Namespace,
     minio_data_connection: Secret,
     ovms_kserve_serving_runtime: ServingRuntime,
 ) -> Generator[InferenceService, Any, Any]:
     with create_isvc(
-        client=admin_client,
+        client=unprivileged_client,
         name=request.param["name"],
         namespace=model_namespace.name,
         deployment_mode=request.param["deployment-mode"],
@@ -38,10 +38,10 @@ def kserve_ovms_minio_inference_service(
 
 @pytest.fixture(scope="class")
 def minio_service_account(
-    admin_client: DynamicClient, minio_data_connection: Secret
+    unprivileged_client: DynamicClient, minio_data_connection: Secret
 ) -> Generator[ServiceAccount, Any, Any]:
     with ServiceAccount(
-        client=admin_client,
+        client=unprivileged_client,
         namespace=minio_data_connection.namespace,
         name="ci-models-bucket-sa",
         secrets=[{"name": minio_data_connection.name}],
@@ -52,14 +52,14 @@ def minio_service_account(
 @pytest.fixture(scope="class")
 def model_mesh_ovms_minio_inference_service(
     request: FixtureRequest,
-    admin_client: DynamicClient,
+    unprivileged_client: DynamicClient,
     minio_data_connection: Secret,
     minio_service_account: ServiceAccount,
     model_namespace: Namespace,
     http_s3_ovms_model_mesh_serving_runtime: ServingRuntime,
 ) -> Generator[InferenceService, Any, Any]:
     with create_isvc(
-        client=admin_client,
+        client=unprivileged_client,
         name=request.param["name"],
         namespace=model_namespace.name,
         runtime=http_s3_ovms_model_mesh_serving_runtime.name,
