@@ -42,7 +42,7 @@ def skip_if_no_gpu_nodes(nvidia_gpu_nodes: list[Node]) -> None:
 @pytest.fixture(scope="class")
 def models_bucket_downloaded_model_data(
     request: FixtureRequest,
-    unprivileged_client: DynamicClient,
+    admin_client: DynamicClient,
     unprivileged_model_namespace: Namespace,
     models_s3_bucket_name: str,
     model_pvc: PersistentVolumeClaim,
@@ -52,7 +52,7 @@ def models_bucket_downloaded_model_data(
     models_s3_bucket_region: str,
 ) -> str:
     return download_model_data(
-        client=unprivileged_client,
+        client=admin_client,
         aws_access_key_id=aws_access_key_id,
         aws_secret_access_key=aws_secret_access_key,
         model_namespace=unprivileged_model_namespace.name,
