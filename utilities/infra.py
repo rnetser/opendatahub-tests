@@ -9,7 +9,11 @@ import kubernetes
 import pytest
 from _pytest.fixtures import FixtureRequest
 from kubernetes.dynamic import DynamicClient
-from kubernetes.dynamic.exceptions import NotFoundError, ResourceNotFoundError, ResourceNotUniqueError
+from kubernetes.dynamic.exceptions import (
+    NotFoundError,
+    ResourceNotFoundError,
+    ResourceNotUniqueError,
+)
 from ocp_resources.catalog_source import CatalogSource
 from ocp_resources.cluster_service_version import ClusterServiceVersion
 from ocp_resources.config_map import ConfigMap
@@ -104,7 +108,7 @@ def create_ns(
 
     namespace_kwargs = {
         "name": name,
-        "client": client,
+        "client": client or unprivileged_client,
         "teardown": teardown,
         "delete_timeout": delete_timeout,
         "label": labels or {},
@@ -123,6 +127,16 @@ def create_ns(
         with ProjectRequest(name=name, client=unprivileged_client, teardown=teardown):
             project = Project(**namespace_kwargs)
             project.wait_for_status(status=project.Status.ACTIVE, timeout=Timeout.TIMEOUT_2MIN)
+            if _labels := namespace_kwargs.get("label", {}):
+                # To patch the namespace, admin client is required
+                ns = Namespace(client=get_client(), name=name)
+                ResourceEditor({
+                    ns: {
+                        "metadata": {
+                            "labels": _labels,
+                        }
+                    }
+                }).update()
             yield project
 
             if teardown:
