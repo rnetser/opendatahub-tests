@@ -85,13 +85,13 @@ def current_client_token(admin_client: DynamicClient) -> str:
 
 @pytest.fixture(scope="session")
 def teardown_resources(pytestconfig: pytest.Config) -> bool:
-    delete_pre_upgrade_resources = True
+    delete_resources = True
 
     if pytestconfig.option.pre_upgrade:
-        if delete_pre_upgrade_resources := pytestconfig.option.delete_pre_upgrade_resources:
+        if delete_resources := pytestconfig.option.delete_pre_upgrade_resources:
             LOGGER.warning("Upgrade resources will be deleted")
 
-    return delete_pre_upgrade_resources
+    return delete_resources
 
 
 @pytest.fixture(scope="class")
