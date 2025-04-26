@@ -19,7 +19,7 @@ pytestmark = [pytest.mark.serverless, pytest.mark.usefixtures("skip_if_no_nfs_st
     "pvc_inference_service",
     [
         pytest.param(
-            {"name": "pvc-rxw-access"},
+            {"name": "pvc-rwx-access"},
             {"model-dir": "test-dir"},
             {"access-modes": "ReadWriteMany", "storage-class-name": StorageClassName.NFS, "pvc-size": "4Gi"},
             KSERVE_OVMS_SERVING_RUNTIME_PARAMS,

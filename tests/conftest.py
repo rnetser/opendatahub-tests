@@ -24,7 +24,6 @@ from simple_logger.logger import get_logger
 
 from utilities.data_science_cluster_utils import update_components_in_dsc
 from utilities.exceptions import ClusterLoginError
-from utilities.general import get_s3_secret_dict
 from utilities.infra import (
     verify_cluster_sanity,
     create_ns,
@@ -35,14 +34,13 @@ from utilities.infra import (
 )
 from utilities.constants import (
     AcceleratorType,
-    ApiGroups,
     DscComponents,
     Labels,
     MinIo,
     Protocols,
 )
 from utilities.infra import update_configmap_data
-
+from utilities.minio import create_minio_data_connection_secret
 
 LOGGER = get_logger(name=__name__)
 
@@ -455,29 +453,13 @@ def minio_data_connection(
     model_namespace: Namespace,
     minio_service: Service,
 ) -> Generator[Secret, Any, Any]:
-    data_dict = get_s3_secret_dict(
-        aws_access_key=MinIo.Credentials.ACCESS_KEY_VALUE,
-        aws_secret_access_key=MinIo.Credentials.SECRET_KEY_VALUE,  # pragma: allowlist secret
+    with create_minio_data_connection_secret(
+        minio_service=minio_service,
+        model_namespace=model_namespace.name,
         aws_s3_bucket=request.param["bucket"],
-        aws_s3_endpoint=f"{Protocols.HTTP}://{minio_service.instance.spec.clusterIP}:{str(MinIo.Metadata.DEFAULT_PORT)}",  # noqa: E501
-        aws_s3_region="us-south",
-    )
-
-    with Secret(
         client=admin_client,
-        name="aws-connection-minio-data-connection",
-        namespace=model_namespace.name,
-        data_dict=data_dict,
-        label={
-            Labels.OpenDataHub.DASHBOARD: "true",
-            Labels.OpenDataHubIo.MANAGED: "true",
-        },
-        annotations={
-            f"{ApiGroups.OPENDATAHUB_IO}/connection-type": "s3",
-            "openshift.io/display-name": "Minio Data Connection",
-        },
-    ) as minio_secret:
-        yield minio_secret
+    ) as secret:
+        yield secret
 
 
 @pytest.fixture(scope="session")
