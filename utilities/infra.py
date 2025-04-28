@@ -627,7 +627,6 @@ def verify_no_failed_pods(
 
     """
     wait_for_isvc_pods(client=client, isvc=isvc, runtime_name=runtime_name)
-    deployment_mode = isvc.instance.metadata.annotations.get("serving.kserve.io/deploymentMode")
 
     LOGGER.info("Verifying no failed pods")
     for pods in TimeoutSampler(
@@ -645,7 +644,9 @@ def verify_no_failed_pods(
         container_terminated_base_errors = [Resource.Status.ERROR]
 
         # For Model Mesh, if image pulling takes longer, pod may be in CrashLoopBackOff state but recover with retries.
-        if deployment_mode != KServeDeploymentType.MODEL_MESH:
+        if (
+            deployment_mode := isvc.instance.metadata.annotations.get("serving.kserve.io/deploymentMode")
+        ) and deployment_mode != KServeDeploymentType.MODEL_MESH:
             container_wait_base_errors.append(Resource.Status.CRASH_LOOPBACK_OFF)
             container_terminated_base_errors.append(Resource.Status.CRASH_LOOPBACK_OFF)
 
