@@ -471,6 +471,7 @@ def minio_service(admin_client: DynamicClient, minio_namespace: Namespace) -> Ge
         selector={
             Labels.Openshift.APP: MinIo.Metadata.NAME,
         },
+        session_affinity="ClientIP",
     ) as minio_service:
         yield minio_service
 
