@@ -440,6 +440,12 @@ def minio_pod(
                 ],
                 "image": request.param.get("image"),
                 "name": MinIo.Metadata.NAME,
+                "securityContext": {
+                    "allowPrivilegeEscalation": False,
+                    "capabilities": {"drop": ["ALL"]},
+                    "runAsNonRoot": True,
+                    "seccompProfile": {"type": "RuntimeDefault"},
+                },
             }
         ],
         label=pod_labels,
