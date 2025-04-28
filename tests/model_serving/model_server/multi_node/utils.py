@@ -90,10 +90,10 @@ def delete_multi_node_pod_by_role(client: DynamicClient, isvc: InferenceService,
 
     for pod in pods:
         if role == WORKER_POD_ROLE and WORKER_POD_ROLE in pod.name:
-            pod.delete()
+            pod.delete(wait=True)
 
         elif role == HEAD_POD_ROLE and WORKER_POD_ROLE not in pod.name:
-            pod.delete()
+            pod.delete(wait=True)
 
 
 @retry(wait_timeout=Timeout.TIMEOUT_2MIN, sleep=5)
