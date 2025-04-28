@@ -122,3 +122,26 @@ def get_pods_by_isvc_generation(client: DynamicClient, isvc: InferenceService) -
         return pods
 
     raise ResourceNotFoundError(f"InferenceService {isvc.name} generation {isvc_generation} has no pods")
+
+
+def is_arg_in_model_spec(client: DynamicClient, isvc: InferenceService, arg: str) -> bool:
+    """
+    Check if arg is in model spec; spec.model.args are only added to head pod
+
+    Args:
+        client (DynamicClient): OCP Client to use.
+        isvc (InferenceService): InferenceService object.
+        arg (str): arg to check
+
+    Returns:
+        bool: True if arg is in model spec, False otherwise
+
+    Raises:
+        ResourceNotFoundError if no head pod found.
+
+    """
+    for pod in get_pods_by_isvc_generation(client=client, isvc=isvc):
+        if WORKER_POD_ROLE not in pod.name:
+            return arg in pod.instance.spec.containers[0].args
+
+    raise ResourceNotFoundError(f"InferenceService {isvc.name} has no head pod")

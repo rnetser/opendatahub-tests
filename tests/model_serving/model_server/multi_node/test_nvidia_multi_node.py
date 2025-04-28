@@ -9,6 +9,7 @@ from tests.model_serving.model_server.multi_node.constants import (
 )
 from tests.model_serving.model_server.multi_node.utils import (
     get_pods_by_isvc_generation,
+    is_arg_in_model_spec,
     verify_nvidia_gpu_status,
     verify_ray_status,
 )
@@ -230,12 +231,14 @@ class TestMultiNode:
         [pytest.param({"spec": {"model": {"args": [MAX_NUM_BATCHED_TOKENS_ARG]}}})],
         indirect=True,
     )
-    def test_model_args_added_to_vllm_command(self, admin_client, patched_multi_node_spec):
+    @pytest.mark.dependency(name="test_model_args_added_to_vllm_command")
+    def test_model_args_added_to_model_spec(self, admin_client, patched_multi_node_spec):
         """Test model args added to vllm command"""
-        for pod in get_pods_by_isvc_generation(client=admin_client, isvc=patched_multi_node_spec):
-            # spec.model.args are only added to head pod
-            if (
-                WORKER_POD_ROLE not in pod.name
-                and MAX_NUM_BATCHED_TOKENS_ARG not in pod.instance.spec.containers[0].args
-            ):
-                pytest.fail(f"{MAX_NUM_BATCHED_TOKENS_ARG} model args is not set in {pod.name} pod's spec.model.args")
+        if not is_arg_in_model_spec(client=admin_client, isvc=patched_multi_node_spec, arg=MAX_NUM_BATCHED_TOKENS_ARG):
+            pytest.fail(f"{MAX_NUM_BATCHED_TOKENS_ARG} model args is not set in spec")
+
+    @pytest.mark.dependency(depends=["test_model_args_added_to_vllm_command"])
+    def test_model_args_removed_from_model_spec(self, admin_client, multi_node_inference_service):
+        """Test model args removed from vllm command"""
+        if is_arg_in_model_spec(client=admin_client, isvc=multi_node_inference_service, arg=MAX_NUM_BATCHED_TOKENS_ARG):
+            pytest.fail(f"{MAX_NUM_BATCHED_TOKENS_ARG} model args is not removed from spec")
