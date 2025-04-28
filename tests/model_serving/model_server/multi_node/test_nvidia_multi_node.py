@@ -23,6 +23,7 @@ pytestmark = [
 
 
 LOGGER = get_logger(name=__name__)
+MAX_NUM_BATCHED_TOKENS_ARG: str = "--max-num-batched-tokens=256"
 
 
 @pytest.mark.parametrize(
@@ -168,17 +169,26 @@ class TestMultiNode:
         )
 
     @pytest.mark.parametrize(
-        "patched_multi_node_worker_spec",
-        [pytest.param({"worker-spec": {"pipelineParallelSize": 2, "tensorParallelSize": 4}})],
+        "patched_multi_node_spec",
+        [
+            pytest.param({
+                "spec": {
+                    "workerSpec": {
+                        "pipelineParallelSize": 2,
+                        "tensorParallelSize": 4,
+                    }
+                }
+            })
+        ],
         indirect=True,
     )
-    def test_multi_node_tensor_parallel_size_propagation(self, admin_client, patched_multi_node_worker_spec):
+    def test_multi_node_tensor_parallel_size_propagation(self, admin_client, patched_multi_node_spec):
         """Test multi node tensor parallel size (number of GPUs per pod) propagation to pod config"""
-        isvc_parallel_size = str(patched_multi_node_worker_spec.instance.spec.predictor.workerSpec.tensorParallelSize)
+        isvc_parallel_size = str(patched_multi_node_spec.instance.spec.predictor.workerSpec.tensorParallelSize)
 
         failed_pods: list[dict[str, Any]] = []
 
-        for pod in get_pods_by_isvc_generation(client=admin_client, isvc=patched_multi_node_worker_spec):
+        for pod in get_pods_by_isvc_generation(client=admin_client, isvc=patched_multi_node_spec):
             pod_resources = pod.instance.spec.containers[0].resources
             if not (
                 isvc_parallel_size
@@ -191,17 +201,41 @@ class TestMultiNode:
             pytest.fail(f"Failed pods resources : {failed_pods}, expected tesnor parallel size {isvc_parallel_size}")
 
     @pytest.mark.parametrize(
-        "patched_multi_node_worker_spec",
-        [pytest.param({"worker-spec": {"pipelineParallelSize": 2, "tensorParallelSize": 1}})],
+        "patched_multi_node_spec",
+        [
+            pytest.param({
+                "spec": {
+                    "workerSpec": {
+                        "pipelineParallelSize": 2,
+                        "tensorParallelSize": 1,
+                    }
+                }
+            })
+        ],
         indirect=True,
     )
-    def test_multi_node_pipeline_parallel_size_propagation(self, admin_client, patched_multi_node_worker_spec):
+    def test_multi_node_pipeline_parallel_size_propagation(self, admin_client, patched_multi_node_spec):
         """Test multi node pipeline parallel size (number of pods) propagation to pod config"""
-        isvc_parallel_size = patched_multi_node_worker_spec.instance.spec.predictor.workerSpec.pipelineParallelSize
-        isvc_num_pods = get_pods_by_isvc_generation(client=admin_client, isvc=patched_multi_node_worker_spec)
+        isvc_parallel_size = patched_multi_node_spec.instance.spec.predictor.workerSpec.pipelineParallelSize
+        isvc_num_pods = get_pods_by_isvc_generation(client=admin_client, isvc=patched_multi_node_spec)
 
         if isvc_parallel_size != len(isvc_num_pods):
             pytest.fail(
                 f"Expected pipeline parallel size {isvc_parallel_size} "
                 f"does not match number of pods {len(isvc_num_pods)}"
             )
+
+    @pytest.mark.parametrize(
+        "patched_multi_node_spec",
+        [pytest.param({"spec": {"model": {"args": [MAX_NUM_BATCHED_TOKENS_ARG]}}})],
+        indirect=True,
+    )
+    def test_model_args_added_to_vllm_command(self, admin_client, patched_multi_node_spec):
+        """Test model args added to vllm command"""
+        for pod in get_pods_by_isvc_generation(client=admin_client, isvc=patched_multi_node_spec):
+            # spec.model.args are only added to head pod
+            if (
+                WORKER_POD_ROLE not in pod.name
+                and MAX_NUM_BATCHED_TOKENS_ARG not in pod.instance.spec.containers[0].args
+            ):
+                pytest.fail(f"{MAX_NUM_BATCHED_TOKENS_ARG} model args is not set in {pod.name} pod's spec.model.args")
