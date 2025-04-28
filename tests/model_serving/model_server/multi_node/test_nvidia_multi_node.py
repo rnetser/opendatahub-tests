@@ -28,7 +28,7 @@ MAX_NUM_BATCHED_TOKENS_ARG: str = "--max-num-batched-tokens=256"
 
 
 @pytest.mark.parametrize(
-    "model_namespace, models_bucket_downloaded_model_data, model_pvc, multi_node_inference_service",
+    "unprivileged_model_namespace, models_bucket_downloaded_model_data, model_pvc, multi_node_inference_service",
     [
         pytest.param(
             {"name": "gpu-multi-node"},
@@ -107,7 +107,7 @@ class TestMultiNode:
         [pytest.param({"pod-role": HEAD_POD_ROLE})],
         indirect=True,
     )
-    def test_multi_node_head_pod_deletion(self, admin_client, multi_node_inference_service, deleted_multi_node_pod):
+    def test_multi_node_head_pod_deletion(self, multi_node_inference_service, deleted_multi_node_pod):
         """Test multi node when head pod is deleted"""
         verify_inference_response(
             inference_service=multi_node_inference_service,
@@ -122,7 +122,7 @@ class TestMultiNode:
         [pytest.param({"pod-role": WORKER_POD_ROLE})],
         indirect=True,
     )
-    def test_multi_node_worker_pod_deletion(self, admin_client, multi_node_inference_service, deleted_multi_node_pod):
+    def test_multi_node_worker_pod_deletion(self, multi_node_inference_service, deleted_multi_node_pod):
         """Test multi node when worker pod is deleted"""
         verify_inference_response(
             inference_service=multi_node_inference_service,
