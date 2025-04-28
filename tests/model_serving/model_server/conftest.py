@@ -571,7 +571,7 @@ def unprivileged_s3_caikit_serverless_inference_service(
         yield isvc
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="package")
 def fail_if_missing_dependent_operators(admin_client: DynamicClient) -> None:
     missing_operators: list[str] = []
     csvs = list(
