@@ -31,7 +31,7 @@ pytestmark = [pytest.mark.modelmesh, pytest.mark.minio, pytest.mark.sanity]
             MINIO_DATA_CONNECTION_CONFIG,
             {
                 "runtime_image": MinIo.PodConfig.KSERVE_MINIO_IMAGE,
-                "external-route": True,
+                "enable-external-route": True,
                 **RunTimeConfigs.ONNX_OPSET13_RUNTIME_CONFIG,
             },
             {
